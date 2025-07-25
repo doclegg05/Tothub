@@ -320,7 +320,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Get current state compliance data
       const currentCompliance = await storage.getStateCompliance();
-      let ratiosData = {};
+      let ratiosData: Record<string, string> = {};
       
       if (currentCompliance && currentCompliance.ratiosData) {
         try {

@@ -43,20 +43,20 @@ export function Sidebar() {
             const isActive = location === item.href || (item.href !== "/" && location.startsWith(item.href));
             
             return (
-              <Link key={item.name} href={item.href}>
-                <a
-                  className={cn(
-                    "flex items-center px-4 py-3 rounded-lg transition-colors",
-                    isActive
-                      ? "text-gray-700 bg-blue-50 border-r-4 border-primary"
-                      : "text-gray-600 hover:bg-gray-50"
-                  )}
-                >
-                  <Icon className="w-5 h-5 mr-3" />
-                  <span className={cn("font-medium", isActive && "font-semibold")}>
-                    {item.name}
-                  </span>
-                </a>
+              <Link 
+                key={item.name} 
+                href={item.href}
+                className={cn(
+                  "flex items-center px-4 py-3 rounded-lg transition-colors",
+                  isActive
+                    ? "text-gray-700 bg-blue-50 border-r-4 border-primary"
+                    : "text-gray-600 hover:bg-gray-50"
+                )}
+              >
+                <Icon className="w-5 h-5 mr-3" />
+                <span className={cn("font-medium", isActive && "font-semibold")}>
+                  {item.name}
+                </span>
               </Link>
             );
           })}
