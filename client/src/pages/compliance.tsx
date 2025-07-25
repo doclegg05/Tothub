@@ -24,6 +24,7 @@ import {
 } from 'lucide-react';
 import { US_STATES_LIST, STATE_COMPLIANCE_RATIOS } from '@shared/stateComplianceData';
 import { SafetyReminderManager } from '@/components/safety-reminder-manager';
+import { DocumentExpirationManager } from '@/components/document-expiration-manager';
 
 export default function CompliancePage() {
   const [selectedState, setSelectedState] = useState('California');
@@ -625,65 +626,13 @@ export default function CompliancePage() {
         <TabsContent value="documentation" className="space-y-6">
           <Card>
             <CardHeader>
-              <CardTitle>Legal Documentation & Compliance</CardTitle>
+              <CardTitle>Document Expiration Management</CardTitle>
+              <CardDescription>
+                Track required documents, insurance policies, and certifications with automated expiration alerts
+              </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="text-lg">Required Documents</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <ul className="space-y-2">
-                        <li className="flex items-center gap-2">
-                          <FileText className="h-4 w-4" />
-                          Service Agreement
-                        </li>
-                        <li className="flex items-center gap-2">
-                          <FileText className="h-4 w-4" />
-                          Privacy Policy (COPPA/GDPR)
-                        </li>
-                        <li className="flex items-center gap-2">
-                          <FileText className="h-4 w-4" />
-                          Biometric Consent Forms
-                        </li>
-                        <li className="flex items-center gap-2">
-                          <FileText className="h-4 w-4" />
-                          Data Processing Agreement
-                        </li>
-                        <li className="flex items-center gap-2">
-                          <FileText className="h-4 w-4" />
-                          Incident Response Plan
-                        </li>
-                      </ul>
-                    </CardContent>
-                  </Card>
-
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="text-lg">Insurance Requirements</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <ul className="space-y-2">
-                        <li>• General Liability ($2M minimum)</li>
-                        <li>• Cyber Liability Insurance</li>
-                        <li>• Professional Liability</li>
-                        <li>• Employment Practices Liability</li>
-                        <li>• Technology Errors & Omissions</li>
-                      </ul>
-                    </CardContent>
-                  </Card>
-                </div>
-
-                <Alert>
-                  <Building className="h-4 w-4" />
-                  <AlertDescription>
-                    All legal documents should be reviewed by qualified legal counsel before implementation. 
-                    TotHub provides templates and guidance but cannot provide legal advice.
-                  </AlertDescription>
-                </Alert>
-              </div>
+              <DocumentExpirationManager />
             </CardContent>
           </Card>
         </TabsContent>

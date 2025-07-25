@@ -4,6 +4,7 @@ import { setupVite, serveStatic, log } from "./vite";
 import securityRoutes from "./routes/securityRoutes";
 import complianceRoutes from "./routes/complianceRoutes";
 import safetyRoutes from "./routes/safetyRoutes";
+import documentRoutes from "./routes/documentRoutes";
 import { healthRoutes } from "./routes/healthRoutes";
 import { securityHeaders, validateInput, generateCSRFToken } from "./middleware/security";
 import { MonitoringService } from "./services/monitoringService";
@@ -63,6 +64,7 @@ app.use((req, res, next) => {
   app.use('/api/security', securityRoutes);
   app.use('/api/compliance', complianceRoutes);
   app.use('/api/safety', safetyRoutes);
+  app.use('/api/documents', documentRoutes);
   
   const server = await registerRoutes(app);
 

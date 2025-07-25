@@ -808,3 +808,149 @@ export type SafetyReminder = typeof safetyReminders.$inferSelect;
 export type InsertSafetyReminder = z.infer<typeof insertSafetyReminderSchema>;
 export type SafetyReminderCompletion = typeof safetyReminderCompletions.$inferSelect;
 export type InsertSafetyReminderCompletion = z.infer<typeof insertSafetyReminderCompletionSchema>;
+
+// Document Expiration Management System
+export const documentTypes = pgTable('document_types', {
+  id: text('id').primaryKey().default(sql`gen_random_uuid()`),
+  name: text('name').notNull(), // 'General Liability Insurance', 'Fire Safety Certificate'
+  category: text('category').notNull(), // 'insurance', 'license', 'certification', 'legal'
+  description: text('description'),
+  isRequired: boolean('is_required').default(true).notNull(),
+  renewalFrequency: text('renewal_frequency').notNull(), // 'yearly', 'quarterly', 'biannual', 'custom'
+  customFrequencyDays: integer('custom_frequency_days'), // For custom renewal periods
+  alertDaysBefore: integer('alert_days_before').default(30).notNull(),
+  regulatoryBody: text('regulatory_body'), // 'State Department', 'County Health Dept'
+  complianceNotes: text('compliance_notes'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+});
+
+export const documents = pgTable('documents', {
+  id: text('id').primaryKey().default(sql`gen_random_uuid()`),
+  documentTypeId: text('document_type_id').notNull().references(() => documentTypes.id),
+  title: text('title').notNull(),
+  description: text('description'),
+  issueDate: timestamp('issue_date').notNull(),
+  expirationDate: timestamp('expiration_date').notNull(),
+  status: text('status').notNull().default('active'), // 'active', 'expired', 'pending_renewal', 'suspended'
+  documentNumber: text('document_number'), // Policy number, license number, etc.
+  issuingAuthority: text('issuing_authority'), // Insurance company, government agency
+  contactInfo: text('contact_info'), // Phone/email for renewal
+  filePath: text('file_path'), // Path to uploaded document
+  lastReminderSent: timestamp('last_reminder_sent'),
+  isActive: boolean('is_active').default(true).notNull(),
+  createdBy: text('created_by').notNull(),
+  updatedBy: text('updated_by'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+});
+
+export const documentReminders = pgTable('document_reminders', {
+  id: text('id').primaryKey().default(sql`gen_random_uuid()`),
+  documentId: text('document_id').notNull().references(() => documents.id),
+  reminderType: text('reminder_type').notNull(), // 'expiration_warning', 'renewal_required', 'overdue'
+  reminderDate: timestamp('reminder_date').notNull(),
+  message: text('message').notNull(),
+  sentAt: timestamp('sent_at'),
+  acknowledgedAt: timestamp('acknowledged_at'),
+  acknowledgedBy: text('acknowledged_by'),
+  priority: text('priority').notNull().default('medium'), // 'low', 'medium', 'high', 'critical'
+  isActive: boolean('is_active').default(true).notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+});
+
+export const documentRenewals = pgTable('document_renewals', {
+  id: text('id').primaryKey().default(sql`gen_random_uuid()`),
+  documentId: text('document_id').notNull().references(() => documents.id),
+  previousExpirationDate: timestamp('previous_expiration_date').notNull(),
+  newExpirationDate: timestamp('new_expiration_date').notNull(),
+  renewalDate: timestamp('renewal_date').defaultNow().notNull(),
+  cost: text('cost'), // Renewal cost
+  processedBy: text('processed_by').notNull(),
+  notes: text('notes'),
+  filePath: text('file_path'), // Path to renewed document
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+});
+
+// Document relations
+export const documentTypeRelations = relations(documentTypes, ({ many }) => ({
+  documents: many(documents),
+}));
+
+export const documentRelations = relations(documents, ({ one, many }) => ({
+  documentType: one(documentTypes, {
+    fields: [documents.documentTypeId],
+    references: [documentTypes.id],
+  }),
+  reminders: many(documentReminders),
+  renewals: many(documentRenewals),
+}));
+
+export const documentReminderRelations = relations(documentReminders, ({ one }) => ({
+  document: one(documents, {
+    fields: [documentReminders.documentId],
+    references: [documents.id],
+  }),
+}));
+
+export const documentRenewalRelations = relations(documentRenewals, ({ one }) => ({
+  document: one(documents, {
+    fields: [documentRenewals.documentId],
+    references: [documents.id],
+  }),
+}));
+
+// Document schemas
+export const insertDocumentTypeSchema = createInsertSchema(documentTypes).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+}).extend({
+  category: z.enum(['insurance', 'license', 'certification', 'legal']),
+  renewalFrequency: z.enum(['yearly', 'quarterly', 'biannual', 'custom']),
+  customFrequencyDays: z.number().min(1).optional(),
+  alertDaysBefore: z.number().min(1).max(365),
+});
+
+export const insertDocumentSchema = z.object({
+  documentTypeId: z.string(),
+  title: z.string().min(1),
+  description: z.string().optional(),
+  issueDate: z.string().transform((str) => new Date(str)),
+  expirationDate: z.string().transform((str) => new Date(str)),
+  status: z.enum(['active', 'expired', 'pending_renewal', 'suspended']).default('active'),
+  documentNumber: z.string().optional(),
+  issuingAuthority: z.string().optional(),
+  contactInfo: z.string().optional(),
+  filePath: z.string().optional(),
+  createdBy: z.string(),
+  updatedBy: z.string().optional(),
+  isActive: z.boolean().default(true),
+});
+
+export const insertDocumentReminderSchema = createInsertSchema(documentReminders).omit({
+  id: true,
+  createdAt: true,
+}).extend({
+  reminderType: z.enum(['expiration_warning', 'renewal_required', 'overdue']),
+  priority: z.enum(['low', 'medium', 'high', 'critical']),
+  reminderDate: z.string().transform((str) => new Date(str)),
+});
+
+export const insertDocumentRenewalSchema = createInsertSchema(documentRenewals).omit({
+  id: true,
+  createdAt: true,
+}).extend({
+  previousExpirationDate: z.string().transform((str) => new Date(str)),
+  newExpirationDate: z.string().transform((str) => new Date(str)),
+  renewalDate: z.string().transform((str) => new Date(str)).optional(),
+});
+
+export type DocumentType = typeof documentTypes.$inferSelect;
+export type InsertDocumentType = z.infer<typeof insertDocumentTypeSchema>;
+export type Document = typeof documents.$inferSelect;
+export type InsertDocument = z.infer<typeof insertDocumentSchema>;
+export type DocumentReminder = typeof documentReminders.$inferSelect;
+export type InsertDocumentReminder = z.infer<typeof insertDocumentReminderSchema>;
+export type DocumentRenewal = typeof documentRenewals.$inferSelect;
+export type InsertDocumentRenewal = z.infer<typeof insertDocumentRenewalSchema>;
