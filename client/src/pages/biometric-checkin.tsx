@@ -165,8 +165,8 @@ export default function BiometricCheckIn() {
   });
 
   const allPeople = [
-    ...children.map((child: any) => ({ ...child, type: 'child' })),
-    ...staff.map((member: any) => ({ ...member, type: 'staff' }))
+    ...(children as any[]).map((child: any) => ({ ...child, type: 'child' })),
+    ...(staff as any[]).map((member: any) => ({ ...member, type: 'staff' }))
   ];
 
   const filteredPeople = allPeople.filter(person =>
@@ -174,7 +174,7 @@ export default function BiometricCheckIn() {
   );
 
   const getPresentChild = (childId: string) => {
-    return presentChildren.find((attendance: any) => attendance.childId === childId);
+    return (presentChildren as any[]).find((attendance: any) => attendance.childId === childId);
   };
 
   const handleBiometricSuccess = (method: 'face' | 'fingerprint', confidence?: number) => {
