@@ -33,6 +33,11 @@ export const children = pgTable("children", {
   enrollmentDate: timestamp("enrollment_date").default(sql`now()`),
   tuitionRate: integer("tuition_rate"), // Monthly rate in cents
   isActive: boolean("is_active").default(true),
+  // Biometric authentication data
+  faceDescriptor: text("face_descriptor"), // Serialized face encoding
+  fingerprintHash: text("fingerprint_hash"), // WebAuthn credential ID
+  biometricEnrolledAt: timestamp("biometric_enrolled_at"),
+  biometricEnabled: boolean("biometric_enabled").default(false),
   createdAt: timestamp("created_at").default(sql`now()`),
 });
 
@@ -44,6 +49,11 @@ export const staff = pgTable("staff", {
   phone: text("phone"),
   position: text("position").notNull(),
   isActive: boolean("is_active").default(true),
+  // Biometric authentication data
+  faceDescriptor: text("face_descriptor"), // Serialized face encoding
+  fingerprintHash: text("fingerprint_hash"), // WebAuthn credential ID
+  biometricEnrolledAt: timestamp("biometric_enrolled_at"),
+  biometricEnabled: boolean("biometric_enabled").default(false),
   createdAt: timestamp("created_at").default(sql`now()`),
 });
 
@@ -62,6 +72,9 @@ export const attendance = pgTable("attendance", {
   notes: text("notes"), // Daily notes for parents
   moodRating: integer("mood_rating"), // 1-5 scale
   activitiesCompleted: text("activities_completed").array().default(sql`'{}'::text[]`),
+  // Biometric authentication data
+  biometricMethod: text("biometric_method"), // 'face', 'fingerprint', 'manual'
+  biometricConfidence: text("biometric_confidence"), // Confidence score as string
   createdAt: timestamp("created_at").default(sql`now()`),
 });
 
@@ -401,4 +414,3 @@ export const insertSecurityZoneSchema = createInsertSchema(securityZones).omit({
 });
 export type InsertSecurityZone = z.infer<typeof insertSecurityZoneSchema>;
 export type SecurityZone = typeof securityZones.$inferSelect;
-export type InsertUserRole = z.infer<typeof insertUserRoleSchema>;

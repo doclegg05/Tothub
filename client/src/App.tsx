@@ -8,6 +8,7 @@ import { Chatbot } from "@/components/chatbot";
 import Dashboard from "@/pages/dashboard";
 import CheckInOut from "@/pages/check-in-out";
 import EnhancedCheckIn from "@/pages/enhanced-checkin";
+import BiometricCheckIn from "@/pages/biometric-checkin";
 import Children from "@/pages/children";
 import Staff from "@/pages/staff";
 import Reports from "@/pages/reports";
@@ -28,6 +29,7 @@ function Router() {
           <Route path="/landing" component={Landing} />
           <Route path="/check-in-out" component={CheckInOut} />
           <Route path="/enhanced-checkin" component={EnhancedCheckIn} />
+          <Route path="/biometric-checkin" component={BiometricCheckIn} />
           <Route path="/parent-communication" component={ParentCommunication} />
           <Route path="/children" component={Children} />
           <Route path="/staff" component={Staff} />

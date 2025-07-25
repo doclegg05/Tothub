@@ -1,0 +1,12 @@
+{
+  "modelTopology": {},
+  "weightsManifest": [
+    {
+      "paths": ["./face_recognition_model-shard1"],
+      "weights": []
+    }
+  ],
+  "format": "layers-model",
+  "generatedBy": "face-api.js",
+  "convertedBy": "TensorFlow.js Converter v1.0.0"
+}
