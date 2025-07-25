@@ -4,6 +4,7 @@ export class EncryptionService {
   private static readonly ALGORITHM = 'aes-256-gcm';
   private static readonly KEY_LENGTH = 32;
   private static readonly IV_LENGTH = 16;
+  private static readonly AUTH_TAG_LENGTH = 16; // 128 bits - standard for GCM
   
   // Get encryption key from environment
   private static getEncryptionKey(): Buffer {
@@ -36,7 +37,7 @@ export class EncryptionService {
   static decryptSensitiveData(encryptedData: { encrypted: string; iv: string; tag: string }): string {
     const key = this.getEncryptionKey();
     const iv = Buffer.from(encryptedData.iv, 'hex');
-    const decipher = crypto.createDecipheriv(this.ALGORITHM, key, iv);
+    const decipher = crypto.createDecipheriv(this.ALGORITHM, key, iv, { authTagLength: this.AUTH_TAG_LENGTH });
     decipher.setAuthTag(Buffer.from(encryptedData.tag, 'hex'));
     
     let decrypted = decipher.update(encryptedData.encrypted, 'hex', 'utf8');
