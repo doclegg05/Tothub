@@ -2,6 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { emailService } from "./services/emailService";
+import { TimesheetService } from "./services/timesheetService";
 import { insertChildSchema, insertStaffSchema, insertAttendanceSchema, insertStaffScheduleSchema, insertSettingSchema, insertAlertSchema, insertMessageSchema, insertMediaShareSchema, insertBillingSchema, insertDailyReportSchema } from "@shared/schema";
 import { z } from "zod";
 
@@ -61,6 +62,85 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(staff);
     } catch (error) {
       res.status(500).json({ message: "Failed to fetch staff" });
+    }
+  });
+
+  // Staff clock-in endpoint
+  app.post("/api/staff/:staffId/clock-in", async (req, res) => {
+    try {
+      const { staffId } = req.params;
+      const clockInTime = req.body.clockInTime ? new Date(req.body.clockInTime) : new Date();
+      
+      const timesheetEntry = await TimesheetService.clockIn(staffId, clockInTime);
+      
+      res.status(201).json({
+        success: true,
+        message: "Clocked in successfully",
+        timesheetEntry,
+      });
+    } catch (error) {
+      console.error('Clock-in error:', error);
+      res.status(400).json({ 
+        success: false,
+        message: error instanceof Error ? error.message : "Failed to clock in" 
+      });
+    }
+  });
+
+  // Staff clock-out endpoint
+  app.post("/api/staff/:staffId/clock-out", async (req, res) => {
+    try {
+      const { staffId } = req.params;
+      const clockOutTime = req.body.clockOutTime ? new Date(req.body.clockOutTime) : new Date();
+      
+      const timesheetEntry = await TimesheetService.clockOut(staffId, clockOutTime);
+      
+      res.status(200).json({
+        success: true,
+        message: "Clocked out successfully",
+        timesheetEntry,
+      });
+    } catch (error) {
+      console.error('Clock-out error:', error);
+      res.status(400).json({ 
+        success: false,
+        message: error instanceof Error ? error.message : "Failed to clock out" 
+      });
+    }
+  });
+
+  // Get staff clock status
+  app.get("/api/staff/:staffId/clock-status", async (req, res) => {
+    try {
+      const { staffId } = req.params;
+      const status = await TimesheetService.getClockStatus(staffId);
+      res.json(status);
+    } catch (error) {
+      console.error('Get clock status error:', error);
+      res.status(500).json({ message: "Failed to get clock status" });
+    }
+  });
+
+  // Get staff timesheet summary
+  app.get("/api/staff/:staffId/timesheet-summary", async (req, res) => {
+    try {
+      const { staffId } = req.params;
+      const { startDate, endDate } = req.query;
+      
+      if (!startDate || !endDate) {
+        return res.status(400).json({ message: "Start date and end date are required" });
+      }
+      
+      const summary = await TimesheetService.getTimesheetSummary(
+        staffId,
+        new Date(startDate as string),
+        new Date(endDate as string)
+      );
+      
+      res.json(summary);
+    } catch (error) {
+      console.error('Get timesheet summary error:', error);
+      res.status(500).json({ message: "Failed to get timesheet summary" });
     }
   });
 

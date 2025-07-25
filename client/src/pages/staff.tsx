@@ -11,6 +11,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Search, Plus, GraduationCap, Mail, Phone, Clock, CheckCircle, AlertTriangle } from "lucide-react";
+import { StaffTimeClock } from "@/components/staff-timeclock";
 
 export default function Staff() {
   const { toast } = useToast();
