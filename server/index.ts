@@ -1,4 +1,6 @@
 import express, { type Request, Response, NextFunction } from "express";
+import session from "express-session";
+import pgSession from "connect-pg-simple";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import securityRoutes from "./routes/securityRoutes";
@@ -11,6 +13,7 @@ import { securityHeaders, validateInput, generateCSRFToken } from "./middleware/
 import { authMiddleware } from "./middleware/auth";
 import { MonitoringService } from "./services/monitoringService";
 import { CachingService } from "./services/cachingService";
+import { pool } from "./db";
 
 const app = express();
 
@@ -21,12 +24,31 @@ const cachingService = CachingService.getInstance();
 // Monitoring middleware
 app.use(monitoringService.performanceMiddleware());
 
+// Configure session middleware
+const PgStore = pgSession(session);
+app.use(session({
+  store: new PgStore({
+    pool: pool,
+    tableName: 'user_sessions',
+    createTableIfMissing: true,
+  }),
+  secret: process.env.SESSION_SECRET || 'daycare-session-secret-2024',
+  resave: false,
+  saveUninitialized: false,
+  cookie: {
+    secure: process.env.NODE_ENV === 'production',
+    httpOnly: true,
+    maxAge: 8 * 60 * 60 * 1000, // 8 hours
+    sameSite: 'lax',
+  },
+  name: 'tothub.sid',
+}));
+
 // Security middleware
 app.use(securityHeaders);
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: false, limit: '10mb' }));
 app.use(validateInput);
-// Note: CSRF protection temporarily disabled until session middleware is properly configured
 
 app.use((req, res, next) => {
   const start = Date.now();
@@ -64,6 +86,10 @@ app.use((req, res, next) => {
   
   // Authentication routes (no auth required)
   app.use('/api/auth', authRoutes);
+  
+  // Session routes (requires auth)
+  const sessionRoutes = (await import('./routes/sessionRoutes')).default;
+  app.use('/api/sessions', sessionRoutes);
   
   // Apply auth middleware to all other API routes
   app.use('/api', authMiddleware);

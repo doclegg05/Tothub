@@ -954,3 +954,43 @@ export type DocumentReminder = typeof documentReminders.$inferSelect;
 export type InsertDocumentReminder = z.infer<typeof insertDocumentReminderSchema>;
 export type DocumentRenewal = typeof documentRenewals.$inferSelect;
 export type InsertDocumentRenewal = z.infer<typeof insertDocumentRenewalSchema>;
+
+// Session Management Tables
+export const sessions = pgTable("sessions", {
+  id: text("id").primaryKey(),
+  userId: text("user_id").notNull(),
+  username: text("username").notNull(),
+  role: text("role").notNull(),
+  loginTime: timestamp("login_time").defaultNow().notNull(),
+  lastActivity: timestamp("last_activity").defaultNow().notNull(),
+  endTime: timestamp("end_time"),
+  isActive: boolean("is_active").default(true).notNull(),
+  ipAddress: text("ip_address"),
+  userAgent: text("user_agent"),
+  endReason: text("end_reason"), // logout, expired, forced
+});
+
+export const sessionActivity = pgTable("session_activity", {
+  id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
+  sessionId: text("session_id").notNull().references(() => sessions.id),
+  action: text("action").notNull(), // login, logout, check_in, check_out, view_child, etc
+  path: text("path").notNull(),
+  timestamp: timestamp("timestamp").defaultNow().notNull(),
+  details: text("details"), // JSON string for additional data
+});
+
+// Session schemas
+export const insertSessionSchema = createInsertSchema(sessions).omit({
+  loginTime: true,
+  lastActivity: true,
+});
+
+export const insertSessionActivitySchema = createInsertSchema(sessionActivity).omit({
+  id: true,
+  timestamp: true,
+});
+
+export type Session = typeof sessions.$inferSelect;
+export type InsertSession = z.infer<typeof insertSessionSchema>;
+export type SessionActivity = typeof sessionActivity.$inferSelect;
+export type InsertSessionActivity = z.infer<typeof insertSessionActivitySchema>;

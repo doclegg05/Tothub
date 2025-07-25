@@ -18,6 +18,7 @@ import Compliance from "@/pages/compliance";
 import ParentCommunication from "@/pages/parent-communication";
 import Payroll from "@/pages/payroll";
 import Scheduling from "@/pages/scheduling";
+import Sessions from "@/pages/sessions";
 import Landing from "@/pages/landing";
 import Login from "@/pages/login";
 import NotFound from "@/pages/not-found";
@@ -41,6 +42,7 @@ function AuthenticatedApp() {
           <Route path="/security" component={Security} />
           <Route path="/compliance" component={Compliance} />
           <Route path="/performance-test" component={PerformanceTest} />
+          <Route path="/sessions" component={Sessions} />
           <Route component={NotFound} />
         </Switch>
       </div>

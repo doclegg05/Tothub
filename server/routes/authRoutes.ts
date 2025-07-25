@@ -1,6 +1,7 @@
-import { Router } from 'express';
+import { Router, Request, Response } from 'express';
 import jwt from 'jsonwebtoken';
 import { z } from 'zod';
+import { sessionService } from '../services/sessionService';
 
 const router = Router();
 
@@ -40,7 +41,7 @@ const loginSchema = z.object({
 const JWT_SECRET = process.env.JWT_SECRET || 'daycare-jwt-secret-2024';
 
 // Login endpoint
-router.post('/login', async (req, res) => {
+router.post('/login', async (req: Request, res: Response) => {
   try {
     const { username, password } = loginSchema.parse(req.body);
 
@@ -72,12 +73,26 @@ router.post('/login', async (req, res) => {
       { expiresIn: '8h' }
     );
 
+    // Create session tracking
+    const sessionId = await sessionService.createSession({
+      userId: user.id,
+      username: user.username,
+      role: user.role,
+      ipAddress: req.ip,
+      userAgent: req.headers['user-agent'],
+    });
+    
+    // Store session ID in express-session
+    req.session!.sessionId = sessionId;
+    req.session!.userId = user.id;
+    
     // Return user data (without password)
     const { password: _, ...userWithoutPassword } = user;
     
     res.json({
       token,
       user: userWithoutPassword,
+      sessionId,
       message: 'Login successful',
     });
 
@@ -95,10 +110,27 @@ router.post('/login', async (req, res) => {
 });
 
 // Logout endpoint
-router.post('/logout', (req, res) => {
-  // In a stateless JWT system, logout is handled client-side
-  // But we can add token blacklisting here if needed
-  res.json({ message: 'Logged out successfully' });
+router.post('/logout', async (req: Request, res: Response) => {
+  try {
+    const sessionId = (req as any).session?.sessionId;
+    
+    if (sessionId) {
+      // End the session tracking
+      await sessionService.endSession(sessionId, 'logout');
+      
+      // Destroy express-session
+      req.session?.destroy((err: any) => {
+        if (err) {
+          console.error('Session destroy error:', err);
+        }
+      });
+    }
+    
+    res.json({ message: 'Logged out successfully' });
+  } catch (error) {
+    console.error('Logout error:', error);
+    res.json({ message: 'Logged out successfully' }); // Still return success
+  }
 });
 
 // Verify token endpoint

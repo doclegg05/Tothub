@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
+import { sessionService } from '../services/sessionService';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'daycare-jwt-secret-2024';
 
@@ -11,7 +12,7 @@ export interface AuthRequest extends Request {
   };
 }
 
-export function authMiddleware(req: AuthRequest, res: Response, next: NextFunction) {
+export async function authMiddleware(req: AuthRequest, res: Response, next: NextFunction) {
   // Skip auth for public routes
   const publicPaths = ['/api/auth/login', '/api/auth/logout', '/api/health'];
   if (publicPaths.some(path => req.path.startsWith(path))) {
@@ -31,6 +32,18 @@ export function authMiddleware(req: AuthRequest, res: Response, next: NextFuncti
       username: decoded.username,
       role: decoded.role,
     };
+    
+    // Track activity if session exists
+    const sessionId = (req as any).session?.sessionId;
+    if (sessionId) {
+      await sessionService.trackActivity(
+        sessionId,
+        req.method.toLowerCase(),
+        req.path,
+        { body: req.body }
+      );
+    }
+    
     next();
   } catch (error) {
     return res.status(401).json({ message: 'Invalid or expired token' });

@@ -13,7 +13,8 @@ import {
   Shield,
   DollarSign,
   Calendar,
-  CheckCircle
+  CheckCircle,
+  Activity
 } from "lucide-react";
 
 const navigation = [
@@ -33,6 +34,7 @@ const advancedNavigation = [
   { name: "Scheduling", href: "/scheduling", icon: Calendar },
   { name: "Physical Security", href: "/security", icon: Shield },
   { name: "Performance Test", href: "/performance-test", icon: TrendingUp },
+  { name: "Sessions", href: "/sessions", icon: Activity },
 ];
 
 export function Sidebar() {
