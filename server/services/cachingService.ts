@@ -32,17 +32,23 @@ export class CachingService {
   private responseTimes: number[] = [];
 
   constructor(config: CacheConfig) {
-    this.redis = new Redis({
-      host: config.host,
-      port: config.port,
-      password: config.password,
-      keyPrefix: config.keyPrefix,
-      retryDelayOnFailover: 100,
-      maxRetriesPerRequest: config.maxRetries,
-      lazyConnect: true,
-    });
-
-    this.setupEventHandlers();
+    // Only use Redis in production or when explicitly enabled
+    if (process.env.NODE_ENV === 'production' || process.env.REDIS_URL) {
+      this.redis = new Redis({
+        host: config.host,
+        port: config.port,
+        password: config.password,
+        keyPrefix: config.keyPrefix,
+        retryDelayOnFailover: 100,
+        maxRetriesPerRequest: config.maxRetries,
+        lazyConnect: true,
+      });
+      this.setupEventHandlers();
+    } else {
+      // Use null Redis client for development
+      console.log('📝 CachingService: Using in-memory fallback (Redis disabled in development)');
+      this.redis = null as any;
+    }
   }
 
   public static getInstance(config?: CacheConfig): CachingService {

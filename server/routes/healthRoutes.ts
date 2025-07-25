@@ -4,6 +4,10 @@ import { CachingService } from '../services/cachingService';
 import { BackupService } from '../services/backupService';
 import { IntegrationTestingService } from '../services/integrationTestingService';
 import { LoadTestingService } from '../services/loadTestingService';
+import { EndToEndTestingService } from '../services/endToEndTestingService';
+import { CrossPlatformTestingService } from '../services/crossPlatformTestingService';
+import { BetaTestingService } from '../services/betaTestingService';
+import { DataMigrationService } from '../services/dataMigrationService';
 import { pool } from '../db';
 
 const router = Router();
@@ -421,6 +425,315 @@ router.get('/optimization/suggestions', async (req, res) => {
   } catch (error) {
     res.status(500).json({
       error: error instanceof Error ? error.message : 'Optimization analysis failed',
+      timestamp: new Date().toISOString(),
+    });
+  }
+});
+
+// Comprehensive testing endpoints
+router.post('/tests/e2e', async (req, res) => {
+  try {
+    const e2eService = EndToEndTestingService.getInstance();
+    const results = await e2eService.runCompleteTestSuite();
+    
+    res.json({
+      timestamp: new Date().toISOString(),
+      results: results.map(r => ({
+        scenario: r.scenario,
+        passed: r.passed,
+        duration: r.duration,
+        stepCount: r.steps.length,
+        error: r.error,
+      })),
+      summary: {
+        total: results.length,
+        passed: results.filter(r => r.passed).length,
+        failed: results.filter(r => !r.passed).length,
+      },
+    });
+  } catch (error) {
+    res.status(500).json({
+      error: error instanceof Error ? error.message : 'E2E tests failed',
+      timestamp: new Date().toISOString(),
+    });
+  }
+});
+
+router.post('/tests/e2e/critical', async (req, res) => {
+  try {
+    const e2eService = EndToEndTestingService.getInstance();
+    const results = await e2eService.runCriticalTests();
+    
+    res.json({
+      timestamp: new Date().toISOString(),
+      results: results.map(r => ({
+        scenario: r.scenario,
+        passed: r.passed,
+        duration: r.duration,
+        error: r.error,
+      })),
+      allCriticalPassed: results.every(r => r.passed),
+    });
+  } catch (error) {
+    res.status(500).json({
+      error: error instanceof Error ? error.message : 'Critical E2E tests failed',
+      timestamp: new Date().toISOString(),
+    });
+  }
+});
+
+router.post('/tests/compatibility', async (req, res) => {
+  try {
+    const compatibilityService = CrossPlatformTestingService.getInstance();
+    const config = req.body.config || CrossPlatformTestingService.getDefaultTestConfig();
+    
+    const results = await compatibilityService.runCompatibilityTests(config);
+    const summary = compatibilityService.getCompatibilitySummary();
+    
+    // Convert Map to object for JSON serialization
+    const serializedResults: Record<string, any> = {};
+    results.forEach((result, platform) => {
+      serializedResults[platform] = {
+        passed: result.passed,
+        features: result.features,
+        performance: result.performance,
+        issues: result.issues,
+        recommendations: result.recommendations,
+      };
+    });
+    
+    res.json({
+      timestamp: new Date().toISOString(),
+      results: serializedResults,
+      summary,
+      readyForProduction: summary.passed === summary.total,
+    });
+  } catch (error) {
+    res.status(500).json({
+      error: error instanceof Error ? error.message : 'Compatibility tests failed',
+      timestamp: new Date().toISOString(),
+    });
+  }
+});
+
+router.post('/beta/initialize', async (req, res) => {
+  try {
+    const betaService = BetaTestingService.getInstance();
+    await betaService.initializeBetaProgram();
+    
+    const groups = Array.from(betaService.getBetaGroups().values());
+    
+    res.json({
+      timestamp: new Date().toISOString(),
+      success: true,
+      groups: groups.map(group => ({
+        id: group.id,
+        name: group.name,
+        daycareCenter: group.daycareCenter.name,
+        participants: group.participants.length,
+        phase: group.testPhase,
+        features: group.features,
+      })),
+    });
+  } catch (error) {
+    res.status(500).json({
+      error: error instanceof Error ? error.message : 'Beta initialization failed',
+      timestamp: new Date().toISOString(),
+    });
+  }
+});
+
+router.post('/beta/feedback', async (req, res) => {
+  try {
+    const betaService = BetaTestingService.getInstance();
+    const { participantId, feedback } = req.body;
+    
+    await betaService.submitFeedback(participantId, feedback);
+    
+    res.json({
+      timestamp: new Date().toISOString(),
+      success: true,
+      message: 'Feedback submitted successfully',
+    });
+  } catch (error) {
+    res.status(500).json({
+      error: error instanceof Error ? error.message : 'Feedback submission failed',
+      timestamp: new Date().toISOString(),
+    });
+  }
+});
+
+router.get('/beta/report', async (req, res) => {
+  try {
+    const betaService = BetaTestingService.getInstance();
+    const feedbackReport = betaService.generateFeedbackReport();
+    const usageAnalytics = betaService.generateUsageAnalytics();
+    const mobileReport = betaService.generateMobileReport();
+    
+    res.json({
+      timestamp: new Date().toISOString(),
+      feedback: feedbackReport,
+      usage: usageAnalytics,
+      mobile: mobileReport,
+    });
+  } catch (error) {
+    res.status(500).json({
+      error: error instanceof Error ? error.message : 'Beta report generation failed',
+      timestamp: new Date().toISOString(),
+    });
+  }
+});
+
+router.post('/migration/start', async (req, res) => {
+  try {
+    const migrationService = DataMigrationService.getInstance();
+    const { daycareCenter, sourceSystem, sourceData } = req.body;
+    
+    const commonMappings = DataMigrationService.getCommonSystemMappings();
+    const mapping = commonMappings[sourceSystem.toLowerCase()];
+    
+    const jobId = await migrationService.startMigration(
+      daycareCenter,
+      sourceSystem,
+      sourceData,
+      mapping
+    );
+    
+    res.json({
+      timestamp: new Date().toISOString(),
+      success: true,
+      jobId,
+      message: 'Migration started successfully',
+    });
+  } catch (error) {
+    res.status(500).json({
+      error: error instanceof Error ? error.message : 'Migration start failed',
+      timestamp: new Date().toISOString(),
+    });
+  }
+});
+
+router.get('/migration/:jobId/status', async (req, res) => {
+  try {
+    const migrationService = DataMigrationService.getInstance();
+    const { jobId } = req.params;
+    
+    const status = migrationService.getMigrationStatus(jobId);
+    
+    if (!status) {
+      return res.status(404).json({
+        error: 'Migration job not found',
+        timestamp: new Date().toISOString(),
+      });
+    }
+    
+    res.json({
+      timestamp: new Date().toISOString(),
+      status: {
+        id: status.id,
+        daycareCenter: status.daycareCenter,
+        sourceSystem: status.sourceSystem,
+        status: status.status,
+        progress: status.progress,
+        totalRecords: status.totalRecords,
+        processedRecords: status.processedRecords,
+        failedRecords: status.failedRecords,
+        errors: status.errors.length,
+        warnings: status.warnings.length,
+      },
+    });
+  } catch (error) {
+    res.status(500).json({
+      error: error instanceof Error ? error.message : 'Migration status check failed',
+      timestamp: new Date().toISOString(),
+    });
+  }
+});
+
+router.get('/migration/:jobId/report', async (req, res) => {
+  try {
+    const migrationService = DataMigrationService.getInstance();
+    const { jobId } = req.params;
+    
+    const report = migrationService.generateMigrationReport(jobId);
+    
+    if (!report) {
+      return res.status(404).json({
+        error: 'Migration job not found',
+        timestamp: new Date().toISOString(),
+      });
+    }
+    
+    res.json({
+      timestamp: new Date().toISOString(),
+      report,
+    });
+  } catch (error) {
+    res.status(500).json({
+      error: error instanceof Error ? error.message : 'Migration report generation failed',
+      timestamp: new Date().toISOString(),
+    });
+  }
+});
+
+router.post('/migration/:jobId/rollback', async (req, res) => {
+  try {
+    const migrationService = DataMigrationService.getInstance();
+    const { jobId } = req.params;
+    
+    const success = await migrationService.rollbackMigration(jobId);
+    
+    res.json({
+      timestamp: new Date().toISOString(),
+      success,
+      message: success ? 'Migration rolled back successfully' : 'Rollback failed',
+    });
+  } catch (error) {
+    res.status(500).json({
+      error: error instanceof Error ? error.message : 'Migration rollback failed',
+      timestamp: new Date().toISOString(),
+    });
+  }
+});
+
+// Comprehensive testing dashboard
+router.get('/tests/dashboard', async (req, res) => {
+  try {
+    const e2eService = EndToEndTestingService.getInstance();
+    const compatibilityService = CrossPlatformTestingService.getInstance();
+    const betaService = BetaTestingService.getInstance();
+    
+    // Get test histories and summaries
+    const e2eResults = e2eService.getTestResults();
+    const compatibilitySummary = compatibilityService.getCompatibilitySummary();
+    const pendingFeedback = betaService.getPendingFeedback();
+    
+    res.json({
+      timestamp: new Date().toISOString(),
+      testing_status: {
+        e2e_tests: {
+          last_run: e2eResults.length > 0 ? e2eResults[e2eResults.length - 1] : null,
+          total_scenarios: e2eResults.length,
+          passed: e2eResults.filter(r => r.passed).length,
+        },
+        compatibility: compatibilitySummary,
+        beta_testing: {
+          active_groups: betaService.getBetaGroups().size,
+          pending_feedback: pendingFeedback.length,
+          critical_issues: pendingFeedback.filter(f => f.severity === 'critical').length,
+        },
+      },
+      recommendations: [
+        'Run critical E2E tests before each deployment',
+        'Monitor beta feedback for usability issues',
+        'Test mobile compatibility regularly',
+        'Validate data migration with sample datasets',
+        'Review performance metrics after each test run',
+      ],
+    });
+  } catch (error) {
+    res.status(500).json({
+      error: error instanceof Error ? error.message : 'Testing dashboard failed',
       timestamp: new Date().toISOString(),
     });
   }
