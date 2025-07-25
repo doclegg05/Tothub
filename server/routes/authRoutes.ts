@@ -7,12 +7,15 @@ import { sessionService } from '../services/sessionService';
 const router = Router();
 
 // Mock user database - in production, this would be a real database
-// Passwords are properly hashed with bcrypt (salt rounds: 10)
+// Passwords must be provided via environment variables for security
 const users = [
   {
     id: '1',
     username: 'director',
-    password: process.env.DIRECTOR_PASSWORD_HASH || '$2b$10$EPwXHpTpP.c2FZ0ax2NoIusr6K33F5tkyH0RcuLO.KMhXDHTwc2f6', // admin123
+    password: process.env.DIRECTOR_PASSWORD_HASH || (() => {
+      console.error('DIRECTOR_PASSWORD_HASH environment variable not set');
+      return null;
+    })(),
     name: 'Sarah Johnson',
     role: 'director',
     email: 'director@daycare.com',
@@ -20,7 +23,10 @@ const users = [
   {
     id: '2',
     username: 'teacher',
-    password: process.env.TEACHER_PASSWORD_HASH || '$2b$10$efyee677K/Pwkc5fNzIGCe9ub2HvShQoVQ7TrlP86O4Q.1dxLWtne', // teacher123
+    password: process.env.TEACHER_PASSWORD_HASH || (() => {
+      console.error('TEACHER_PASSWORD_HASH environment variable not set');
+      return null;
+    })(),
     name: 'Maria Garcia',
     role: 'teacher',
     email: 'teacher@daycare.com',
@@ -28,12 +34,21 @@ const users = [
   {
     id: '3',
     username: 'staff',
-    password: process.env.STAFF_PASSWORD_HASH || '$2b$10$2ZfAf8/YZV56dWd8hQBtEuz/vY/Ot/PGUxSQ2IRBXaOuzYG7uSDLW', // staff123
+    password: process.env.STAFF_PASSWORD_HASH || (() => {
+      console.error('STAFF_PASSWORD_HASH environment variable not set');
+      return null;
+    })(),
     name: 'John Smith',
     role: 'staff',
     email: 'staff@daycare.com',
   },
-];
+].filter(user => user.password !== null); // Remove users without valid password hashes
+
+// Debug logging for initialization
+console.log('🔐 Auth initialization:');
+console.log(`- Available users: ${users.length}`);
+console.log(`- Users loaded: ${users.map(u => u.username).join(', ')}`);
+console.log(`- Environment variables: DIRECTOR=${!!process.env.DIRECTOR_PASSWORD_HASH}, TEACHER=${!!process.env.TEACHER_PASSWORD_HASH}, STAFF=${!!process.env.STAFF_PASSWORD_HASH}`);
 
 const loginSchema = z.object({
   username: z.string().min(1, 'Username is required'),
@@ -49,12 +64,15 @@ router.post('/login', async (req: Request, res: Response) => {
 
     // Find user
     const user = users.find(u => u.username === username);
-    if (!user) {
+    if (!user || !user.password) {
+      console.log(`🔐 Login failed - user not found or no password hash: ${username}`);
       return res.status(401).json({ message: 'Invalid username or password' });
     }
 
     // Verify password using bcrypt
+    console.log(`🔐 Attempting login for user: ${username}`);
     const isValidPassword = await bcrypt.compare(password, user.password);
+    console.log(`🔐 Password verification result: ${isValidPassword}`);
     if (!isValidPassword) {
       return res.status(401).json({ message: 'Invalid username or password' });
     }
