@@ -34,8 +34,17 @@ export function Sidebar() {
   return (
     <div className="w-64 bg-white shadow-lg border-r border-gray-200">
       <div className="p-6 border-b border-gray-200">
-        <h1 className="text-xl font-bold text-gray-800">KidSign Pro</h1>
-        <p className="text-sm text-gray-600">Enhanced Daycare Management</p>
+        <div className="flex items-center space-x-3">
+          <img 
+            src="@assets/7329979f-8516-4378-b1b7-dd17ca2532e3_1753458570775.jpg" 
+            alt="TotHub Logo" 
+            className="w-8 h-8 object-contain"
+          />
+          <div>
+            <h1 className="text-xl font-bold text-gray-800">TotHub</h1>
+            <p className="text-sm text-gray-600">Complete Daycare Management</p>
+          </div>
+        </div>
       </div>
       
       <nav className="mt-6">
