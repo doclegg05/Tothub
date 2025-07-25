@@ -1,4 +1,4 @@
-import { securityService } from "./securityService";
+import { securityService, SecurityService } from "./securityService";
 import { storage } from "../storage";
 import type { InsertSecurityDevice } from "@shared/schema";
 
@@ -15,8 +15,8 @@ export class SecurityTestScript {
       testsRun: 0,
       unlockTests: 0,
       credentialTests: 0,
-      errors: [],
-      summary: {},
+      errors: [] as string[],
+      summary: {} as any,
     };
 
     try {
@@ -195,7 +195,7 @@ export class SecurityTestScript {
           const mockParentId = 'parent_001';
           const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
           
-          const handler = securityService.createDeviceHandler(keypadDevice);
+          const handler = SecurityService.createDeviceHandler(keypadDevice);
           if ('generateTemporaryPIN' in handler) {
             const tempPIN = await (handler as any).generateTemporaryPIN(mockParentId, expiresAt);
             console.log(`📱 Generated temporary PIN for parent: ${tempPIN}`);
@@ -229,7 +229,7 @@ export class SecurityTestScript {
             isActive: true,
           });
           
-          const handler = securityService.createDeviceHandler(rfidDevice);
+          const handler = SecurityService.createDeviceHandler(rfidDevice);
           const cardValid = await handler.validateCredential('0x1234ABCD');
           results.credentialTests++;
           
@@ -248,7 +248,7 @@ export class SecurityTestScript {
       const biometricDevice = createdDevices.find(d => d.type === 'biometric');
       if (biometricDevice) {
         try {
-          const handler = securityService.createDeviceHandler(biometricDevice);
+          const handler = SecurityService.createDeviceHandler(biometricDevice);
           if ('enrollBiometric' in handler) {
             await (handler as any).enrollBiometric('admin_001', 'MOCK_FINGERPRINT_TEMPLATE');
             console.log(`👆 Enrolled biometric template for admin`);
@@ -299,20 +299,20 @@ export class SecurityTestScript {
         testsExecuted: results.testsRun + results.unlockTests + results.credentialTests,
         successfulActions: securityLogs.filter((log: any) => log.log.success).length,
         failedActions: securityLogs.filter((log: any) => !log.log.success).length,
-        deviceTypes: [...new Set(createdDevices.map(d => d.type))],
-        connectionTypes: [...new Set(createdDevices.map(d => d.connectionType))],
+        deviceTypes: Array.from(new Set(createdDevices.map(d => d.type))),
+        connectionTypes: Array.from(new Set(createdDevices.map(d => d.connectionType))),
         lastActivity: securityLogs.length > 0 ? securityLogs[0].log.timestamp : null,
       };
 
       console.log("\n📊 SECURITY SYSTEM SIMULATION RESULTS:");
       console.log("=====================================");
-      console.log(`✅ Devices Created: ${results.summary.totalDevices}`);
-      console.log(`🔌 Online Devices: ${results.summary.onlineDevices}`);
-      console.log(`🧪 Total Tests: ${results.summary.testsExecuted}`);
-      console.log(`✅ Successful Actions: ${results.summary.successfulActions}`);
-      console.log(`❌ Failed Actions: ${results.summary.failedActions}`);
-      console.log(`🔧 Device Types: ${results.summary.deviceTypes.join(', ')}`);
-      console.log(`🌐 Connection Types: ${results.summary.connectionTypes.join(', ')}`);
+      console.log(`✅ Devices Created: ${results.summary.totalDevices || 0}`);
+      console.log(`🔌 Online Devices: ${results.summary.onlineDevices || 0}`);
+      console.log(`🧪 Total Tests: ${results.summary.testsExecuted || 0}`);
+      console.log(`✅ Successful Actions: ${results.summary.successfulActions || 0}`);
+      console.log(`❌ Failed Actions: ${results.summary.failedActions || 0}`);
+      console.log(`🔧 Device Types: ${results.summary.deviceTypes?.join(', ') || 'None'}`);
+      console.log(`🌐 Connection Types: ${results.summary.connectionTypes?.join(', ') || 'None'}`);
       
       if (results.errors.length > 0) {
         console.log(`\n⚠️  Errors Encountered: ${results.errors.length}`);
@@ -349,7 +349,7 @@ export class SecurityTestScript {
     const device = await storage.createSecurityDevice(keypadData);
     await securityService.initializeDevice(device);
     
-    const handler = securityService.createDeviceHandler(device);
+    const handler = SecurityService.createDeviceHandler(device);
     
     // Test connection
     const connected = await handler.testConnection();
