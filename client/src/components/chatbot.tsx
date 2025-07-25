@@ -140,7 +140,7 @@ export function Chatbot() {
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-2">
                 <Bot className="w-5 h-5" />
-                <CardTitle className="text-lg font-medium">KidSign Pro Support</CardTitle>
+                <CardTitle className="text-lg font-medium">TotHub Support</CardTitle>
               </div>
               <Button
                 variant="ghost"
