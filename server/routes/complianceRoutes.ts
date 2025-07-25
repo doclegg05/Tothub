@@ -48,7 +48,7 @@ router.get('/qualifications/:state/:ageGroup', complianceRateLimit, async (req, 
   try {
     const { state, ageGroup } = req.params;
     
-    const requirements = RegulatoryComplianceService.getQualificationRequirements(state, ageGroup);
+    const requirements = await RegulatoryComplianceService.getQualificationRequirements(state, ageGroup);
     
     res.json(requirements);
   } catch (error) {

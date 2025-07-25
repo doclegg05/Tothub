@@ -18,11 +18,14 @@ import {
   FileText,
   Clock,
   Building,
-  Scale
+  Scale,
+  MapPin,
+  Info
 } from 'lucide-react';
+import { US_STATES_LIST, STATE_COMPLIANCE_RATIOS } from '@shared/stateComplianceData';
 
 export default function CompliancePage() {
-  const [selectedState, setSelectedState] = useState('CA');
+  const [selectedState, setSelectedState] = useState('California');
   const [ageGroup, setAgeGroup] = useState('infant');
   const [childCount, setChildCount] = useState('4');
   const [staffCount, setStaffCount] = useState('1');
@@ -139,11 +142,12 @@ export default function CompliancePage() {
                     <SelectTrigger>
                       <SelectValue placeholder="Select state" />
                     </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="CA">California</SelectItem>
-                      <SelectItem value="NY">New York</SelectItem>
-                      <SelectItem value="TX">Texas</SelectItem>
-                      <SelectItem value="FL">Florida</SelectItem>
+                    <SelectContent className="max-h-[200px] overflow-y-auto">
+                      {US_STATES_LIST.map((state) => (
+                        <SelectItem key={state} value={state}>
+                          {state}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
@@ -227,37 +231,122 @@ export default function CompliancePage() {
                 </div>
               )}
 
-              {qualifications && (
-                <Card className="mt-6">
-                  <CardHeader>
-                    <CardTitle>Staff Qualification Requirements</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-4">
-                      <div>
-                        <h4 className="font-semibold">Required Qualifications</h4>
-                        <ul className="list-disc pl-5 mt-2">
-                          {qualifications.required.map((req: string, index: number) => (
-                            <li key={index}>{req}</li>
-                          ))}
-                        </ul>
-                      </div>
-                      <div>
-                        <h4 className="font-semibold">Preferred Qualifications</h4>
-                        <ul className="list-disc pl-5 mt-2">
-                          {qualifications.preferred.map((pref: string, index: number) => (
-                            <li key={index}>{pref}</li>
-                          ))}
-                        </ul>
-                      </div>
-                      <div>
-                        <h4 className="font-semibold">Continuing Education</h4>
-                        <p>{qualifications.continuing_education}</p>
+              {/* Comprehensive State Requirements */}
+              <Card className="mt-6">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <MapPin className="h-5 w-5" />
+                    {selectedState} State Requirements
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-6">
+                    {/* Full Ratio Table */}
+                    <div>
+                      <h4 className="font-semibold mb-3">Complete Ratio Requirements</h4>
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {STATE_COMPLIANCE_RATIOS[selectedState] && Object.entries(STATE_COMPLIANCE_RATIOS[selectedState]).map(([ageGroup, ratio]) => {
+                          if (ageGroup === 'maxGroupSize' || ageGroup === 'notes') return null;
+                          return (
+                            <Card key={ageGroup} className="border-l-4 border-l-blue-500">
+                              <CardContent className="pt-4">
+                                <div className="text-sm font-medium text-muted-foreground">{ageGroup}</div>
+                                <div className="text-2xl font-bold">{ratio}</div>
+                                <div className="text-xs text-muted-foreground">Children per Teacher</div>
+                              </CardContent>
+                            </Card>
+                          );
+                        })}
                       </div>
                     </div>
-                  </CardContent>
-                </Card>
-              )}
+
+                    {/* Maximum Group Sizes */}
+                    {STATE_COMPLIANCE_RATIOS[selectedState]?.maxGroupSize && (
+                      <div>
+                        <h4 className="font-semibold mb-3">Maximum Group Sizes</h4>
+                        <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                          {Object.entries(STATE_COMPLIANCE_RATIOS[selectedState].maxGroupSize!).map(([ageGroup, maxSize]) => (
+                            <div key={ageGroup} className="bg-gray-50 p-3 rounded-lg">
+                              <div className="text-sm text-muted-foreground">{ageGroup}</div>
+                              <div className="font-bold">{maxSize} children max</div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Special Notes */}
+                    {STATE_COMPLIANCE_RATIOS[selectedState]?.notes && (
+                      <Alert>
+                        <Info className="h-4 w-4" />
+                        <AlertDescription>
+                          <strong>State-Specific Notes:</strong> {STATE_COMPLIANCE_RATIOS[selectedState].notes}
+                        </AlertDescription>
+                      </Alert>
+                    )}
+
+                    {/* Staff Qualifications */}
+                    {qualifications && (
+                      <div>
+                        <h4 className="font-semibold mb-3">Staff Qualification Requirements</h4>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                          <div>
+                            <h5 className="font-medium text-green-700 mb-2">Required Qualifications</h5>
+                            <ul className="list-disc pl-5 space-y-1">
+                              {qualifications.required.map((req: string, index: number) => (
+                                <li key={index} className="text-sm">{req}</li>
+                              ))}
+                            </ul>
+                          </div>
+                          <div>
+                            <h5 className="font-medium text-blue-700 mb-2">Preferred Qualifications</h5>
+                            <ul className="list-disc pl-5 space-y-1">
+                              {qualifications.preferred.map((pref: string, index: number) => (
+                                <li key={index} className="text-sm">{pref}</li>
+                              ))}
+                            </ul>
+                          </div>
+                        </div>
+                        <div className="mt-4 p-3 bg-blue-50 rounded-lg">
+                          <h5 className="font-medium text-blue-800">Continuing Education</h5>
+                          <p className="text-sm text-blue-700 mt-1">{qualifications.continuing_education}</p>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Compliance Comparison */}
+                    <div>
+                      <h4 className="font-semibold mb-3">How {selectedState} Compares</h4>
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <Card className="border-green-200 bg-green-50">
+                          <CardContent className="pt-4">
+                            <div className="text-green-800 font-semibold">Strictest States</div>
+                            <div className="text-sm text-green-600 mt-1">
+                              Maryland (3:1), Massachusetts (3:1), DC (3:1)
+                            </div>
+                          </CardContent>
+                        </Card>
+                        <Card className="border-yellow-200 bg-yellow-50">
+                          <CardContent className="pt-4">
+                            <div className="text-yellow-800 font-semibold">Moderate States</div>
+                            <div className="text-sm text-yellow-600 mt-1">
+                              California (4:1), New York (4:1), Texas (4:1)
+                            </div>
+                          </CardContent>
+                        </Card>
+                        <Card className="border-orange-200 bg-orange-50">
+                          <CardContent className="pt-4">
+                            <div className="text-orange-800 font-semibold">Lenient States</div>
+                            <div className="text-sm text-orange-600 mt-1">
+                              Alabama (5:1), Arkansas (6:1), Louisiana (6:1)
+                            </div>
+                          </CardContent>
+                        </Card>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
             </CardContent>
           </Card>
         </TabsContent>

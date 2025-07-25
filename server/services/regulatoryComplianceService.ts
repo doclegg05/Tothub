@@ -305,28 +305,39 @@ export class RegulatoryComplianceService {
     };
   }
 
-  // Get staff qualification requirements
-  static getQualificationRequirements(state: string, ageGroup: string): {
+  // Get staff qualification requirements using comprehensive state data
+  static async getQualificationRequirements(state: string, ageGroup: string): Promise<{
     required: string[];
     preferred: string[];
     continuing_education: string;
-  } {
-    const stateRegs = this.STATE_REGULATIONS[state];
-    
-    if (stateRegs && stateRegs.ratios[ageGroup]) {
+  }> {
+    try {
+      // Import comprehensive state qualification data
+      const { STATE_QUALIFICATION_REQUIREMENTS } = await import('../../shared/stateComplianceData');
+      
+      const stateQualifications = STATE_QUALIFICATION_REQUIREMENTS[state];
+      
+      if (stateQualifications) {
+        return {
+          required: stateQualifications.required,
+          preferred: stateQualifications.preferred,
+          continuing_education: stateQualifications.continuing_education,
+        };
+      }
+      // Fallback to default requirements if state not found
       return {
-        required: stateRegs.ratios[ageGroup].qualifications,
-        preferred: stateRegs.trainingRequirements,
-        continuing_education: stateRegs.trainingRequirements.find(req => req.includes('hours')) || 'Annual training required',
+        required: ['High school diploma or equivalent'],
+        preferred: ['Child Development Associate (CDA)', 'Early Childhood Education units'],
+        continuing_education: '15 hours annually',
+      };
+    } catch (error) {
+      // Fallback for any import errors
+      return {
+        required: ['High school diploma or equivalent'],
+        preferred: ['Child Development Associate (CDA)', 'Early Childhood Education units'],
+        continuing_education: '15 hours annually',
       };
     }
-
-    // Default requirements
-    return {
-      required: ['High school diploma or equivalent'],
-      preferred: ['Child Development Associate (CDA)', 'Early Childhood Education units'],
-      continuing_education: '15 hours annually',
-    };
   }
 
   // Validate background check completion
