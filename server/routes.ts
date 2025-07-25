@@ -627,6 +627,91 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // State Compliance Routes
+  app.get("/api/compliance/current-state", async (req, res) => {
+    try {
+      const currentState = await storage.getCurrentState();
+      const compliance = await storage.getStateCompliance();
+      res.json({ 
+        state: currentState, 
+        compliance,
+        isInitialized: !!compliance 
+      });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch current state" });
+    }
+  });
+
+  app.post("/api/compliance/update-state", async (req, res) => {
+    try {
+      const { state, auditNote } = req.body;
+      
+      if (!state || typeof state !== 'string') {
+        return res.status(400).json({ message: "Valid state name is required" });
+      }
+
+      // Validate state exists in our compliance data
+      const { STATE_COMPLIANCE_RATIOS } = await import("@shared/stateComplianceData");
+      if (!STATE_COMPLIANCE_RATIOS[state]) {
+        return res.status(400).json({ message: "Invalid state - not found in compliance database" });
+      }
+
+      const compliance = await storage.updateStateCompliance(state, auditNote);
+      
+      // Generate alert about state change
+      await storage.createAlert({
+        type: "general",
+        message: `Updated compliance settings for ${state} - review for compliance.`,
+        severity: "medium",
+        isRead: false,
+      });
+
+      res.json({ 
+        success: true, 
+        compliance,
+        message: `State compliance updated to ${state}` 
+      });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to update state compliance" });
+    }
+  });
+
+  app.get("/api/compliance/available-states", async (req, res) => {
+    try {
+      const { US_STATES_LIST, STATE_COMPLIANCE_RATIOS } = await import("@shared/stateComplianceData");
+      
+      const statesWithData = US_STATES_LIST.map(state => ({
+        name: state,
+        hasData: !!STATE_COMPLIANCE_RATIOS[state],
+        ratios: STATE_COMPLIANCE_RATIOS[state] || null
+      }));
+
+      res.json(statesWithData);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch available states" });
+    }
+  });
+
+  app.get("/api/compliance/:state/ratios", async (req, res) => {
+    try {
+      const { state } = req.params;
+      const { getStateRatios } = await import("@shared/stateComplianceData");
+      
+      const ratios = getStateRatios(state);
+      if (!ratios) {
+        return res.status(404).json({ message: "State ratios not found" });
+      }
+
+      res.json({
+        state,
+        ratios,
+        notes: ratios.notes
+      });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch state ratios" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

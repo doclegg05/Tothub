@@ -1,4 +1,4 @@
-import { children, staff, attendance, staffSchedules, settings, alerts, stateRatios, type Child, type InsertChild, type Staff, type InsertStaff, type Attendance, type InsertAttendance, type StaffSchedule, type InsertStaffSchedule, type Setting, type InsertSetting, type Alert, type InsertAlert, type StateRatio, type InsertStateRatio } from "@shared/schema";
+import { children, staff, attendance, staffSchedules, settings, alerts, stateRatios, stateCompliance, type Child, type InsertChild, type Staff, type InsertStaff, type Attendance, type InsertAttendance, type StaffSchedule, type InsertStaffSchedule, type Setting, type InsertSetting, type Alert, type InsertAlert, type StateRatio, type InsertStateRatio, type StateCompliance, type InsertStateCompliance } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, gte, lte, desc, asc, isNull } from "drizzle-orm";
 
@@ -54,6 +54,12 @@ export interface IStorage {
   getAllStateRatios(): Promise<StateRatio[]>;
   createOrUpdateStateRatio(ratio: InsertStateRatio): Promise<StateRatio>;
   seedStateRatios(): Promise<void>;
+  
+  // State Compliance
+  getStateCompliance(): Promise<StateCompliance | undefined>;
+  getCurrentState(): Promise<string>;
+  updateStateCompliance(state: string, auditNote?: string): Promise<StateCompliance>;
+  initializeDefaultState(): Promise<StateCompliance>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -352,6 +358,48 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
+  // State Compliance Methods
+  async getStateCompliance(): Promise<StateCompliance | undefined> {
+    const [compliance] = await db.select().from(stateCompliance).where(eq(stateCompliance.isActive, true));
+    return compliance || undefined;
+  }
+
+  async getCurrentState(): Promise<string> {
+    const compliance = await this.getStateCompliance();
+    return compliance?.state || "West Virginia";
+  }
+
+  async updateStateCompliance(state: string, auditNote?: string): Promise<StateCompliance> {
+    const { STATE_COMPLIANCE_RATIOS } = await import("@shared/stateComplianceData");
+    const ratiosData = JSON.stringify(STATE_COMPLIANCE_RATIOS[state]);
+    
+    // Deactivate existing compliance records
+    await db.update(stateCompliance).set({ isActive: false }).where(eq(stateCompliance.isActive, true));
+    
+    // Create new compliance record
+    const auditLogEntry = `State changed to ${state}${auditNote ? ` - ${auditNote}` : ''} at ${new Date().toISOString()}`;
+    const existing = await this.getStateCompliance();
+    const existingAuditLog = existing?.auditLog || [];
+    
+    const [newCompliance] = await db.insert(stateCompliance).values({
+      state,
+      ratiosData,
+      auditLog: [...existingAuditLog, auditLogEntry],
+      isActive: true,
+    }).returning();
+    
+    return newCompliance;
+  }
+
+  async initializeDefaultState(): Promise<StateCompliance> {
+    const existing = await this.getStateCompliance();
+    if (existing) {
+      return existing;
+    }
+    
+    return await this.updateStateCompliance("West Virginia", "Initial setup");
+  }
+
   // Security System Methods
   async createSecurityDevice(deviceData: any): Promise<any> {
     const { securityDevices } = await import("@shared/schema");
@@ -405,13 +453,17 @@ export class DatabaseStorage implements IStorage {
 
   async getSecurityCredentialsForDevice(deviceId: string, type?: string): Promise<any[]> {
     const { securityCredentials } = await import("@shared/schema");
-    let query = db.select().from(securityCredentials).where(eq(securityCredentials.deviceId, deviceId));
     
     if (type) {
-      query = query.where(eq(securityCredentials.credentialType, type));
+      return await db.select().from(securityCredentials)
+        .where(and(
+          eq(securityCredentials.deviceId, deviceId),
+          eq(securityCredentials.credentialType, type)
+        ));
+    } else {
+      return await db.select().from(securityCredentials)
+        .where(eq(securityCredentials.deviceId, deviceId));
     }
-    
-    return await query;
   }
 
   async updateSecurityCredential(id: string, updates: any): Promise<any> {

@@ -85,6 +85,19 @@ export const settings = pgTable("settings", {
   updatedAt: timestamp("updated_at").default(sql`now()`),
 });
 
+// State Compliance Settings for Dynamic US State Support
+export const stateCompliance = pgTable("state_compliance", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  state: text("state").notNull().default("West Virginia"),
+  ratiosData: text("ratios_data").notNull(), // JSON string of ratios
+  federalCompliance: text("federal_compliance").array().default(sql`'{"COPPA","HIPAA","FERPA"}'::text[]`),
+  additionalRules: text("additional_rules"), // JSON for extra state rules
+  isActive: boolean("is_active").default(true),
+  lastUpdated: timestamp("last_updated").default(sql`now()`),
+  auditLog: text("audit_log").array().default(sql`'{}'::text[]`), // Track state changes
+  createdAt: timestamp("created_at").default(sql`now()`),
+});
+
 export const alerts = pgTable("alerts", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   type: text("type").notNull(), // 'staffing', 'ratio_violation', 'general'
@@ -269,6 +282,12 @@ export const insertUserRoleSchema = createInsertSchema(userRoles).omit({
   createdAt: true,
 });
 
+export const insertStateComplianceSchema = createInsertSchema(stateCompliance).omit({
+  id: true,
+  createdAt: true,
+  lastUpdated: true,
+});
+
 // Types
 export type Child = typeof children.$inferSelect;
 export type InsertChild = z.infer<typeof insertChildSchema>;
@@ -293,6 +312,9 @@ export type InsertBilling = z.infer<typeof insertBillingSchema>;
 export type DailyReport = typeof dailyReports.$inferSelect;
 export type InsertDailyReport = z.infer<typeof insertDailyReportSchema>;
 export type UserRole = typeof userRoles.$inferSelect;
+export type InsertUserRole = z.infer<typeof insertUserRoleSchema>;
+export type StateCompliance = typeof stateCompliance.$inferSelect;
+export type InsertStateCompliance = z.infer<typeof insertStateComplianceSchema>;
 
 // Physical Security System Tables
 export const securityDevices = pgTable("security_devices", {

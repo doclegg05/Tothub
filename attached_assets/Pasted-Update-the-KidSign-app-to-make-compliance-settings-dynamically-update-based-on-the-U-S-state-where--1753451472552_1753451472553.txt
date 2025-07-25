@@ -1,0 +1,20 @@
+Update the KidSign app to make compliance settings dynamically update based on the U.S. state where the daycare or school is located. Add a state selection feature that automatically adjusts state-specific rules, focusing primarily on staff-to-child ratios (which vary by state for licensed child care centers), while ensuring integration with existing federal compliance (COPPA, HIPAA, FERPA) and general features. This addresses research showing no app licensing needed but emphasizes supporting state compliance (e.g., accurate ratios for audits). Make it modular: Users select their state once in setup/settings, and the app pulls from a built-in data structure for ratios. If other state-specific rules (e.g., screen time limits, group sizes) are available, include them as notes or additional configs.
+
+Key enhancements (add to 'Compliance & Privacy' and 'Settings' tabs in the dashboard with a U.S. state dropdown selector—use a list of all 50 states + DC/territories for completeness; default to West Virginia):
+- **State Selection UI**: Simple dropdown (e.g., via HTML select or Bootstrap) in settings; save to DB (add a 'state' field in settings table). On change, reload/recalculate relevant features with alerts like "Updated ratios for [State]—review for compliance."
+- **State-Specific Ratios Data**: Embed a Python dictionary or JSON in the code with ratios by state and age groups (infants 0-12 months, toddlers 13-24 months, 2-3 years, 3-4 years, 4-5 years, school-age 6+). Use this data for dynamic calculations in staff ratio alerts and reports. Example structure (populate fully with accurate 2025 data from sources like World Population Review):
+  ratios = {
+      "Alabama": {"Infants (0-12 months)": "5:1", "Toddlers (13-24 months)": "7:1", "2-3 years": "8:1", "3-4 years": "8:1", "4-5 years": "18:1", "School-age (6+)": "22:1"},
+      "Alaska": {"Infants (0-12 months)": "5:1", "Toddlers (13-24 months)": "7:1", "2-3 years": "6:1", "3-4 years": "10:1", "4-5 years": "10:1", "School-age (6+)": "18:1"},
+      # Add all states similarly, e.g.,
+      "Wyoming": {"Infants (0-12 months)": "4:1", "Toddlers (13-24 months)": "5:1", "2-3 years": "7:1", "3-4 years": "10:1", "4-5 years": "12:1", "School-age (6+)": "16:1"},
+  }
+  Logic: On app load or state change, fetch ratios[state] and use in calculate_required_teachers function (e.g., parse "5:1" to 5 kids per teacher). Handle mixed-age groups by youngest child's ratio. Add notes field for state variations (e.g., max group sizes if available).
+- **Dynamic Updates & Integration**: 
+  - **Ratios & Alerts**: Override default WV ratios with state-specific ones in real-time attendance/staff calculations; update non-intrusive alerts (e.g., "Based on [State] rules, need 1 more teacher for toddlers").
+  - **Reports**: Generate state-tailored compliance reports (e.g., PDF/CSV exports noting "[State] ratios applied").
+  - **Other State Rules**: If data includes extras (e.g., WV's 75 min/week screen time), add toggles/alerts (e.g., track app usage time and warn if exceeded). For now, focus on ratios; make extensible for future (e.g., API hook placeholder for updates).
+  - **Federal Tie-In**: Ensure state changes don't affect COPPA/HIPAA/FERPA (universal); add tooltips: "State settings support local compliance; federal privacy always enforced."
+- **User-Friendliness & Security**: Beginner-friendly wizard for state setup; validate selection; log changes for audits. Encrypt state data if sensitive.
+
+Use existing Flask/Python with SQLite (update tables for state/ratios if needed). Generate updated code, explain how it addresses state variability (e.g., "Dynamic ratios prevent non-compliance in audits across states"), and provide a test script simulating switches (e.g., WV to CA). Focus on scalability for all states without performance issues.

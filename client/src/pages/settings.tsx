@@ -27,8 +27,12 @@ export default function SettingsPage() {
     queryKey: ["/api/settings"],
   });
 
-  const { data: states = [] } = useQuery({
-    queryKey: ["/api/states"],
+  const { data: availableStates = [] } = useQuery({
+    queryKey: ["/api/compliance/available-states"],
+  });
+
+  const { data: currentStateData, isLoading: isStateLoading } = useQuery({
+    queryKey: ["/api/compliance/current-state"],
   });
 
   const updateSettingMutation = useMutation({
@@ -62,6 +66,27 @@ export default function SettingsPage() {
       toast({
         title: "Error",
         description: "Failed to send test email. Please check your email configuration.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const updateStateMutation = useMutation({
+    mutationFn: ({ state, auditNote }: { state: string; auditNote?: string }) =>
+      apiRequest("POST", "/api/compliance/update-state", { state, auditNote }),
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/compliance/current-state"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/ratios"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/dashboard/stats"] });
+      toast({
+        title: "State Updated",
+        description: `${data.message} - ratios will automatically apply to calculations.`,
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update state compliance.",
         variant: "destructive",
       });
     },
@@ -106,49 +131,98 @@ export default function SettingsPage() {
               <div>
                 <Label htmlFor="selectedState">Select Your State</Label>
                 <Select
-                  value={getSetting("selected_state", "West Virginia")}
+                  value={currentStateData?.state || "West Virginia"}
                   onValueChange={(value) => {
-                    updateSetting("selected_state", value);
-                    // Invalidate ratio calculations and dashboard stats
-                    queryClient.invalidateQueries({ queryKey: ["/api/ratios"] });
-                    queryClient.invalidateQueries({ queryKey: ["/api/dashboard/stats"] });
-                    toast({
-                      title: "State Updated",
-                      description: `Compliance ratios updated for ${value}. All ratio calculations will now use ${value} requirements.`,
+                    updateStateMutation.mutate({
+                      state: value,
+                      auditNote: `State updated via settings page`
                     });
                   }}
+                  disabled={isStateLoading || updateStateMutation.isPending}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Select your state" />
                   </SelectTrigger>
                   <SelectContent>
-                    {(states as string[]).map((state: string) => (
-                      <SelectItem key={state} value={state}>
-                        {state}
+                    {(availableStates as any[]).map((stateData: any) => (
+                      <SelectItem key={stateData.name} value={stateData.name} disabled={!stateData.hasData}>
+                        <div className="flex items-center justify-between w-full">
+                          <span>{stateData.name}</span>
+                          {!stateData.hasData && (
+                            <Badge variant="outline" className="ml-2 text-xs">
+                              No Data
+                            </Badge>
+                          )}
+                        </div>
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
                 <p className="text-sm text-gray-500 mt-1">
-                  This automatically updates all ratio requirements to match your state's licensing requirements
+                  Changes are logged for audit compliance and automatically update all ratio calculations
                 </p>
               </div>
 
               <div className="space-y-2">
-                <Label>Current State</Label>
+                <Label>Current Compliance State</Label>
                 <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
-                  <div className="flex items-center">
-                    <Badge variant="secondary" className="mr-2">
-                      {getSetting("selected_state", "West Virginia")}
-                    </Badge>
-                    <span className="text-sm text-blue-700">Active</span>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center">
+                      <Badge variant="secondary" className="mr-2">
+                        {currentStateData?.state || "West Virginia"}
+                      </Badge>
+                      <span className="text-sm text-blue-700">
+                        {currentStateData?.isInitialized ? "Active" : "Not Initialized"}
+                      </span>
+                    </div>
+                    {updateStateMutation.isPending && (
+                      <div className="text-xs text-orange-600">Updating...</div>
+                    )}
                   </div>
                   <p className="text-xs text-blue-600 mt-1">
-                    All ratios and compliance checks use this state's requirements
+                    Federal compliance (COPPA, HIPAA, FERPA) always enforced
                   </p>
+                  {currentStateData?.compliance?.notes && (
+                    <p className="text-xs text-gray-600 mt-2 italic">
+                      Note: {currentStateData.compliance.notes}
+                    </p>
+                  )}
                 </div>
               </div>
             </div>
+
+            {/* State Ratio Preview */}
+            {currentStateData?.state && (
+              <div className="mt-4 p-4 bg-gray-50 rounded-lg">
+                <h4 className="text-sm font-medium mb-3">Current State Ratios - {currentStateData.state}</h4>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-xs">
+                  <div>
+                    <div className="font-medium text-gray-700">Infants (0-12 mo)</div>
+                    <div className="text-blue-600">Loading...</div>
+                  </div>
+                  <div>
+                    <div className="font-medium text-gray-700">Toddlers (13-24 mo)</div>
+                    <div className="text-blue-600">Loading...</div>
+                  </div>
+                  <div>
+                    <div className="font-medium text-gray-700">2-3 years</div>
+                    <div className="text-blue-600">Loading...</div>
+                  </div>
+                  <div>
+                    <div className="font-medium text-gray-700">3-4 years</div>
+                    <div className="text-blue-600">Loading...</div>
+                  </div>
+                  <div>
+                    <div className="font-medium text-gray-700">4-5 years</div>
+                    <div className="text-blue-600">Loading...</div>
+                  </div>
+                  <div>
+                    <div className="font-medium text-gray-700">School-age (6+)</div>
+                    <div className="text-blue-600">Loading...</div>
+                  </div>
+                </div>
+              </div>
+            )}
           </CardContent>
         </Card>
 
