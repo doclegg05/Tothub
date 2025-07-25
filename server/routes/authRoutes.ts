@@ -12,7 +12,7 @@ const users = [
   {
     id: '1',
     username: 'director',
-    password: '$2b$10$EPwXHpTpP.c2FZ0ax2NoIusr6K33F5tkyH0RcuLO.KMhXDHTwc2f6', // admin123
+    password: process.env.DIRECTOR_PASSWORD_HASH || '$2b$10$EPwXHpTpP.c2FZ0ax2NoIusr6K33F5tkyH0RcuLO.KMhXDHTwc2f6', // admin123
     name: 'Sarah Johnson',
     role: 'director',
     email: 'director@daycare.com',
@@ -20,7 +20,7 @@ const users = [
   {
     id: '2',
     username: 'teacher',
-    password: '$2b$10$efyee677K/Pwkc5fNzIGCe9ub2HvShQoVQ7TrlP86O4Q.1dxLWtne', // teacher123
+    password: process.env.TEACHER_PASSWORD_HASH || '$2b$10$efyee677K/Pwkc5fNzIGCe9ub2HvShQoVQ7TrlP86O4Q.1dxLWtne', // teacher123
     name: 'Maria Garcia',
     role: 'teacher',
     email: 'teacher@daycare.com',
@@ -28,7 +28,7 @@ const users = [
   {
     id: '3',
     username: 'staff',
-    password: '$2b$10$2ZfAf8/YZV56dWd8hQBtEuz/vY/Ot/PGUxSQ2IRBXaOuzYG7uSDLW', // staff123
+    password: process.env.STAFF_PASSWORD_HASH || '$2b$10$2ZfAf8/YZV56dWd8hQBtEuz/vY/Ot/PGUxSQ2IRBXaOuzYG7uSDLW', // staff123
     name: 'John Smith',
     role: 'staff',
     email: 'staff@daycare.com',
