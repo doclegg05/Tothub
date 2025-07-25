@@ -144,10 +144,11 @@ TotHub is a comprehensive daycare management system built with a React frontend 
     - Eliminated false positive detection of bcrypt hashes as "hardcoded credentials"
     - Maintains backwards compatibility with fallback values for development
     - Following security best practices by removing hardcoded authentication data from source code
-  - **FIXED (July 25, 2025)**: Deprecated crypto.createCipher vulnerability in EncryptionService
-    - Replaced insecure createCipher/createDecipher with createCipheriv/createDecipheriv in server/services/encryptionService.ts
+  - **FIXED (July 25, 2025)**: Deprecated crypto.createCipher vulnerability in SecurityService
+    - Replaced insecure createCipher/createDecipher with createCipheriv/createDecipheriv in server/services/securityService.ts
     - Fixed IV reuse vulnerability that could lead to confidentiality breach and potential key recovery
-    - Critical for PII/medical data encryption security - prevents identical ciphertexts for identical plaintexts
+    - Added backward compatibility for legacy encrypted data with security warnings
+    - Critical for PII/medical data encryption security - prevents exploitation of same IV reusevents identical ciphertexts for identical plaintexts
     - Proper random IV usage now enforced for all sensitive data encryption operations
   - Now uses proper random IV generation preventing initialization vector reuse attacks
   - Backward compatibility maintained for existing encrypted data

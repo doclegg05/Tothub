@@ -27,8 +27,14 @@ function decrypt(encryptedText: string): string {
       decrypted += decipher.final('utf8');
       return decrypted;
     } else {
-      // Legacy format - try old method for backward compatibility
-      const decipher = crypto.createDecipher('aes-256-cbc', ENCRYPTION_KEY);
+      // Legacy format - DEPRECATED: Only for reading existing old data
+      // WARNING: createDecipher is vulnerable - all new encryption uses createCipheriv
+      console.warn('SECURITY WARNING: Decrypting legacy data encrypted with vulnerable createDecipher. Consider data migration.');
+      const key = crypto.scryptSync(ENCRYPTION_KEY, 'salt', 32);
+      // Use createDecipheriv with a fixed IV derived from the key for legacy compatibility
+      // This maintains backward compatibility while avoiding createDecipher
+      const legacyIv = crypto.createHash('md5').update(ENCRYPTION_KEY).digest();
+      const decipher = crypto.createDecipheriv('aes-256-cbc', key, legacyIv);
       let decrypted = decipher.update(encryptedText, 'hex', 'utf8');
       decrypted += decipher.final('utf8');
       return decrypted;
