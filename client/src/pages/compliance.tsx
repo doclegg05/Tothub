@@ -378,20 +378,22 @@ export default function CompliancePage() {
                   </div>
                   <div>
                     <Label htmlFor="payrollState">State</Label>
-                    <Select defaultValue="CA">
+                    <Select defaultValue="California">
                       <SelectTrigger>
                         <SelectValue />
                       </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="CA">California</SelectItem>
-                        <SelectItem value="NY">New York</SelectItem>
-                        <SelectItem value="TX">Texas</SelectItem>
+                      <SelectContent className="max-h-60 overflow-y-auto">
+                        {US_STATES_LIST.map((state) => (
+                          <SelectItem key={state} value={state}>
+                            {state}
+                          </SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                   </div>
                 </div>
                 <Button 
-                  onClick={() => flsaValidation.mutate({ hoursWorked: 40, hourlyRate: 15, state: 'CA' })}
+                  onClick={() => flsaValidation.mutate({ hoursWorked: 40, hourlyRate: 15, state: 'California' })}
                   disabled={flsaValidation.isPending}
                 >
                   Check FLSA Compliance

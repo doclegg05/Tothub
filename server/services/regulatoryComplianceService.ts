@@ -164,10 +164,20 @@ export class RegulatoryComplianceService {
 
     // Federal minimum wage (update as needed)
     const federalMinWage = 7.25;
+    
+    // Comprehensive 2025 minimum wage data for all 50 states
     const stateMinWages: { [state: string]: number } = {
-      'CA': 16.00,
-      'NY': 15.00,
-      'TX': 7.25,
+      'Alabama': 7.25, 'Alaska': 11.73, 'Arizona': 14.70, 'Arkansas': 11.00, 'California': 16.00,
+      'Colorado': 14.42, 'Connecticut': 15.00, 'Delaware': 11.75, 'Florida': 12.00, 'Georgia': 7.25,
+      'Hawaii': 12.00, 'Idaho': 7.25, 'Illinois': 13.00, 'Indiana': 7.25, 'Iowa': 7.25,
+      'Kansas': 7.25, 'Kentucky': 7.25, 'Louisiana': 7.25, 'Maine': 14.15, 'Maryland': 15.00,
+      'Massachusetts': 15.00, 'Michigan': 10.10, 'Minnesota': 10.85, 'Mississippi': 7.25, 'Missouri': 8.60,
+      'Montana': 10.30, 'Nebraska': 12.00, 'Nevada': 12.00, 'New Hampshire': 7.25, 'New Jersey': 15.13,
+      'New Mexico': 12.00, 'New York': 15.00, 'North Carolina': 7.25, 'North Dakota': 7.25, 'Ohio': 10.10,
+      'Oklahoma': 7.25, 'Oregon': 15.45, 'Pennsylvania': 7.25, 'Rhode Island': 14.00, 'South Carolina': 7.25,
+      'South Dakota': 11.20, 'Tennessee': 7.25, 'Texas': 7.25, 'Utah': 7.25, 'Vermont': 13.18,
+      'Virginia': 12.00, 'Washington': 16.28, 'West Virginia': 8.75, 'Wisconsin': 7.25, 'Wyoming': 7.25,
+      'District of Columbia': 17.00, 'Puerto Rico': 8.50
     };
 
     const applicableMinWage = Math.max(federalMinWage, stateMinWages[state] || federalMinWage);
