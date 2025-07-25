@@ -4,6 +4,7 @@ import { storage } from "./storage";
 import { emailService } from "./services/emailService";
 import { TimesheetService } from "./services/timesheetService";
 import { QuickBooksExporter } from "./services/quickbooksExporter";
+import { SchedulingService } from "./services/schedulingService";
 import { insertChildSchema, insertStaffSchema, insertAttendanceSchema, insertStaffScheduleSchema, insertSettingSchema, insertAlertSchema, insertMessageSchema, insertMediaShareSchema, insertBillingSchema, insertDailyReportSchema } from "@shared/schema";
 import { z } from "zod";
 
@@ -1026,6 +1027,95 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ 
         message: error instanceof Error ? error.message : "Failed to generate tax reports" 
       });
+    }
+  });
+
+  // Scheduling Routes
+  app.get("/api/staff-schedules/:date?", async (req, res) => {
+    try {
+      const date = req.params.date || new Date().toISOString().split('T')[0];
+      const schedules = await SchedulingService.getStaffSchedules(date);
+      res.json(schedules);
+    } catch (error) {
+      console.error('Get staff schedules error:', error);
+      res.status(500).json({ message: "Failed to fetch staff schedules" });
+    }
+  });
+
+  app.post("/api/staff-schedules", async (req, res) => {
+    try {
+      const schedule = await SchedulingService.createStaffSchedule(req.body);
+      res.json(schedule);
+    } catch (error) {
+      console.error('Create staff schedule error:', error);
+      res.status(500).json({ message: "Failed to create staff schedule" });
+    }
+  });
+
+  app.get("/api/child-schedules/:date?", async (req, res) => {
+    try {
+      const date = req.params.date || new Date().toISOString().split('T')[0];
+      const schedules = await SchedulingService.getChildSchedules(date);
+      res.json(schedules);
+    } catch (error) {
+      console.error('Get child schedules error:', error);
+      res.status(500).json({ message: "Failed to fetch child schedules" });
+    }
+  });
+
+  app.post("/api/child-schedules", async (req, res) => {
+    try {
+      const schedule = await SchedulingService.createChildSchedule(req.body);
+      res.json(schedule);
+    } catch (error) {
+      console.error('Create child schedule error:', error);
+      res.status(500).json({ message: "Failed to create child schedule" });
+    }
+  });
+
+  app.patch("/api/staff-schedules/:id/status", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { status } = req.body;
+      const schedule = await SchedulingService.updateScheduleStatus(id, 'staff', status);
+      res.json(schedule);
+    } catch (error) {
+      console.error('Update staff schedule status error:', error);
+      res.status(500).json({ message: "Failed to update schedule status" });
+    }
+  });
+
+  app.patch("/api/child-schedules/:id/status", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { status } = req.body;
+      const schedule = await SchedulingService.updateScheduleStatus(id, 'child', status);
+      res.json(schedule);
+    } catch (error) {
+      console.error('Update child schedule status error:', error);
+      res.status(500).json({ message: "Failed to update schedule status" });
+    }
+  });
+
+  app.get("/api/room-utilization/:date?", async (req, res) => {
+    try {
+      const date = req.params.date || new Date().toISOString().split('T')[0];
+      const utilization = await SchedulingService.getRoomUtilization(date);
+      res.json(utilization);
+    } catch (error) {
+      console.error('Get room utilization error:', error);
+      res.status(500).json({ message: "Failed to fetch room utilization" });
+    }
+  });
+
+  app.get("/api/weekly-schedule/:startDate", async (req, res) => {
+    try {
+      const { startDate } = req.params;
+      const overview = await SchedulingService.getWeeklyScheduleOverview(startDate);
+      res.json(overview);
+    } catch (error) {
+      console.error('Get weekly schedule error:', error);
+      res.status(500).json({ message: "Failed to fetch weekly schedule" });
     }
   });
 

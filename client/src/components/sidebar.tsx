@@ -10,7 +10,8 @@ import {
   Settings,
   TrendingUp,
   Shield,
-  DollarSign
+  DollarSign,
+  Calendar
 } from "lucide-react";
 
 const navigation = [
@@ -20,6 +21,7 @@ const navigation = [
   { name: "Children", href: "/children", icon: Users },
   { name: "Staff Management", href: "/staff", icon: GraduationCap },
   { name: "Payroll", href: "/payroll", icon: DollarSign },
+  { name: "Scheduling", href: "/scheduling", icon: Calendar },
   { name: "Reports", href: "/reports", icon: BarChart3 },
   { name: "Physical Security", href: "/security", icon: Shield },
   { name: "Settings", href: "/settings", icon: Settings },

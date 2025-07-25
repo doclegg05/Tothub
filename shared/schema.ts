@@ -98,6 +98,67 @@ export const staffSchedules = pgTable("staff_schedules", {
   actualEnd: timestamp("actual_end"),
   date: timestamp("date").notNull(),
   isPresent: boolean("is_present").default(false),
+  scheduleType: text("schedule_type").default("regular"), // "regular", "substitute", "overtime", "training"
+  isRecurring: boolean("is_recurring").default(false),
+  recurringPattern: text("recurring_pattern"), // "daily", "weekly", "biweekly", "monthly"
+  recurringUntil: timestamp("recurring_until"),
+  notes: text("notes"),
+  approvedBy: varchar("approved_by").references(() => staff.id),
+  status: text("status").default("scheduled"), // "scheduled", "confirmed", "cancelled", "completed"
+  createdAt: timestamp("created_at").default(sql`now()`),
+});
+
+// Enhanced Student/Child Scheduling
+export const childSchedules = pgTable("child_schedules", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  childId: varchar("child_id").references(() => children.id).notNull(),
+  room: text("room").notNull(),
+  date: timestamp("date").notNull(),
+  scheduledArrival: timestamp("scheduled_arrival").notNull(),
+  scheduledDeparture: timestamp("scheduled_departure").notNull(),
+  actualArrival: timestamp("actual_arrival"),
+  actualDeparture: timestamp("actual_departure"),
+  isPresent: boolean("is_present").default(false),
+  scheduleType: text("schedule_type").default("regular"), // "regular", "parttime", "dropin", "field_trip"
+  isRecurring: boolean("is_recurring").default(true),
+  recurringPattern: text("recurring_pattern").default("weekly"), // "daily", "weekly", "custom"
+  recurringDays: text("recurring_days").array().default(sql`'{}'::text[]`), // ["monday", "tuesday", etc.]
+  recurringUntil: timestamp("recurring_until"),
+  mealPlan: text("meal_plan").array().default(sql`'{}'::text[]`), // ["breakfast", "lunch", "snack"]
+  napTime: text("nap_time"), // "early", "regular", "late", "none"
+  specialNeeds: text("special_needs"),
+  notes: text("notes"),
+  parentApproved: boolean("parent_approved").default(false),
+  status: text("status").default("scheduled"), // "scheduled", "confirmed", "cancelled", "completed"
+  createdAt: timestamp("created_at").default(sql`now()`),
+});
+
+// Schedule Templates for recurring schedules
+export const scheduleTemplates = pgTable("schedule_templates", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  name: text("name").notNull(),
+  description: text("description"),
+  entityType: text("entity_type").notNull(), // "staff", "child"
+  templateData: text("template_data").notNull(), // JSON with schedule details
+  isActive: boolean("is_active").default(true),
+  createdBy: varchar("created_by").references(() => staff.id).notNull(),
+  createdAt: timestamp("created_at").default(sql`now()`),
+});
+
+// Room capacity and scheduling
+export const roomSchedules = pgTable("room_schedules", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  room: text("room").notNull(),
+  date: timestamp("date").notNull(),
+  timeSlot: text("time_slot").notNull(), // "6:00-7:00", "7:00-8:00", etc.
+  maxCapacity: integer("max_capacity").notNull(),
+  currentOccupancy: integer("current_occupancy").default(0),
+  staffRequired: integer("staff_required").notNull(),
+  staffAssigned: integer("staff_assigned").default(0),
+  isAvailable: boolean("is_available").default(true),
+  activities: text("activities").array().default(sql`'{}'::text[]`),
+  specialRequirements: text("special_requirements"),
+  notes: text("notes"),
   createdAt: timestamp("created_at").default(sql`now()`),
 });
 
@@ -297,6 +358,7 @@ export const childrenRelations = relations(children, ({ many }) => ({
   mediaShares: many(mediaShares),
   billing: many(billing),
   dailyReports: many(dailyReports),
+  schedules: many(childSchedules),
 }));
 
 export const staffRelations = relations(staff, ({ many }) => ({
@@ -306,6 +368,20 @@ export const staffRelations = relations(staff, ({ many }) => ({
   userRoles: many(userRoles),
   timesheetEntries: many(timesheetEntries),
   payStubs: many(payStubs),
+}));
+
+export const childScheduleRelations = relations(childSchedules, ({ one }) => ({
+  child: one(children, {
+    fields: [childSchedules.childId],
+    references: [children.id],
+  }),
+}));
+
+export const scheduleTemplateRelations = relations(scheduleTemplates, ({ one }) => ({
+  creator: one(staff, {
+    fields: [scheduleTemplates.createdBy],
+    references: [staff.id],
+  }),
 }));
 
 export const timesheetRelations = relations(timesheetEntries, ({ one }) => ({
