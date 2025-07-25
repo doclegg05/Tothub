@@ -49,6 +49,16 @@ export const staff = pgTable("staff", {
   phone: text("phone"),
   position: text("position").notNull(),
   isActive: boolean("is_active").default(true),
+  // Payroll Information
+  employeeNumber: text("employee_number").unique(),
+  hourlyRate: integer("hourly_rate"), // in cents per hour
+  salaryAmount: integer("salary_amount"), // annual salary in cents (for salaried employees)
+  payType: text("pay_type").default("hourly"), // "hourly", "salary"
+  taxFilingStatus: text("tax_filing_status").default("single"), // "single", "married_jointly", "married_separately", "head_of_household"
+  w4Allowances: integer("w4_allowances").default(0),
+  additionalTaxWithholding: integer("additional_tax_withholding").default(0), // in cents
+  directDepositAccount: text("direct_deposit_account"),
+  directDepositRouting: text("direct_deposit_routing"),
   // Biometric authentication data
   faceDescriptor: text("face_descriptor"), // Serialized face encoding
   fingerprintHash: text("fingerprint_hash"), // WebAuthn credential ID
@@ -205,6 +215,82 @@ export const userRoles = pgTable("user_roles", {
   createdAt: timestamp("created_at").default(sql`now()`),
 });
 
+// Payroll System Tables
+export const timesheetEntries = pgTable("timesheet_entries", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  staffId: varchar("staff_id").references(() => staff.id).notNull(),
+  clockInTime: timestamp("clock_in_time").notNull(),
+  clockOutTime: timestamp("clock_out_time"),
+  breakMinutes: integer("break_minutes").default(0),
+  regularHours: integer("regular_hours").default(0), // in minutes
+  overtimeHours: integer("overtime_hours").default(0), // in minutes
+  totalHours: integer("total_hours").default(0), // in minutes
+  date: timestamp("date").notNull(),
+  notes: text("notes"),
+  isApproved: boolean("is_approved").default(false),
+  approvedBy: varchar("approved_by").references(() => staff.id),
+  approvedAt: timestamp("approved_at"),
+  createdAt: timestamp("created_at").default(sql`now()`),
+});
+
+export const payPeriods = pgTable("pay_periods", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  startDate: timestamp("start_date").notNull(),
+  endDate: timestamp("end_date").notNull(),
+  payDate: timestamp("pay_date").notNull(),
+  status: text("status").default("open"), // "open", "processing", "paid", "closed"
+  totalGrossPay: integer("total_gross_pay").default(0), // in cents
+  totalNetPay: integer("total_net_pay").default(0), // in cents
+  totalTaxes: integer("total_taxes").default(0), // in cents
+  processedBy: varchar("processed_by").references(() => staff.id),
+  processedAt: timestamp("processed_at"),
+  createdAt: timestamp("created_at").default(sql`now()`),
+});
+
+export const payStubs = pgTable("pay_stubs", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  staffId: varchar("staff_id").references(() => staff.id).notNull(),
+  payPeriodId: varchar("pay_period_id").references(() => payPeriods.id).notNull(),
+  grossPay: integer("gross_pay").notNull(), // in cents
+  regularPay: integer("regular_pay").notNull(), // in cents
+  overtimePay: integer("overtime_pay").default(0), // in cents
+  federalTax: integer("federal_tax").default(0), // in cents
+  stateTax: integer("state_tax").default(0), // in cents
+  socialSecurityTax: integer("social_security_tax").default(0), // in cents
+  medicareTax: integer("medicare_tax").default(0), // in cents
+  healthInsurance: integer("health_insurance").default(0), // in cents
+  retirement401k: integer("retirement_401k").default(0), // in cents
+  otherDeductions: integer("other_deductions").default(0), // in cents
+  netPay: integer("net_pay").notNull(), // in cents
+  regularHours: integer("regular_hours").notNull(), // in minutes
+  overtimeHours: integer("overtime_hours").default(0), // in minutes
+  totalHours: integer("total_hours").notNull(), // in minutes
+  payStubPdfUrl: text("pay_stub_pdf_url"),
+  createdAt: timestamp("created_at").default(sql`now()`),
+});
+
+export const payrollReports = pgTable("payroll_reports", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  payPeriodId: varchar("pay_period_id").references(() => payPeriods.id).notNull(),
+  reportType: text("report_type").notNull(), // "summary", "tax_report", "detailed"
+  reportData: text("report_data").notNull(), // JSON string with report details
+  generatedBy: varchar("generated_by").references(() => staff.id).notNull(),
+  reportPdfUrl: text("report_pdf_url"),
+  createdAt: timestamp("created_at").default(sql`now()`),
+});
+
+export const payrollAudit = pgTable("payroll_audit", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  action: text("action").notNull(), // "timesheet_edit", "payroll_processed", "rate_change"
+  entityId: varchar("entity_id").notNull(), // ID of the affected record
+  entityType: text("entity_type").notNull(), // "timesheet", "pay_stub", "staff"
+  oldValues: text("old_values"), // JSON string of previous values
+  newValues: text("new_values"), // JSON string of new values
+  performedBy: varchar("performed_by").references(() => staff.id).notNull(),
+  reason: text("reason"),
+  createdAt: timestamp("created_at").default(sql`now()`),
+});
+
 // Relations
 export const childrenRelations = relations(children, ({ many }) => ({
   attendance: many(attendance),
@@ -218,6 +304,39 @@ export const staffRelations = relations(staff, ({ many }) => ({
   messages: many(messages),
   mediaShares: many(mediaShares),
   userRoles: many(userRoles),
+  timesheetEntries: many(timesheetEntries),
+  payStubs: many(payStubs),
+}));
+
+export const timesheetRelations = relations(timesheetEntries, ({ one }) => ({
+  staff: one(staff, {
+    fields: [timesheetEntries.staffId],
+    references: [staff.id],
+  }),
+  approver: one(staff, {
+    fields: [timesheetEntries.approvedBy],
+    references: [staff.id],
+  }),
+}));
+
+export const payPeriodRelations = relations(payPeriods, ({ many, one }) => ({
+  payStubs: many(payStubs),
+  reports: many(payrollReports),
+  processor: one(staff, {
+    fields: [payPeriods.processedBy],
+    references: [staff.id],
+  }),
+}));
+
+export const payStubRelations = relations(payStubs, ({ one }) => ({
+  staff: one(staff, {
+    fields: [payStubs.staffId],
+    references: [staff.id],
+  }),
+  payPeriod: one(payPeriods, {
+    fields: [payStubs.payPeriodId],
+    references: [payPeriods.id],
+  }),
 }));
 
 export const attendanceRelations = relations(attendance, ({ one }) => ({
@@ -301,6 +420,31 @@ export const insertStateComplianceSchema = createInsertSchema(stateCompliance).o
   lastUpdated: true,
 });
 
+export const insertTimesheetEntrySchema = createInsertSchema(timesheetEntries).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertPayPeriodSchema = createInsertSchema(payPeriods).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertPayStubSchema = createInsertSchema(payStubs).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertPayrollReportSchema = createInsertSchema(payrollReports).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertPayrollAuditSchema = createInsertSchema(payrollAudit).omit({
+  id: true,
+  createdAt: true,
+});
+
 // Types
 export type Child = typeof children.$inferSelect;
 export type InsertChild = z.infer<typeof insertChildSchema>;
@@ -328,6 +472,16 @@ export type UserRole = typeof userRoles.$inferSelect;
 export type InsertUserRole = z.infer<typeof insertUserRoleSchema>;
 export type StateCompliance = typeof stateCompliance.$inferSelect;
 export type InsertStateCompliance = z.infer<typeof insertStateComplianceSchema>;
+export type TimesheetEntry = typeof timesheetEntries.$inferSelect;
+export type InsertTimesheetEntry = z.infer<typeof insertTimesheetEntrySchema>;
+export type PayPeriod = typeof payPeriods.$inferSelect;
+export type InsertPayPeriod = z.infer<typeof insertPayPeriodSchema>;
+export type PayStub = typeof payStubs.$inferSelect;
+export type InsertPayStub = z.infer<typeof insertPayStubSchema>;
+export type PayrollReport = typeof payrollReports.$inferSelect;
+export type InsertPayrollReport = z.infer<typeof insertPayrollReportSchema>;
+export type PayrollAudit = typeof payrollAudit.$inferSelect;
+export type InsertPayrollAudit = z.infer<typeof insertPayrollAuditSchema>;
 
 // Physical Security System Tables
 export const securityDevices = pgTable("security_devices", {

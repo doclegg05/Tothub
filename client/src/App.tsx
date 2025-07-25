@@ -14,6 +14,7 @@ import Settings from "@/pages/settings";
 import PerformanceTest from "@/pages/performance-test";
 import Security from "@/pages/security";
 import ParentCommunication from "@/pages/parent-communication";
+import Payroll from "@/pages/payroll";
 import Landing from "@/pages/landing";
 import NotFound from "@/pages/not-found";
 
@@ -29,6 +30,7 @@ function Router() {
           <Route path="/parent-communication" component={ParentCommunication} />
           <Route path="/children" component={Children} />
           <Route path="/staff" component={Staff} />
+          <Route path="/payroll" component={Payroll} />
           <Route path="/reports" component={Reports} />
           <Route path="/settings" component={Settings} />
           <Route path="/security" component={Security} />

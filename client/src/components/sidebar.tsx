@@ -9,7 +9,8 @@ import {
   BarChart3,
   Settings,
   TrendingUp,
-  Shield
+  Shield,
+  DollarSign
 } from "lucide-react";
 
 const navigation = [
@@ -18,6 +19,7 @@ const navigation = [
   { name: "Parent Communication", href: "/parent-communication", icon: MessageSquare },
   { name: "Children", href: "/children", icon: Users },
   { name: "Staff Management", href: "/staff", icon: GraduationCap },
+  { name: "Payroll", href: "/payroll", icon: DollarSign },
   { name: "Reports", href: "/reports", icon: BarChart3 },
   { name: "Physical Security", href: "/security", icon: Shield },
   { name: "Settings", href: "/settings", icon: Settings },

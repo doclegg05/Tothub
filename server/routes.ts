@@ -885,6 +885,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Payroll routes
+  app.use("/api/payroll", (await import("./routes/payroll")).default);
+
   const httpServer = createServer(app);
   return httpServer;
 }
