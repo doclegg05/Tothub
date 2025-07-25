@@ -4,6 +4,7 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Sidebar } from "@/components/sidebar";
+import { Chatbot } from "@/components/chatbot";
 import Dashboard from "@/pages/dashboard";
 import CheckInOut from "@/pages/check-in-out";
 import EnhancedCheckIn from "@/pages/enhanced-checkin";
@@ -14,6 +15,7 @@ import Settings from "@/pages/settings";
 import PerformanceTest from "@/pages/performance-test";
 import Security from "@/pages/security";
 import ParentCommunication from "@/pages/parent-communication";
+import Landing from "@/pages/landing";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -23,6 +25,7 @@ function Router() {
       <div className="flex-1 flex flex-col">
         <Switch>
           <Route path="/" component={Dashboard} />
+          <Route path="/landing" component={Landing} />
           <Route path="/check-in-out" component={CheckInOut} />
           <Route path="/enhanced-checkin" component={EnhancedCheckIn} />
           <Route path="/parent-communication" component={ParentCommunication} />
@@ -35,6 +38,7 @@ function Router() {
           <Route component={NotFound} />
         </Switch>
       </div>
+      <Chatbot />
     </div>
   );
 }
