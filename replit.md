@@ -1,8 +1,8 @@
-# KidSign Pro - Enhanced Daycare Management System
+# TotHub - Complete Daycare Management System
 
 ## Overview
 
-This is a comprehensive daycare management system built with a React frontend and Express.js backend, enhanced with competitor-inspired features from Brightwheel, Procare, Lillio, and Kangarootime. The application now includes advanced attendance tracking with photo capture, parent communication systems, enhanced child profiles with medical information, billing integration (QuickBooks ready), and role-based access control. It features multi-state compliance support for all 50 US states and uses PostgreSQL with Drizzle ORM for data persistence.
+TotHub is a comprehensive daycare management system built with a React frontend and Express.js backend, enhanced with competitor-inspired features from Brightwheel, Procare, Lillio, and Kangarootime. The application now includes advanced attendance tracking with photo capture, parent communication systems, enhanced child profiles with medical information, billing integration (QuickBooks ready), and role-based access control. It features multi-state compliance support for all 50 US states and uses PostgreSQL with Drizzle ORM for data persistence.
 
 ## Recent Changes (July 2025)
 

@@ -50,7 +50,7 @@ export default function LandingPage() {
     setSelectedRole(role);
     toast({
       title: "Demo Started",
-      description: `Viewing KidSign Pro as ${role}. Explore all features!`,
+      description: `Viewing TotHub as ${role}. Explore all features!`,
     });
     setTimeout(() => {
       setShowDemo(false);
@@ -65,9 +65,16 @@ export default function LandingPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center space-x-8">
-              <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 text-transparent bg-clip-text">
-                KidSign Pro
-              </h1>
+              <div className="flex items-center space-x-2">
+                <img 
+                  src="@assets/7329979f-8516-4378-b1b7-dd17ca2532e3_1753458570775.jpg" 
+                  alt="TotHub Logo" 
+                  className="w-8 h-8 object-contain"
+                />
+                <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 text-transparent bg-clip-text">
+                  TotHub
+                </h1>
+              </div>
               <div className="hidden md:flex space-x-6">
                 <a href="#features" className="text-gray-700 hover:text-blue-600 transition">Features</a>
                 <a href="#pricing" className="text-gray-700 hover:text-blue-600 transition">Pricing</a>
@@ -151,7 +158,7 @@ export default function LandingPage() {
               <Card className="relative shadow-2xl rounded-3xl overflow-hidden">
                 <img 
                   src="/dashboard-mockup.svg" 
-                  alt="KidSign Pro Dashboard"
+                  alt="TotHub Dashboard"
                   className="w-full h-auto"
                 />
                 <div className="absolute bottom-4 right-4 bg-white rounded-lg shadow-lg p-3">

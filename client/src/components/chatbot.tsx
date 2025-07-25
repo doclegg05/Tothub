@@ -22,7 +22,7 @@ export function Chatbot() {
   const [messages, setMessages] = useState<Message[]>([
     {
       id: "1",
-      text: "Hi! I'm KidSign Pro's assistant. How can I help you today?",
+      text: "Hi! I'm TotHub's assistant. How can I help you today?",
       sender: "bot",
       timestamp: new Date()
     }
@@ -33,9 +33,9 @@ export function Chatbot() {
 
   const quickActions: QuickAction[] = [
     { label: "How does check-in work?", response: "Our digital check-in system allows parents to sign children in/out using a tablet or smartphone. Photos are captured for security, and staff are instantly notified. The system automatically tracks attendance for compliance reporting." },
-    { label: "What about billing?", response: "KidSign Pro integrates with QuickBooks for automated invoicing. You can set up recurring billing, track payments, send reminders, and generate financial reports. Parents can view and pay invoices through their portal." },
-    { label: "Is it compliant?", response: "Yes! KidSign Pro supports all 50 US states with automatic staff-to-child ratio monitoring. We track federal compliance (COPPA, HIPAA, FERPA) and provide audit-ready reports. State-specific requirements update automatically." },
-    { label: "Schedule a demo", response: "I'd be happy to help you schedule a demo! Please contact our team at demo@kidsignpro.com or call 1-800-KIDSIGN. You can also start a free 30-day trial right from the dashboard." }
+    { label: "What about billing?", response: "TotHub integrates with QuickBooks for automated invoicing. You can set up recurring billing, track payments, send reminders, and generate financial reports. Parents can view and pay invoices through their portal." },
+    { label: "Is it compliant?", response: "Yes! TotHub supports all 50 US states with automatic staff-to-child ratio monitoring. We track federal compliance (COPPA, HIPAA, FERPA) and provide audit-ready reports. State-specific requirements update automatically." },
+    { label: "Schedule a demo", response: "I'd be happy to help you schedule a demo! Please contact our team at demo@tothub.com or call 1-800-TOTHUB. You can also start a free 30-day trial right from the dashboard." }
   ];
 
   useEffect(() => {
@@ -49,12 +49,12 @@ export function Chatbot() {
     
     // Pricing questions
     if (lowerMessage.includes("price") || lowerMessage.includes("cost") || lowerMessage.includes("pricing")) {
-      return "KidSign Pro starts at $99/month for centers with up to 30 children. We offer volume discounts for larger centers and multi-location businesses. All plans include unlimited staff accounts, parent access, and 24/7 support. Would you like me to help you calculate pricing for your center?";
+      return "TotHub starts at $99/month for centers with up to 30 children. We offer volume discounts for larger centers and multi-location businesses. All plans include unlimited staff accounts, parent access, and 24/7 support. Would you like me to help you calculate pricing for your center?";
     }
     
     // Features questions
     if (lowerMessage.includes("feature") || lowerMessage.includes("what can")) {
-      return "KidSign Pro includes: Digital check-in/out with photos, Real-time parent communication, Staff scheduling & ratio monitoring, Billing & invoicing integration, Child profiles with medical info, Activity & meal tracking, Compliance reporting for all 50 states, and much more! What specific feature interests you?";
+      return "TotHub includes: Digital check-in/out with photos, Real-time parent communication, Staff scheduling & ratio monitoring, Billing & invoicing integration, Child profiles with medical info, Activity & meal tracking, Compliance reporting for all 50 states, and much more! What specific feature interests you?";
     }
     
     // Security questions
@@ -73,7 +73,7 @@ export function Chatbot() {
     }
     
     // Default response
-    return "That's a great question! For the most accurate information, I recommend speaking with our team. You can email support@kidsignpro.com or call 1-800-KIDSIGN. Meanwhile, feel free to explore our features or start a free trial!";
+    return "I'm here to help you learn more about TotHub! I can answer questions about features, pricing, compliance, security, and more. Try asking me something like 'How does billing work?' or 'Is it secure?' You can also click the quick action buttons above.";
   };
 
   const handleSend = () => {
