@@ -5,6 +5,7 @@ import securityRoutes from "./routes/securityRoutes";
 import complianceRoutes from "./routes/complianceRoutes";
 import safetyRoutes from "./routes/safetyRoutes";
 import documentRoutes from "./routes/documentRoutes";
+import authRoutes from "./routes/authRoutes";
 import { healthRoutes } from "./routes/healthRoutes";
 import { securityHeaders, validateInput, generateCSRFToken } from "./middleware/security";
 import { MonitoringService } from "./services/monitoringService";
@@ -59,6 +60,9 @@ app.use((req, res, next) => {
 (async () => {
   // Health and infrastructure routes
   app.use('/api', healthRoutes);
+  
+  // Authentication routes (no auth required)
+  app.use('/api/auth', authRoutes);
   
   // Security and compliance routes
   app.use('/api/security', securityRoutes);

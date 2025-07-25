@@ -1,5 +1,6 @@
 import { Link, useLocation } from "wouter";
 import { cn } from "@/lib/utils";
+import { UserMenu } from "@/components/user-menu";
 import { 
   Home,
   UserCheck,
@@ -40,16 +41,19 @@ export function Sidebar() {
   return (
     <div className="w-64 bg-white shadow-lg border-r border-gray-200">
       <div className="p-6 border-b border-gray-200">
-        <div className="flex items-center space-x-3">
-          <img 
-            src="/tothub-logo.jpg" 
-            alt="TotHub Logo" 
-            className="w-8 h-8 object-contain"
-          />
-          <div>
-            <h1 className="text-xl font-bold text-gray-800">TotHub</h1>
-            <p className="text-sm text-gray-600">Complete Daycare Management</p>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-3">
+            <img 
+              src="/tothub-logo.jpg" 
+              alt="TotHub Logo" 
+              className="w-8 h-8 object-contain"
+            />
+            <div>
+              <h1 className="text-xl font-bold text-gray-800">TotHub</h1>
+              <p className="text-sm text-gray-600">Daycare Management</p>
+            </div>
           </div>
+          <UserMenu />
         </div>
       </div>
       
