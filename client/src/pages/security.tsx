@@ -122,7 +122,7 @@ export default function Security() {
 
   const testDeviceMutation = useMutation({
     mutationFn: (deviceId: string) => apiRequest("POST", `/api/security/devices/${deviceId}/test`, {}),
-    onSuccess: (data, deviceId) => {
+    onSuccess: (data: any, deviceId) => {
       toast({
         title: "Test Complete",
         description: data.success ? "Device connection successful" : "Device test failed",
@@ -167,12 +167,12 @@ export default function Security() {
 
   const testSecuritySystemMutation = useMutation({
     mutationFn: () => apiRequest("POST", "/api/security/test/full-simulation", {}),
-    onSuccess: (data) => {
+    onSuccess: (data: any) => {
       queryClient.invalidateQueries({ queryKey: ["/api/security/devices"] });
       queryClient.invalidateQueries({ queryKey: ["/api/security/logs"] });
       toast({
         title: "Security Simulation Complete",
-        description: `Created ${data.devicesCreated} devices, ran ${data.summary?.testsExecuted || 0} tests`,
+        description: `Created ${data.devicesCreated || 0} devices, ran ${data.summary?.testsExecuted || 0} tests`,
       });
     },
     onError: () => {

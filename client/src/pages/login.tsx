@@ -56,7 +56,7 @@ export default function LoginPage() {
 
   const handleQuickLogin = (role: 'director' | 'teacher' | 'staff') => {
     const users = {
-      director: { username: 'director', password: 'admin123', name: 'Sarah Johnson (Director)' },
+      director: { username: 'director', password: 'director123', name: 'Sarah Johnson (Director)' },
       teacher: { username: 'teacher', password: 'teacher123', name: 'Maria Garcia (Teacher)' },
       staff: { username: 'staff', password: 'staff123', name: 'John Smith (Staff)' }
     };

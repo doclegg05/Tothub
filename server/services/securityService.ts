@@ -723,7 +723,7 @@ export class SecurityService {
   async emergencyUnlockAll(): Promise<void> {
     console.log('🚨 EMERGENCY UNLOCK ALL DEVICES 🚨');
     
-    for (const [deviceId, handler] of this.deviceHandlers) {
+    for (const [deviceId, handler] of Array.from(this.deviceHandlers.entries())) {
       try {
         if ('emergencyUnlock' in handler) {
           await (handler as MagneticLockDevice).emergencyUnlock();
