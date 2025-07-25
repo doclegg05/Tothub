@@ -352,6 +352,136 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
+  // Security System Methods
+  async createSecurityDevice(deviceData: any): Promise<any> {
+    const { securityDevices } = await import("@shared/schema");
+    const [device] = await db.insert(securityDevices).values(deviceData).returning();
+    return device;
+  }
+
+  async getSecurityDevice(id: string): Promise<any> {
+    const { securityDevices } = await import("@shared/schema");
+    const [device] = await db.select().from(securityDevices).where(eq(securityDevices.id, id));
+    return device || undefined;
+  }
+
+  async getAllSecurityDevices(): Promise<any[]> {
+    const { securityDevices } = await import("@shared/schema");
+    return await db.select().from(securityDevices).orderBy(asc(securityDevices.location));
+  }
+
+  async getSecurityDevicesForLocation(location: string): Promise<any[]> {
+    const { securityDevices } = await import("@shared/schema");
+    return await db.select().from(securityDevices).where(eq(securityDevices.location, location));
+  }
+
+  async updateSecurityDevice(id: string, updates: any): Promise<any> {
+    const { securityDevices } = await import("@shared/schema");
+    const [device] = await db.update(securityDevices)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(securityDevices.id, id))
+      .returning();
+    return device;
+  }
+
+  async updateSecurityDeviceStatus(id: string, status: string): Promise<void> {
+    const { securityDevices } = await import("@shared/schema");
+    await db.update(securityDevices)
+      .set({ status, lastPing: new Date(), updatedAt: new Date() })
+      .where(eq(securityDevices.id, id));
+  }
+
+  async deleteSecurityDevice(id: string): Promise<void> {
+    const { securityDevices } = await import("@shared/schema");
+    await db.delete(securityDevices).where(eq(securityDevices.id, id));
+  }
+
+  // Security Credentials
+  async createSecurityCredential(credentialData: any): Promise<any> {
+    const { securityCredentials } = await import("@shared/schema");
+    const [credential] = await db.insert(securityCredentials).values(credentialData).returning();
+    return credential;
+  }
+
+  async getSecurityCredentialsForDevice(deviceId: string, type?: string): Promise<any[]> {
+    const { securityCredentials } = await import("@shared/schema");
+    let query = db.select().from(securityCredentials).where(eq(securityCredentials.deviceId, deviceId));
+    
+    if (type) {
+      query = query.where(eq(securityCredentials.credentialType, type));
+    }
+    
+    return await query;
+  }
+
+  async updateSecurityCredential(id: string, updates: any): Promise<any> {
+    const { securityCredentials } = await import("@shared/schema");
+    const [credential] = await db.update(securityCredentials)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(securityCredentials.id, id))
+      .returning();
+    return credential;
+  }
+
+  async deleteSecurityCredential(id: string): Promise<void> {
+    const { securityCredentials } = await import("@shared/schema");
+    await db.delete(securityCredentials).where(eq(securityCredentials.id, id));
+  }
+
+  // Security Logs
+  async createSecurityLog(logData: any): Promise<any> {
+    const { securityLogs } = await import("@shared/schema");
+    const [log] = await db.insert(securityLogs).values(logData).returning();
+    return log;
+  }
+
+  async getSecurityLogs(limit = 100): Promise<any[]> {
+    const { securityLogs, securityDevices } = await import("@shared/schema");
+    return await db.select({
+      log: securityLogs,
+      deviceName: securityDevices.name,
+      deviceLocation: securityDevices.location,
+    })
+    .from(securityLogs)
+    .leftJoin(securityDevices, eq(securityLogs.deviceId, securityDevices.id))
+    .orderBy(desc(securityLogs.timestamp))
+    .limit(limit);
+  }
+
+  async getSecurityLogsForDevice(deviceId: string, limit = 50): Promise<any[]> {
+    const { securityLogs } = await import("@shared/schema");
+    return await db.select().from(securityLogs)
+      .where(eq(securityLogs.deviceId, deviceId))
+      .orderBy(desc(securityLogs.timestamp))
+      .limit(limit);
+  }
+
+  // Security Zones
+  async createSecurityZone(zoneData: any): Promise<any> {
+    const { securityZones } = await import("@shared/schema");
+    const [zone] = await db.insert(securityZones).values(zoneData).returning();
+    return zone;
+  }
+
+  async getAllSecurityZones(): Promise<any[]> {
+    const { securityZones } = await import("@shared/schema");
+    return await db.select().from(securityZones).orderBy(asc(securityZones.name));
+  }
+
+  async updateSecurityZone(id: string, updates: any): Promise<any> {
+    const { securityZones } = await import("@shared/schema");
+    const [zone] = await db.update(securityZones)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(securityZones.id, id))
+      .returning();
+    return zone;
+  }
+
+  async deleteSecurityZone(id: string): Promise<void> {
+    const { securityZones } = await import("@shared/schema");
+    await db.delete(securityZones).where(eq(securityZones.id, id));
+  }
+
   // Test data management methods
   async clearAllChildren(): Promise<void> {
     await db.delete(children);

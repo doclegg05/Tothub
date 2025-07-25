@@ -9,7 +9,8 @@ import {
   GraduationCap,
   BarChart3,
   Settings,
-  TrendingUp
+  TrendingUp,
+  Shield
 } from "lucide-react";
 
 const navigation = [
@@ -20,6 +21,7 @@ const navigation = [
   { name: "Children", href: "/children", icon: Users },
   { name: "Staff Management", href: "/staff", icon: GraduationCap },
   { name: "Reports", href: "/reports", icon: BarChart3 },
+  { name: "Physical Security", href: "/security", icon: Shield },
   { name: "Settings", href: "/settings", icon: Settings },
   { name: "Performance Test", href: "/performance-test", icon: TrendingUp },
 ];

@@ -12,6 +12,7 @@ import Staff from "@/pages/staff";
 import Reports from "@/pages/reports";
 import Settings from "@/pages/settings";
 import PerformanceTest from "@/pages/performance-test";
+import Security from "@/pages/security";
 import ParentCommunication from "@/pages/parent-communication";
 import NotFound from "@/pages/not-found";
 
@@ -29,6 +30,7 @@ function Router() {
           <Route path="/staff" component={Staff} />
           <Route path="/reports" component={Reports} />
           <Route path="/settings" component={Settings} />
+          <Route path="/security" component={Security} />
           <Route path="/performance-test" component={PerformanceTest} />
           <Route component={NotFound} />
         </Switch>

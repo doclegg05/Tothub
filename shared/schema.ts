@@ -293,4 +293,90 @@ export type InsertBilling = z.infer<typeof insertBillingSchema>;
 export type DailyReport = typeof dailyReports.$inferSelect;
 export type InsertDailyReport = z.infer<typeof insertDailyReportSchema>;
 export type UserRole = typeof userRoles.$inferSelect;
+
+// Physical Security System Tables
+export const securityDevices = pgTable("security_devices", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  name: text("name").notNull(),
+  type: text("type").notNull(), // keypad, rfid, biometric, mobile, intercom, magnetic
+  location: text("location").notNull(), // main_entrance, classroom_a, etc.
+  connectionType: text("connection_type").notNull(), // serial, network, bluetooth, gpio
+  connectionConfig: text("connection_config").notNull(), // JSON config (encrypted)
+  isEnabled: boolean("is_enabled").default(true),
+  unlockDuration: integer("unlock_duration").default(5), // seconds
+  failSafeMode: text("fail_safe_mode").default("secure"), // secure, unlock
+  lastPing: timestamp("last_ping"),
+  status: text("status").default("offline"), // online, offline, error
+  createdAt: timestamp("created_at").default(sql`now()`),
+  updatedAt: timestamp("updated_at").default(sql`now()`),
+});
+
+export const securityCredentials = pgTable("security_credentials", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: text("user_id").notNull(), // links to parent/staff
+  deviceId: varchar("device_id").references(() => securityDevices.id).notNull(),
+  credentialType: text("credential_type").notNull(), // pin, rfid, biometric, mobile
+  credentialData: text("credential_data").notNull(), // encrypted data
+  isActive: boolean("is_active").default(true),
+  expiresAt: timestamp("expires_at"), // for temporary access
+  createdAt: timestamp("created_at").default(sql`now()`),
+  updatedAt: timestamp("updated_at").default(sql`now()`),
+});
+
+export const securityLogs = pgTable("security_logs", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  deviceId: varchar("device_id").references(() => securityDevices.id).notNull(),
+  userId: text("user_id"), // null for failed attempts
+  action: text("action").notNull(), // unlock, lock, attempt_failed, system_error
+  method: text("method"), // pin, rfid, biometric, mobile, manual
+  success: boolean("success").notNull(),
+  details: text("details"), // additional info, error messages
+  ipAddress: text("ip_address"),
+  timestamp: timestamp("timestamp").default(sql`now()`),
+});
+
+export const securityZones = pgTable("security_zones", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  name: text("name").notNull(),
+  description: text("description"),
+  deviceIds: text("device_ids").array().default(sql`'{}'::text[]`), // devices in this zone
+  accessRules: text("access_rules").notNull(), // JSON rules
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").default(sql`now()`),
+  updatedAt: timestamp("updated_at").default(sql`now()`),
+});
+
+// Security Schemas
+export const insertSecurityDeviceSchema = createInsertSchema(securityDevices).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+  lastPing: true,
+  status: true,
+});
+export type InsertSecurityDevice = z.infer<typeof insertSecurityDeviceSchema>;
+export type SecurityDevice = typeof securityDevices.$inferSelect;
+
+export const insertSecurityCredentialSchema = createInsertSchema(securityCredentials).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+export type InsertSecurityCredential = z.infer<typeof insertSecurityCredentialSchema>;
+export type SecurityCredential = typeof securityCredentials.$inferSelect;
+
+export const insertSecurityLogSchema = createInsertSchema(securityLogs).omit({
+  id: true,
+  timestamp: true,
+});
+export type InsertSecurityLog = z.infer<typeof insertSecurityLogSchema>;
+export type SecurityLog = typeof securityLogs.$inferSelect;
+
+export const insertSecurityZoneSchema = createInsertSchema(securityZones).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+export type InsertSecurityZone = z.infer<typeof insertSecurityZoneSchema>;
+export type SecurityZone = typeof securityZones.$inferSelect;
 export type InsertUserRole = z.infer<typeof insertUserRoleSchema>;

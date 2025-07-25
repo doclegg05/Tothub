@@ -479,6 +479,121 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Security System Routes
+  app.get("/api/security/devices", async (req, res) => {
+    try {
+      const devices = await storage.getAllSecurityDevices();
+      res.json(devices);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch security devices" });
+    }
+  });
+
+  app.post("/api/security/devices", async (req, res) => {
+    try {
+      const { insertSecurityDeviceSchema } = await import("@shared/schema");
+      const validatedData = insertSecurityDeviceSchema.parse(req.body);
+      
+      // Encrypt connection config
+      const device = await storage.createSecurityDevice({
+        ...validatedData,
+        connectionConfig: JSON.stringify(validatedData.connectionConfig),
+      });
+      
+      // Initialize device in security service
+      const { securityService } = await import("./services/securityService");
+      await securityService.initializeDevice(device);
+      
+      res.status(201).json(device);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid data", errors: error.errors });
+      }
+      res.status(500).json({ message: "Failed to create security device" });
+    }
+  });
+
+  app.post("/api/security/devices/:id/test", async (req, res) => {
+    try {
+      const { securityService } = await import("./services/securityService");
+      const success = await securityService.testDevice(req.params.id);
+      res.json({ success });
+    } catch (error) {
+      res.status(500).json({ message: "Device test failed", success: false });
+    }
+  });
+
+  app.post("/api/security/devices/:id/unlock", async (req, res) => {
+    try {
+      const { securityService } = await import("./services/securityService");
+      const success = await securityService.unlockDevice(req.params.id, 'admin');
+      res.json({ success });
+    } catch (error) {
+      res.status(500).json({ message: "Unlock failed", success: false });
+    }
+  });
+
+  app.post("/api/security/devices/:id/lock", async (req, res) => {
+    try {
+      const { securityService } = await import("./services/securityService");
+      const success = await securityService.lockDevice(req.params.id);
+      res.json({ success });
+    } catch (error) {
+      res.status(500).json({ message: "Lock failed", success: false });
+    }
+  });
+
+  app.post("/api/security/emergency-unlock", async (req, res) => {
+    try {
+      const { securityService } = await import("./services/securityService");
+      await securityService.emergencyUnlockAll();
+      res.json({ message: "Emergency unlock activated" });
+    } catch (error) {
+      res.status(500).json({ message: "Emergency unlock failed" });
+    }
+  });
+
+  app.get("/api/security/logs", async (req, res) => {
+    try {
+      const logs = await storage.getSecurityLogs(100);
+      res.json(logs);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch security logs" });
+    }
+  });
+
+  app.get("/api/security/zones", async (req, res) => {
+    try {
+      const zones = await storage.getAllSecurityZones();
+      res.json(zones);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch security zones" });
+    }
+  });
+
+  // Security System Test Routes
+  app.post("/api/security/test/full-simulation", async (req, res) => {
+    try {
+      const { SecurityTestScript } = await import("./services/securityTestScript");
+      const result = await SecurityTestScript.runFullSimulation();
+      res.json(result);
+    } catch (error) {
+      console.error("Security simulation error:", error);
+      res.status(500).json({ message: "Failed to run security simulation" });
+    }
+  });
+
+  app.post("/api/security/test/keypad-only", async (req, res) => {
+    try {
+      const { SecurityTestScript } = await import("./services/securityTestScript");
+      await SecurityTestScript.testKeypadOnly();
+      res.json({ message: "Keypad test completed" });
+    } catch (error) {
+      console.error("Keypad test error:", error);
+      res.status(500).json({ message: "Failed to test keypad device" });
+    }
+  });
+
   // Test Data Routes for Performance Testing
   app.post("/api/test/seed-data", async (req, res) => {
     try {
