@@ -133,6 +133,7 @@ export class BiometricSecurity {
   private static readonly ALGORITHM = 'aes-256-gcm';
   private static readonly KEY_LENGTH = 32;
   private static readonly IV_LENGTH = 16;
+  private static readonly AUTH_TAG_LENGTH = 16; // 128 bits - standard for GCM
 
   static encryptBiometricData(data: string, key: Buffer): { encrypted: string; iv: string; tag: string } {
     const iv = crypto.randomBytes(this.IV_LENGTH);
@@ -153,7 +154,7 @@ export class BiometricSecurity {
 
   static decryptBiometricData(encryptedData: { encrypted: string; iv: string; tag: string }, key: Buffer): string {
     const iv = Buffer.from(encryptedData.iv, 'hex');
-    const decipher = crypto.createDecipheriv(this.ALGORITHM, key, iv);
+    const decipher = crypto.createDecipheriv(this.ALGORITHM, key, iv, { authTagLength: this.AUTH_TAG_LENGTH });
     decipher.setAAD(Buffer.from('biometric-data'));
     decipher.setAuthTag(Buffer.from(encryptedData.tag, 'hex'));
     
