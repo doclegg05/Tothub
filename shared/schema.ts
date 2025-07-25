@@ -796,6 +796,7 @@ export const insertSafetyReminderSchema = createInsertSchema(safetyReminders).om
   frequency: z.enum(['daily', 'weekly', 'monthly', 'quarterly', 'yearly', 'custom']),
   customInterval: z.number().min(1).optional(),
   alertDaysBefore: z.number().min(0).max(30),
+  nextDueDate: z.string().transform((str) => new Date(str)),
 });
 
 export const insertSafetyReminderCompletionSchema = createInsertSchema(safetyReminderCompletions).omit({
