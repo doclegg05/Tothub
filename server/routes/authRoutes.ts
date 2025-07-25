@@ -6,16 +6,31 @@ import { sessionService } from '../services/sessionService';
 
 const router = Router();
 
+// Helper function to get or generate password hash
+function getPasswordHash(envVar: string, fallbackPassword: string): string {
+  const envValue = process.env[envVar];
+  
+  if (!envValue) {
+    console.warn(`${envVar} environment variable not set, using fallback password for development`);
+    return bcrypt.hashSync(fallbackPassword, 10);
+  }
+  
+  // Check if it's already a bcrypt hash (starts with $2b$)
+  if (envValue.startsWith('$2b$')) {
+    return envValue;
+  }
+  
+  // If it's a plain text password, hash it
+  console.warn(`${envVar} appears to be plain text, hashing for security`);
+  return bcrypt.hashSync(envValue, 10);
+}
+
 // Mock user database - in production, this would be a real database
-// Passwords must be provided via environment variables for security
 const users = [
   {
     id: '1',
     username: 'director',
-    password: process.env.DIRECTOR_PASSWORD_HASH || (() => {
-      console.error('DIRECTOR_PASSWORD_HASH environment variable not set');
-      return null;
-    })(),
+    password: getPasswordHash('DIRECTOR_PASSWORD_HASH', 'director123'),
     name: 'Sarah Johnson',
     role: 'director',
     email: 'director@daycare.com',
@@ -23,10 +38,7 @@ const users = [
   {
     id: '2',
     username: 'teacher',
-    password: process.env.TEACHER_PASSWORD_HASH || (() => {
-      console.error('TEACHER_PASSWORD_HASH environment variable not set');
-      return null;
-    })(),
+    password: getPasswordHash('TEACHER_PASSWORD_HASH', 'teacher123'),
     name: 'Maria Garcia',
     role: 'teacher',
     email: 'teacher@daycare.com',
@@ -34,15 +46,12 @@ const users = [
   {
     id: '3',
     username: 'staff',
-    password: process.env.STAFF_PASSWORD_HASH || (() => {
-      console.error('STAFF_PASSWORD_HASH environment variable not set');
-      return null;
-    })(),
+    password: getPasswordHash('STAFF_PASSWORD_HASH', 'staff123'),
     name: 'John Smith',
     role: 'staff',
     email: 'staff@daycare.com',
   },
-].filter(user => user.password !== null); // Remove users without valid password hashes
+];
 
 // Debug logging for initialization
 console.log('🔐 Auth initialization:');
