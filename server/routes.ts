@@ -3,6 +3,7 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { emailService } from "./services/emailService";
 import { TimesheetService } from "./services/timesheetService";
+import { QuickBooksExporter } from "./services/quickbooksExporter";
 import { insertChildSchema, insertStaffSchema, insertAttendanceSchema, insertStaffScheduleSchema, insertSettingSchema, insertAlertSchema, insertMessageSchema, insertMediaShareSchema, insertBillingSchema, insertDailyReportSchema } from "@shared/schema";
 import { z } from "zod";
 
@@ -962,6 +963,69 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error('Biometric verification error:', error);
       res.status(500).json({ error: 'Failed to verify biometric data' });
+    }
+  });
+
+  // QuickBooks Export Routes
+  app.get("/api/payroll/export/quickbooks/:payPeriodId", async (req, res) => {
+    try {
+      const { payPeriodId } = req.params;
+      const { format } = req.query;
+
+      if (format === 'iif') {
+        const iifContent = await QuickBooksExporter.generatePayrollIIF(payPeriodId);
+        res.setHeader('Content-Type', 'text/plain');
+        res.setHeader('Content-Disposition', `attachment; filename="payroll-${payPeriodId}.iif"`);
+        res.send(iifContent);
+      } else {
+        // Default to CSV
+        const csvContent = await QuickBooksExporter.generatePayrollCSV(payPeriodId);
+        res.setHeader('Content-Type', 'text/csv');
+        res.setHeader('Content-Disposition', `attachment; filename="payroll-${payPeriodId}.csv"`);
+        res.send(csvContent);
+      }
+    } catch (error) {
+      console.error('QuickBooks export error:', error);
+      res.status(500).json({ 
+        message: error instanceof Error ? error.message : "Failed to export to QuickBooks" 
+      });
+    }
+  });
+
+  // General Ledger Summary
+  app.get("/api/payroll/export/gl-summary/:payPeriodId", async (req, res) => {
+    try {
+      const { payPeriodId } = req.params;
+      const summary = await QuickBooksExporter.generateGeneralLedgerSummary(payPeriodId);
+      res.json(summary);
+    } catch (error) {
+      console.error('GL summary error:', error);
+      res.status(500).json({ 
+        message: error instanceof Error ? error.message : "Failed to generate GL summary" 
+      });
+    }
+  });
+
+  // Tax Reports (941, State)
+  app.get("/api/payroll/export/tax-reports", async (req, res) => {
+    try {
+      const { quarter, year } = req.query;
+      
+      if (!quarter || !year) {
+        return res.status(400).json({ message: "Quarter and year are required" });
+      }
+
+      const reports = await QuickBooksExporter.generateTaxReports(
+        parseInt(quarter as string),
+        parseInt(year as string)
+      );
+      
+      res.json(reports);
+    } catch (error) {
+      console.error('Tax reports error:', error);
+      res.status(500).json({ 
+        message: error instanceof Error ? error.message : "Failed to generate tax reports" 
+      });
     }
   });
 

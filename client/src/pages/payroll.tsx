@@ -10,6 +10,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { DollarSign, Clock, Users, FileText, Download, Plus, Calculator } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
+import { QuickBooksExport } from "@/components/quickbooks-export";
 
 interface Staff {
   id: string;
@@ -485,6 +486,43 @@ export default function PayrollPage() {
               </div>
             </CardContent>
           </Card>
+        </TabsContent>
+
+        {/* Reports Tab */}
+        <TabsContent value="reports" className="space-y-6">
+          <div className="grid gap-6 md:grid-cols-2">
+            {/* QuickBooks Export */}
+            <div>
+              <QuickBooksExport />
+            </div>
+            
+            {/* Additional Reports */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <FileText className="h-5 w-5" />
+                  Additional Reports
+                </CardTitle>
+                <CardDescription>
+                  Generate additional payroll and compliance reports
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <Button variant="outline" className="w-full">
+                  <Download className="h-4 w-4 mr-2" />
+                  Employee Summary Report
+                </Button>
+                <Button variant="outline" className="w-full">
+                  <Clock className="h-4 w-4 mr-2" />
+                  Time & Attendance Report
+                </Button>
+                <Button variant="outline" className="w-full">
+                  <Calculator className="h-4 w-4 mr-2" />
+                  Tax Liability Report
+                </Button>
+              </CardContent>
+            </Card>
+          </div>
         </TabsContent>
       </Tabs>
     </div>
