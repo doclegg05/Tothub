@@ -265,7 +265,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         'older_school_age': 20
       };
 
-      for (const [room, stats] of roomStats) {
+      for (const [room, stats] of Array.from(roomStats)) {
         if (stats.children > 0) {
           const requiredRatio = ratioRequirements[stats.ageGroup as keyof typeof ratioRequirements] || 10;
           const requiredStaff = Math.ceil(stats.children / requiredRatio);
@@ -318,25 +318,87 @@ export async function registerRoutes(app: Express): Promise<Server> {
         roomStats.get(room).staff += 1;
       });
 
-      // Import state ratio helpers
-      const { calculateRequiredStaff, getMostRestrictiveRatio, calculateCurrentRatio, isStaffingCompliant } = await import("../client/src/lib/stateRatioCalculations");
+      // Get current state compliance data
+      const currentCompliance = await storage.getStateCompliance();
+      let ratiosData = {};
+      
+      if (currentCompliance && currentCompliance.ratiosData) {
+        try {
+          ratiosData = JSON.parse(currentCompliance.ratiosData);
+        } catch (e) {
+          console.error('Failed to parse ratios data:', e);
+          // Fallback to West Virginia ratios
+          ratiosData = {
+            "Infants (0-12 months)": "4:1",
+            "Toddlers (13-24 months)": "6:1", 
+            "2-3 years": "10:1",
+            "3-4 years": "12:1",
+            "4-5 years": "14:1",
+            "School-age (6+)": "16:1"
+          };
+        }
+      }
 
-      const ratios = Array.from(roomStats.entries()).map(([room, stats]) => {
-        const requiredStaff = calculateRequiredStaff(stats.children, selectedState);
-        const isCompliant = isStaffingCompliant(stats.children, stats.staff, selectedState);
-        const mostRestrictiveRatio = getMostRestrictiveRatio(stats.children, selectedState);
-        const currentRatio = calculateCurrentRatio(stats.children.length, stats.staff);
+      // Helper function to calculate required staff for age group
+      const calculateRequiredStaffForRoom = (children: any[], staff: number) => {
+        if (children.length === 0) return { required: 0, isCompliant: true, ratio: "N/A" };
+        
+        // Group children by age and find most restrictive ratio needed  
+        const ageGroupCounts: Record<string, number> = {};
+        children.forEach((child: any) => {
+          const ageGroup = child.ageGroup;
+          const mappedGroup = mapAgeGroupToRatio(ageGroup);
+          ageGroupCounts[mappedGroup] = (ageGroupCounts[mappedGroup] || 0) + 1;
+        });
+
+        let maxRequired = 0;
+        let mostRestrictiveRatio = "";
+        
+        for (const [ageGroup, count] of Object.entries(ageGroupCounts) as [string, number][]) {
+          const ratioString = ratiosData[ageGroup] || "10:1";
+          const ratioValue = parseInt(ratioString.split(':')[0]);
+          const required = Math.ceil(count / ratioValue);
+          
+          if (required > maxRequired) {
+            maxRequired = required;
+            mostRestrictiveRatio = ratioString;
+          }
+        }
+
+        return {
+          required: maxRequired,
+          isCompliant: staff >= maxRequired,
+          ratio: staff > 0 ? `${children.length}:${staff}` : "N/A",
+          requiredRatio: mostRestrictiveRatio
+        };
+      };
+
+      // Helper to map our age groups to ratio categories
+      const mapAgeGroupToRatio = (ageGroup: string) => {
+        switch (ageGroup) {
+          case 'infant': return "Infants (0-12 months)";
+          case 'young_toddler': return "Toddlers (13-24 months)";
+          case 'toddler': return "2-3 years";
+          case 'preschool': return "3-4 years";
+          case 'school_age': return "School-age (6+)";
+          case 'older_school_age': return "School-age (6+)";
+          default: return "2-3 years";
+        }
+      };
+
+      const ratios = Array.from(roomStats).map(([room, stats]) => {
+        const calculation = calculateRequiredStaffForRoom(stats.children, stats.staff);
         
         return {
           room,
           children: stats.children.length,
           staff: stats.staff,
-          requiredStaff,
-          ratio: currentRatio,
-          requiredRatio: mostRestrictiveRatio,
-          isCompliant,
-          state: selectedState,
-          ageGroups: [...new Set(stats.children.map(c => c.ageGroup))]
+          requiredStaff: calculation.required,
+          ratio: calculation.ratio,
+          requiredRatio: calculation.requiredRatio,
+          isCompliant: calculation.isCompliant,
+          state: currentCompliance?.state || selectedState,
+          ageGroups: Array.from(new Set(stats.children.map((c: any) => c.ageGroup)))
         };
       });
 
