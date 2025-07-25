@@ -6,18 +6,33 @@ import crypto from "crypto";
 const ENCRYPTION_KEY = process.env.SECURITY_ENCRYPTION_KEY || 'kidSign_security_key_2025_default';
 
 function encrypt(text: string): string {
-  const cipher = crypto.createCipher('aes-256-cbc', ENCRYPTION_KEY);
+  const iv = crypto.randomBytes(16); // 16 bytes for AES-256-CBC
+  const key = crypto.scryptSync(ENCRYPTION_KEY, 'salt', 32); // Derive proper 32-byte key
+  const cipher = crypto.createCipheriv('aes-256-cbc', key, iv);
   let encrypted = cipher.update(text, 'utf8', 'hex');
   encrypted += cipher.final('hex');
-  return encrypted;
+  return iv.toString('hex') + ':' + encrypted; // Prepend IV
 }
 
 function decrypt(encryptedText: string): string {
   try {
-    const decipher = crypto.createDecipher('aes-256-cbc', ENCRYPTION_KEY);
-    let decrypted = decipher.update(encryptedText, 'hex', 'utf8');
-    decrypted += decipher.final('utf8');
-    return decrypted;
+    // Handle both old format (without IV) and new format (with IV)
+    if (encryptedText.includes(':')) {
+      // New format with IV
+      const [ivHex, encrypted] = encryptedText.split(':');
+      const iv = Buffer.from(ivHex, 'hex');
+      const key = crypto.scryptSync(ENCRYPTION_KEY, 'salt', 32);
+      const decipher = crypto.createDecipheriv('aes-256-cbc', key, iv);
+      let decrypted = decipher.update(encrypted, 'hex', 'utf8');
+      decrypted += decipher.final('utf8');
+      return decrypted;
+    } else {
+      // Legacy format - try old method for backward compatibility
+      const decipher = crypto.createDecipher('aes-256-cbc', ENCRYPTION_KEY);
+      let decrypted = decipher.update(encryptedText, 'hex', 'utf8');
+      decrypted += decipher.final('utf8');
+      return decrypted;
+    }
   } catch {
     return encryptedText; // Return as-is if decryption fails (for compatibility)
   }

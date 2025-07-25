@@ -132,6 +132,13 @@ TotHub is a comprehensive daycare management system built with a React frontend 
   - Complete staff qualification requirements including background checks, specialized training, and state registries
   - API endpoints supporting async qualification lookup with fallback handling for all states
   - Dynamic state selection with immediate impact analysis and compliance rule updates
+- ✓ **CRITICAL SECURITY VULNERABILITY FIXED (July 25, 2025)** - Deprecated crypto functions patched:
+  - Replaced deprecated createCipher/createDecipher with secure createCipheriv/createDecipheriv
+  - Fixed in BiometricSecurity class (server/middleware/security.ts lines 139, 155)
+  - Fixed in securityService encryption functions (server/services/securityService.ts lines 9, 17)
+  - Now uses proper random IV generation preventing initialization vector reuse attacks
+  - Backward compatibility maintained for existing encrypted data
+  - Tested and verified encryption/decryption functionality working correctly
 
 
 ## User Preferences

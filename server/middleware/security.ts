@@ -136,7 +136,7 @@ export class BiometricSecurity {
 
   static encryptBiometricData(data: string, key: Buffer): { encrypted: string; iv: string; tag: string } {
     const iv = crypto.randomBytes(this.IV_LENGTH);
-    const cipher = crypto.createCipher(this.ALGORITHM, key);
+    const cipher = crypto.createCipheriv(this.ALGORITHM, key, iv);
     cipher.setAAD(Buffer.from('biometric-data'));
     
     let encrypted = cipher.update(data, 'utf8', 'hex');
@@ -152,7 +152,8 @@ export class BiometricSecurity {
   }
 
   static decryptBiometricData(encryptedData: { encrypted: string; iv: string; tag: string }, key: Buffer): string {
-    const decipher = crypto.createDecipher(this.ALGORITHM, key);
+    const iv = Buffer.from(encryptedData.iv, 'hex');
+    const decipher = crypto.createDecipheriv(this.ALGORITHM, key, iv);
     decipher.setAAD(Buffer.from('biometric-data'));
     decipher.setAuthTag(Buffer.from(encryptedData.tag, 'hex'));
     
