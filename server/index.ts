@@ -3,9 +3,19 @@ import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import securityRoutes from "./routes/securityRoutes";
 import complianceRoutes from "./routes/complianceRoutes";
+import { healthRoutes } from "./routes/healthRoutes";
 import { securityHeaders, validateInput, generateCSRFToken } from "./middleware/security";
+import { MonitoringService } from "./services/monitoringService";
+import { CachingService } from "./services/cachingService";
 
 const app = express();
+
+// Initialize monitoring and caching services
+const monitoringService = MonitoringService.getInstance();
+const cachingService = CachingService.getInstance();
+
+// Monitoring middleware
+app.use(monitoringService.performanceMiddleware());
 
 // Security middleware
 app.use(securityHeaders);
@@ -45,6 +55,9 @@ app.use((req, res, next) => {
 });
 
 (async () => {
+  // Health and infrastructure routes
+  app.use('/api', healthRoutes);
+  
   // Security and compliance routes
   app.use('/api/security', securityRoutes);
   app.use('/api/compliance', complianceRoutes);
