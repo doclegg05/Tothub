@@ -100,12 +100,12 @@ export function DocumentExpirationManager() {
   // Fetch statistics
   const { data: stats } = useQuery({
     queryKey: ['/api/documents/statistics'],
-  });
+  }) as { data: { total?: number } | undefined };
 
   // Fetch pending reminders
   const { data: pendingReminders = [] } = useQuery({
     queryKey: ['/api/documents/reminders/pending'],
-  });
+  }) as { data: any[] };
 
   // Create document mutation
   const createDocumentMutation = useMutation({

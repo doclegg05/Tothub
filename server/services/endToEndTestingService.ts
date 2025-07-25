@@ -152,7 +152,7 @@ export class EndToEndTestingService {
           actualResult = { waited: step.waitFor || 1000 };
           break;
         case 'validate_response':
-          actualResult = await this.validateResponse(step.data, step.expectedResult);
+          actualResult = await this.validateResponse(step.data, step.expectedResult || '');
           break;
         case 'simulate_biometric':
           actualResult = await this.simulateBiometricInput(step.data);

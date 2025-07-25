@@ -26,18 +26,18 @@ export default function Sessions() {
   const { data: activeSessions = [], isLoading } = useQuery({
     queryKey: ['/api/sessions/active'],
     refetchInterval: 10000, // Refresh every 10 seconds
-  });
+  }) as { data: any[]; isLoading: boolean };
 
   // Fetch current session
   const { data: currentSession } = useQuery({
     queryKey: ['/api/sessions/current'],
-  });
+  }) as { data: any | undefined };
 
   // Fetch session activity for selected session
   const { data: sessionActivity = [] } = useQuery({
     queryKey: selectedSession ? [`/api/sessions/activity`] : [],
     enabled: !!selectedSession,
-  });
+  }) as { data: any[] };
 
   // Force logout mutation
   const forceLogoutMutation = useMutation({
