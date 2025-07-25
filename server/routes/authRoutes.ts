@@ -1,16 +1,18 @@
 import { Router, Request, Response } from 'express';
 import jwt from 'jsonwebtoken';
+import bcrypt from 'bcryptjs';
 import { z } from 'zod';
 import { sessionService } from '../services/sessionService';
 
 const router = Router();
 
 // Mock user database - in production, this would be a real database
+// Passwords are properly hashed with bcrypt (salt rounds: 10)
 const users = [
   {
     id: '1',
     username: 'director',
-    password: '$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', // password: admin123
+    password: '$2b$10$EPwXHpTpP.c2FZ0ax2NoIusr6K33F5tkyH0RcuLO.KMhXDHTwc2f6', // admin123
     name: 'Sarah Johnson',
     role: 'director',
     email: 'director@daycare.com',
@@ -18,7 +20,7 @@ const users = [
   {
     id: '2',
     username: 'teacher',
-    password: '$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', // password: teacher123
+    password: '$2b$10$efyee677K/Pwkc5fNzIGCe9ub2HvShQoVQ7TrlP86O4Q.1dxLWtne', // teacher123
     name: 'Maria Garcia',
     role: 'teacher',
     email: 'teacher@daycare.com',
@@ -26,7 +28,7 @@ const users = [
   {
     id: '3',
     username: 'staff',
-    password: '$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', // password: staff123
+    password: '$2b$10$2ZfAf8/YZV56dWd8hQBtEuz/vY/Ot/PGUxSQ2IRBXaOuzYG7uSDLW', // staff123
     name: 'John Smith',
     role: 'staff',
     email: 'staff@daycare.com',
@@ -51,14 +53,9 @@ router.post('/login', async (req: Request, res: Response) => {
       return res.status(401).json({ message: 'Invalid username or password' });
     }
 
-    // Simple password check for demo (in production, use bcrypt properly)
-    const passwordMap: Record<string, string> = {
-      'director': 'admin123',
-      'teacher': 'teacher123',
-      'staff': 'staff123',
-    };
-
-    if (password !== passwordMap[username]) {
+    // Verify password using bcrypt
+    const isValidPassword = await bcrypt.compare(password, user.password);
+    if (!isValidPassword) {
       return res.status(401).json({ message: 'Invalid username or password' });
     }
 
