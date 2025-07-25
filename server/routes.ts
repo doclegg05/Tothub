@@ -288,61 +288,93 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Room ratios route
+  // Room ratios route with state-based calculations
   app.get("/api/ratios", async (req, res) => {
     try {
       const presentChildren = await storage.getCurrentlyPresentChildren();
       const todaysSchedules = await storage.getTodaysStaffSchedules();
       
+      // Get current state setting
+      const stateSetting = await storage.getSetting('selected_state');
+      const selectedState = stateSetting?.value || 'West Virginia';
+      
       const roomStats = new Map();
       
-      // Group children by room
+      // Group children by room with full child objects
       presentChildren.forEach(({ child }) => {
         const room = child.room;
         if (!roomStats.has(room)) {
-          roomStats.set(room, { children: 0, staff: 0, ageGroup: child.ageGroup });
+          roomStats.set(room, { children: [], staff: 0 });
         }
-        roomStats.get(room).children += 1;
+        roomStats.get(room).children.push(child);
       });
       
       // Group staff by room
       todaysSchedules.filter(s => s.isPresent).forEach(schedule => {
         const room = schedule.room;
         if (!roomStats.has(room)) {
-          roomStats.set(room, { children: 0, staff: 0, ageGroup: 'mixed' });
+          roomStats.set(room, { children: [], staff: 0 });
         }
         roomStats.get(room).staff += 1;
       });
 
-      const ratioRequirements = {
-        'infant': 4,
-        'young_toddler': 5,
-        'toddler': 8,
-        'preschool': 10,
-        'school_age': 18,
-        'older_school_age': 20
-      };
+      // Import state ratio helpers
+      const { calculateRequiredStaff, getMostRestrictiveRatio, calculateCurrentRatio, isStaffingCompliant } = await import("../client/src/lib/stateRatioCalculations");
 
       const ratios = Array.from(roomStats.entries()).map(([room, stats]) => {
-        const requiredRatio = ratioRequirements[stats.ageGroup as keyof typeof ratioRequirements] || 10;
-        const requiredStaff = Math.ceil(stats.children / requiredRatio);
-        const isCompliant = stats.staff >= requiredStaff || stats.children === 0;
+        const requiredStaff = calculateRequiredStaff(stats.children, selectedState);
+        const isCompliant = isStaffingCompliant(stats.children, stats.staff, selectedState);
+        const mostRestrictiveRatio = getMostRestrictiveRatio(stats.children, selectedState);
+        const currentRatio = calculateCurrentRatio(stats.children.length, stats.staff);
         
         return {
           room,
-          children: stats.children,
+          children: stats.children.length,
           staff: stats.staff,
           requiredStaff,
-          ratio: stats.staff > 0 ? `1:${Math.floor(stats.children / stats.staff)}` : '0:0',
-          requiredRatio: `1:${requiredRatio}`,
+          ratio: currentRatio,
+          requiredRatio: mostRestrictiveRatio,
           isCompliant,
-          ageGroup: stats.ageGroup
+          state: selectedState,
+          ageGroups: [...new Set(stats.children.map(c => c.ageGroup))]
         };
       });
 
       res.json(ratios);
     } catch (error) {
+      console.error('Ratio calculation error:', error);
       res.status(500).json({ message: "Failed to calculate ratios" });
+    }
+  });
+
+  // State ratios routes
+  app.get("/api/states", async (req, res) => {
+    try {
+      const { US_STATES } = await import("@shared/stateRatios");
+      res.json(US_STATES);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch states" });
+    }
+  });
+
+  app.get("/api/state-ratios/:state", async (req, res) => {
+    try {
+      const stateRatio = await storage.getStateRatio(req.params.state);
+      if (!stateRatio) {
+        return res.status(404).json({ message: "State ratios not found" });
+      }
+      res.json(stateRatio);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch state ratios" });
+    }
+  });
+
+  app.post("/api/seed-state-ratios", async (req, res) => {
+    try {
+      await storage.seedStateRatios();
+      res.json({ message: "State ratios seeded successfully" });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to seed state ratios" });
     }
   });
 

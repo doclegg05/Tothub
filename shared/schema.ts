@@ -82,6 +82,23 @@ export const alerts = pgTable("alerts", {
   createdAt: timestamp("created_at").default(sql`now()`),
 });
 
+export const stateRatios = pgTable("state_ratios", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  state: text("state").notNull().unique(),
+  sixWeeks: text("six_weeks").notNull(), // 6 weeks old
+  nineMonths: text("nine_months").notNull(), // 9 months old
+  eighteenMonths: text("eighteen_months").notNull(), // 18 months old
+  twentySevenMonths: text("twenty_seven_months").notNull(), // 27 months old
+  threeYears: text("three_years").notNull(), // 3 years old
+  fourYears: text("four_years").notNull(), // 4 years old
+  fiveYears: text("five_years").notNull(), // 5 years old
+  sixYears: text("six_years").notNull(), // 6 years old
+  sevenYears: text("seven_years").notNull(), // 7 years old
+  eightNineYears: text("eight_nine_years").notNull(), // 8-9 years old
+  tenPlusYears: text("ten_plus_years").notNull(), // 10+ years old
+  createdAt: timestamp("created_at").default(sql`now()`),
+});
+
 // Relations
 export const childrenRelations = relations(children, ({ many }) => ({
   attendance: many(attendance),
@@ -136,6 +153,11 @@ export const insertAlertSchema = createInsertSchema(alerts).omit({
   createdAt: true,
 });
 
+export const insertStateRatioSchema = createInsertSchema(stateRatios).omit({
+  id: true,
+  createdAt: true,
+});
+
 // Types
 export type Child = typeof children.$inferSelect;
 export type InsertChild = z.infer<typeof insertChildSchema>;
@@ -149,3 +171,5 @@ export type Setting = typeof settings.$inferSelect;
 export type InsertSetting = z.infer<typeof insertSettingSchema>;
 export type Alert = typeof alerts.$inferSelect;
 export type InsertAlert = z.infer<typeof insertAlertSchema>;
+export type StateRatio = typeof stateRatios.$inferSelect;
+export type InsertStateRatio = z.infer<typeof insertStateRatioSchema>;

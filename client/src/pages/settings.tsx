@@ -27,6 +27,10 @@ export default function SettingsPage() {
     queryKey: ["/api/settings"],
   });
 
+  const { data: states = [] } = useQuery({
+    queryKey: ["/api/states"],
+  });
+
   const updateSettingMutation = useMutation({
     mutationFn: ({ key, value }: { key: string; value: string }) =>
       apiRequest("POST", "/api/settings", { key, value }),
@@ -64,7 +68,7 @@ export default function SettingsPage() {
   });
 
   const getSetting = (key: string, defaultValue: string = "") => {
-    const setting = settings.find((s: any) => s.key === key);
+    const setting = (settings as any[]).find((s: any) => s.key === key);
     return setting ? setting.value : defaultValue;
   };
 
@@ -89,6 +93,65 @@ export default function SettingsPage() {
     <>
       <Header title="Settings" subtitle="Configure system preferences and alerts" />
       <main className="flex-1 p-6 space-y-6 overflow-y-auto">
+        {/* State Configuration */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center">
+              <Shield className="w-5 h-5 mr-2" />
+              State Compliance Configuration
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <Label htmlFor="selectedState">Select Your State</Label>
+                <Select
+                  value={getSetting("selected_state", "West Virginia")}
+                  onValueChange={(value) => {
+                    updateSetting("selected_state", value);
+                    // Invalidate ratio calculations and dashboard stats
+                    queryClient.invalidateQueries({ queryKey: ["/api/ratios"] });
+                    queryClient.invalidateQueries({ queryKey: ["/api/dashboard/stats"] });
+                    toast({
+                      title: "State Updated",
+                      description: `Compliance ratios updated for ${value}. All ratio calculations will now use ${value} requirements.`,
+                    });
+                  }}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select your state" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {(states as string[]).map((state: string) => (
+                      <SelectItem key={state} value={state}>
+                        {state}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-sm text-gray-500 mt-1">
+                  This automatically updates all ratio requirements to match your state's licensing requirements
+                </p>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Current State</Label>
+                <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
+                  <div className="flex items-center">
+                    <Badge variant="secondary" className="mr-2">
+                      {getSetting("selected_state", "West Virginia")}
+                    </Badge>
+                    <span className="text-sm text-blue-700">Active</span>
+                  </div>
+                  <p className="text-xs text-blue-600 mt-1">
+                    All ratios and compliance checks use this state's requirements
+                  </p>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
         {/* Alert Settings */}
         <Card>
           <CardHeader>

@@ -1,6 +1,6 @@
-import { children, staff, attendance, staffSchedules, settings, alerts, type Child, type InsertChild, type Staff, type InsertStaff, type Attendance, type InsertAttendance, type StaffSchedule, type InsertStaffSchedule, type Setting, type InsertSetting, type Alert, type InsertAlert } from "@shared/schema";
+import { children, staff, attendance, staffSchedules, settings, alerts, stateRatios, type Child, type InsertChild, type Staff, type InsertStaff, type Attendance, type InsertAttendance, type StaffSchedule, type InsertStaffSchedule, type Setting, type InsertSetting, type Alert, type InsertAlert, type StateRatio, type InsertStateRatio } from "@shared/schema";
 import { db } from "./db";
-import { eq, and, gte, lte, desc, asc } from "drizzle-orm";
+import { eq, and, gte, lte, desc, asc, isNull } from "drizzle-orm";
 
 export interface IStorage {
   // Children
@@ -48,6 +48,12 @@ export interface IStorage {
   createAlert(alert: InsertAlert): Promise<Alert>;
   markAlertAsRead(id: string): Promise<Alert>;
   deleteAlert(id: string): Promise<void>;
+  
+  // State Ratios
+  getStateRatio(state: string): Promise<StateRatio | undefined>;
+  getAllStateRatios(): Promise<StateRatio[]>;
+  createOrUpdateStateRatio(ratio: InsertStateRatio): Promise<StateRatio>;
+  seedStateRatios(): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -128,17 +134,19 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getAttendanceByChild(childId: string, startDate?: Date, endDate?: Date): Promise<Attendance[]> {
-    let query = db.select().from(attendance).where(eq(attendance.childId, childId));
-    
     if (startDate && endDate) {
-      query = query.where(and(
-        eq(attendance.childId, childId),
-        gte(attendance.date, startDate),
-        lte(attendance.date, endDate)
-      ));
+      return await db.select().from(attendance)
+        .where(and(
+          eq(attendance.childId, childId),
+          gte(attendance.date, startDate),
+          lte(attendance.date, endDate)
+        ))
+        .orderBy(desc(attendance.checkInTime));
     }
     
-    return await query.orderBy(desc(attendance.checkInTime));
+    return await db.select().from(attendance)
+      .where(eq(attendance.childId, childId))
+      .orderBy(desc(attendance.checkInTime));
   }
 
   async getCurrentlyPresentChildren(): Promise<(Attendance & { child: Child })[]> {
@@ -153,7 +161,7 @@ export class DatabaseStorage implements IStorage {
       .where(and(
         gte(attendance.date, today),
         lte(attendance.date, tomorrow),
-        eq(attendance.checkOutTime, null)
+        isNull(attendance.checkOutTime)
       ))
       .orderBy(asc(children.firstName));
 
@@ -307,6 +315,41 @@ export class DatabaseStorage implements IStorage {
 
   async deleteAlert(id: string): Promise<void> {
     await db.delete(alerts).where(eq(alerts.id, id));
+  }
+
+  // State Ratios
+  async getStateRatio(state: string): Promise<StateRatio | undefined> {
+    const [ratio] = await db.select().from(stateRatios).where(eq(stateRatios.state, state));
+    return ratio || undefined;
+  }
+
+  async getAllStateRatios(): Promise<StateRatio[]> {
+    return await db.select().from(stateRatios).orderBy(asc(stateRatios.state));
+  }
+
+  async createOrUpdateStateRatio(ratioData: InsertStateRatio): Promise<StateRatio> {
+    const existing = await this.getStateRatio(ratioData.state);
+    
+    if (existing) {
+      const [updated] = await db.update(stateRatios)
+        .set(ratioData)
+        .where(eq(stateRatios.state, ratioData.state))
+        .returning();
+      return updated;
+    } else {
+      const [created] = await db.insert(stateRatios)
+        .values(ratioData)
+        .returning();
+      return created;
+    }
+  }
+
+  async seedStateRatios(): Promise<void> {
+    const { STATE_RATIOS_DATA } = await import("@shared/stateRatios");
+    
+    for (const ratioData of STATE_RATIOS_DATA) {
+      await this.createOrUpdateStateRatio(ratioData);
+    }
   }
 }
 
