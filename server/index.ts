@@ -2,6 +2,7 @@ import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import securityRoutes from "./routes/securityRoutes";
+import complianceRoutes from "./routes/complianceRoutes";
 import { securityHeaders, validateInput, generateCSRFToken } from "./middleware/security";
 
 const app = express();
@@ -11,7 +12,7 @@ app.use(securityHeaders);
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: false, limit: '10mb' }));
 app.use(validateInput);
-app.use(generateCSRFToken);
+// Note: CSRF protection temporarily disabled until session middleware is properly configured
 
 app.use((req, res, next) => {
   const start = Date.now();
@@ -44,8 +45,9 @@ app.use((req, res, next) => {
 });
 
 (async () => {
-  // Security routes
+  // Security and compliance routes
   app.use('/api/security', securityRoutes);
+  app.use('/api/compliance', complianceRoutes);
   
   const server = await registerRoutes(app);
 

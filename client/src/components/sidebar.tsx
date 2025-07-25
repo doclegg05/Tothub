@@ -11,7 +11,8 @@ import {
   TrendingUp,
   Shield,
   DollarSign,
-  Calendar
+  Calendar,
+  CheckCircle
 } from "lucide-react";
 
 const navigation = [
@@ -24,6 +25,7 @@ const navigation = [
   { name: "Scheduling", href: "/scheduling", icon: Calendar },
   { name: "Reports", href: "/reports", icon: BarChart3 },
   { name: "Physical Security", href: "/security", icon: Shield },
+  { name: "Compliance", href: "/compliance", icon: CheckCircle },
   { name: "Settings", href: "/settings", icon: Settings },
   { name: "Performance Test", href: "/performance-test", icon: TrendingUp },
 ];
