@@ -351,6 +351,19 @@ export class DatabaseStorage implements IStorage {
       await this.createOrUpdateStateRatio(ratioData);
     }
   }
+
+  // Test data management methods
+  async clearAllChildren(): Promise<void> {
+    await db.delete(children);
+  }
+
+  async clearAllStaff(): Promise<void> {
+    await db.delete(staff);
+  }
+
+  async clearAllAttendance(): Promise<void> {
+    await db.delete(attendance);
+  }
 }
 
 export const storage = new DatabaseStorage();

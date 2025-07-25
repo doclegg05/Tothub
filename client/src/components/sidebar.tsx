@@ -8,7 +8,8 @@ import {
   Users,
   GraduationCap,
   BarChart3,
-  Settings
+  Settings,
+  TrendingUp
 } from "lucide-react";
 
 const navigation = [
@@ -20,6 +21,7 @@ const navigation = [
   { name: "Staff Management", href: "/staff", icon: GraduationCap },
   { name: "Reports", href: "/reports", icon: BarChart3 },
   { name: "Settings", href: "/settings", icon: Settings },
+  { name: "Performance Test", href: "/performance-test", icon: TrendingUp },
 ];
 
 export function Sidebar() {

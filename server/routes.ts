@@ -479,6 +479,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Test Data Routes for Performance Testing
+  app.post("/api/test/seed-data", async (req, res) => {
+    try {
+      const { TestDataService } = await import("./services/testDataService");
+      const result = await TestDataService.seedTestData();
+      res.json(result);
+    } catch (error) {
+      console.error("Test data seeding error:", error);
+      res.status(500).json({ message: "Failed to seed test data" });
+    }
+  });
+
+  app.delete("/api/test/clear-data", async (req, res) => {
+    try {
+      const { TestDataService } = await import("./services/testDataService");
+      const result = await TestDataService.clearTestData();
+      res.json(result);
+    } catch (error) {
+      console.error("Test data clearing error:", error);
+      res.status(500).json({ message: "Failed to clear test data" });
+    }
+  });
+
+  app.get("/api/test/scenario-summary", async (req, res) => {
+    try {
+      const { TestDataService } = await import("./services/testDataService");
+      const summary = TestDataService.getTestScenarioSummary();
+      res.json(summary);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to get scenario summary" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
