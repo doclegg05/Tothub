@@ -18,7 +18,7 @@ export class EncryptionService {
   static encryptSensitiveData(data: string): { encrypted: string; iv: string; tag: string } {
     const key = this.getEncryptionKey();
     const iv = crypto.randomBytes(this.IV_LENGTH);
-    const cipher = crypto.createCipher(this.ALGORITHM, key);
+    const cipher = crypto.createCipheriv(this.ALGORITHM, key, iv);
     
     let encrypted = cipher.update(data, 'utf8', 'hex');
     encrypted += cipher.final('hex');
@@ -35,7 +35,8 @@ export class EncryptionService {
   // Decrypt sensitive data
   static decryptSensitiveData(encryptedData: { encrypted: string; iv: string; tag: string }): string {
     const key = this.getEncryptionKey();
-    const decipher = crypto.createDecipher(this.ALGORITHM, key);
+    const iv = Buffer.from(encryptedData.iv, 'hex');
+    const decipher = crypto.createDecipheriv(this.ALGORITHM, key, iv);
     decipher.setAuthTag(Buffer.from(encryptedData.tag, 'hex'));
     
     let decrypted = decipher.update(encryptedData.encrypted, 'hex', 'utf8');
