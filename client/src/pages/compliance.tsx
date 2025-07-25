@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -23,6 +23,7 @@ import {
   Info
 } from 'lucide-react';
 import { US_STATES_LIST, STATE_COMPLIANCE_RATIOS } from '@shared/stateComplianceData';
+import { SafetyReminderManager } from '@/components/safety-reminder-manager';
 
 export default function CompliancePage() {
   const [selectedState, setSelectedState] = useState('California');
@@ -440,6 +441,19 @@ export default function CompliancePage() {
 
         {/* Physical Security Compliance */}
         <TabsContent value="security" className="space-y-6">
+          {/* Safety Reminders System */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Safety Reminder System</CardTitle>
+              <CardDescription>
+                Manage safety equipment checks, emergency drills, and compliance tasks with automated alerts
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <SafetyReminderManager />
+            </CardContent>
+          </Card>
+
           <Card>
             <CardHeader>
               <CardTitle>UL 294 Physical Security Compliance</CardTitle>

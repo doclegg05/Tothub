@@ -741,3 +741,69 @@ export const insertSecurityZoneSchema = createInsertSchema(securityZones).omit({
 });
 export type InsertSecurityZone = z.infer<typeof insertSecurityZoneSchema>;
 export type SecurityZone = typeof securityZones.$inferSelect;
+
+// Safety Reminders and Alerts System
+export const safetyReminders = pgTable('safety_reminders', {
+  id: text('id').primaryKey().default(sql`gen_random_uuid()`),
+  title: text('title').notNull(),
+  description: text('description'),
+  category: text('category').notNull(), // 'fire_safety', 'equipment', 'drills', 'maintenance', 'inspection'
+  priority: text('priority').notNull().default('medium'), // 'low', 'medium', 'high', 'critical'
+  frequency: text('frequency').notNull(), // 'daily', 'weekly', 'monthly', 'quarterly', 'yearly', 'custom'
+  customInterval: integer('custom_interval'), // For custom frequency (in days)
+  nextDueDate: timestamp('next_due_date').notNull(),
+  lastCompletedDate: timestamp('last_completed_date'),
+  isActive: boolean('is_active').default(true).notNull(),
+  isPaused: boolean('is_paused').default(false).notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+  createdBy: text('created_by').notNull(),
+  assignedTo: text('assigned_to'), // Staff member responsible
+  completionNotes: text('completion_notes'),
+  alertDaysBefore: integer('alert_days_before').default(3).notNull(), // Alert X days before due
+});
+
+export const safetyReminderCompletions = pgTable('safety_reminder_completions', {
+  id: text('id').primaryKey().default(sql`gen_random_uuid()`),
+  reminderId: text('reminder_id').notNull().references(() => safetyReminders.id),
+  completedAt: timestamp('completed_at').defaultNow().notNull(),
+  completedBy: text('completed_by').notNull(),
+  notes: text('notes'),
+  nextScheduledDate: timestamp('next_scheduled_date'),
+  attachments: text('attachments').array().default(sql`'{}'::text[]`), // File paths for completion evidence
+});
+
+// Safety reminder relations
+export const safetyReminderRelations = relations(safetyReminders, ({ many }) => ({
+  completions: many(safetyReminderCompletions),
+}));
+
+export const safetyReminderCompletionRelations = relations(safetyReminderCompletions, ({ one }) => ({
+  reminder: one(safetyReminders, {
+    fields: [safetyReminderCompletions.reminderId],
+    references: [safetyReminders.id],
+  }),
+}));
+
+// Safety reminder schemas
+export const insertSafetyReminderSchema = createInsertSchema(safetyReminders).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+}).extend({
+  category: z.enum(['fire_safety', 'equipment', 'drills', 'maintenance', 'inspection']),
+  priority: z.enum(['low', 'medium', 'high', 'critical']),
+  frequency: z.enum(['daily', 'weekly', 'monthly', 'quarterly', 'yearly', 'custom']),
+  customInterval: z.number().min(1).optional(),
+  alertDaysBefore: z.number().min(0).max(30),
+});
+
+export const insertSafetyReminderCompletionSchema = createInsertSchema(safetyReminderCompletions).omit({
+  id: true,
+  completedAt: true,
+});
+
+export type SafetyReminder = typeof safetyReminders.$inferSelect;
+export type InsertSafetyReminder = z.infer<typeof insertSafetyReminderSchema>;
+export type SafetyReminderCompletion = typeof safetyReminderCompletions.$inferSelect;
+export type InsertSafetyReminderCompletion = z.infer<typeof insertSafetyReminderCompletionSchema>;
