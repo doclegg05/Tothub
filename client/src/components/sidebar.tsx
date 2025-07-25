@@ -36,7 +36,7 @@ export function Sidebar() {
       <div className="p-6 border-b border-gray-200">
         <div className="flex items-center space-x-3">
           <img 
-            src="@assets/7329979f-8516-4378-b1b7-dd17ca2532e3_1753458570775.jpg" 
+            src="/tothub-logo.jpg" 
             alt="TotHub Logo" 
             className="w-8 h-8 object-contain"
           />
