@@ -3,8 +3,6 @@ import { cn } from "@/lib/utils";
 import { 
   Home,
   UserCheck,
-  Camera,
-  Fingerprint,
   MessageSquare,
   Users,
   GraduationCap,
@@ -16,9 +14,7 @@ import {
 
 const navigation = [
   { name: "Dashboard", href: "/", icon: Home },
-  { name: "Basic Check-In/Out", href: "/check-in-out", icon: UserCheck },
-  { name: "Enhanced Check-In", href: "/enhanced-checkin", icon: Camera },
-  { name: "Biometric Check-In", href: "/biometric-checkin", icon: Fingerprint },
+  { name: "Check-In/Out", href: "/checkin", icon: UserCheck },
   { name: "Parent Communication", href: "/parent-communication", icon: MessageSquare },
   { name: "Children", href: "/children", icon: Users },
   { name: "Staff Management", href: "/staff", icon: GraduationCap },
