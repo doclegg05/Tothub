@@ -13,6 +13,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useState } from "react";
+import { HardwareSetupWizard } from "@/components/HardwareSetupWizard";
 import { 
   Shield, 
   Plus, 
@@ -76,6 +77,7 @@ export default function Security() {
   const queryClient = useQueryClient();
   const [selectedDevice, setSelectedDevice] = useState<any>(null);
   const [deviceModalOpen, setDeviceModalOpen] = useState(false);
+  const [wizardOpen, setWizardOpen] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
     type: '',
@@ -335,14 +337,22 @@ export default function Security() {
           <TabsContent value="devices" className="space-y-4">
             <div className="flex justify-between items-center">
               <h3 className="text-lg font-semibold">Security Devices</h3>
-              <Dialog open={deviceModalOpen} onOpenChange={setDeviceModalOpen}>
-                <DialogTrigger asChild>
-                  <Button>
-                    <Plus className="w-4 h-4 mr-2" />
-                    Add Device
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="max-w-2xl">
+              <div className="flex gap-2">
+                <Button 
+                  onClick={() => setWizardOpen(true)}
+                  className="bg-blue-600 hover:bg-blue-700"
+                >
+                  <Settings className="w-4 h-4 mr-2" />
+                  Hardware Setup Wizard
+                </Button>
+                <Dialog open={deviceModalOpen} onOpenChange={setDeviceModalOpen}>
+                  <DialogTrigger asChild>
+                    <Button variant="outline">
+                      <Plus className="w-4 h-4 mr-2" />
+                      Manual Setup
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="max-w-2xl">
                   <DialogHeader>
                     <DialogTitle>Add Security Device</DialogTitle>
                   </DialogHeader>
@@ -543,6 +553,7 @@ export default function Security() {
                 })}
               </div>
             )}
+            </div>
           </TabsContent>
 
           {/* Activity Logs Tab */}
@@ -700,6 +711,11 @@ export default function Security() {
             </Card>
           </TabsContent>
         </Tabs>
+        
+        {/* Hardware Setup Wizard */}
+        {wizardOpen && (
+          <HardwareSetupWizard onClose={() => setWizardOpen(false)} />
+        )}
       </div>
     </div>
   );

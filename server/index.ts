@@ -8,6 +8,7 @@ import complianceRoutes from "./routes/complianceRoutes";
 import safetyRoutes from "./routes/safetyRoutes";
 import documentRoutes from "./routes/documentRoutes";
 import authRoutes from "./routes/authRoutes";
+import hardwareRoutes from "./routes/hardwareRoutes";
 import { healthRoutes } from "./routes/healthRoutes";
 import { securityHeaders, validateInput, generateCSRFToken } from "./middleware/security";
 import { authMiddleware } from "./middleware/auth";
@@ -99,6 +100,7 @@ app.use((req, res, next) => {
   app.use('/api/compliance', complianceRoutes);
   app.use('/api/safety', safetyRoutes);
   app.use('/api/documents', documentRoutes);
+  app.use('/api/hardware', hardwareRoutes);
   
   const server = await registerRoutes(app);
 
