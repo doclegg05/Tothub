@@ -48,6 +48,14 @@ This is a comprehensive daycare management system built with a React frontend an
   - Feature cards highlighting time-saving, billing, engagement, and compliance
   - Responsive design optimized for all devices
   - Quick demo modal with role-based experience selection
+- ✓ **Flask/SQLite Alternative Implementation** - Complete client-server architecture:
+  - Flask web server with RESTful API endpoints (POST /checkin, GET /checkins)
+  - SQLite database with auto-incrementing IDs and timestamp tracking
+  - Client-side `perform_checkin()` function as requested by user
+  - Complete error handling for database and network operations
+  - Industry-standard daycare management features for children and staff
+  - Production-ready with comprehensive documentation and testing suite
+  - Runs on port 5001 alongside existing Node.js system for comparison
 
 ## User Preferences
 
