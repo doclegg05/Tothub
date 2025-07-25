@@ -2,7 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { emailService } from "./services/emailService";
-import { insertChildSchema, insertStaffSchema, insertAttendanceSchema, insertStaffScheduleSchema, insertSettingSchema, insertAlertSchema } from "@shared/schema";
+import { insertChildSchema, insertStaffSchema, insertAttendanceSchema, insertStaffScheduleSchema, insertSettingSchema, insertAlertSchema, insertMessageSchema, insertMediaShareSchema, insertBillingSchema, insertDailyReportSchema } from "@shared/schema";
 import { z } from "zod";
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -395,6 +395,87 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
     } catch (error) {
       res.status(500).json({ message: "Failed to send email" });
+    }
+  });
+
+  // Enhanced Check-In/Out Routes
+  app.post("/api/attendance/checkin", async (req, res) => {
+    try {
+      const validatedData = insertAttendanceSchema.extend({
+        moodRating: z.number().optional(),
+        checkInPhotoUrl: z.string().optional(),
+        notes: z.string().optional(),
+      }).parse(req.body);
+      
+      const attendance = await storage.createAttendance(validatedData);
+      res.status(201).json(attendance);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid data", errors: error.errors });
+      }
+      res.status(500).json({ message: "Failed to check in child" });
+    }
+  });
+
+  app.post("/api/attendance/checkout", async (req, res) => {
+    try {
+      const { attendanceId, checkOutBy, notes, checkOutPhotoUrl, activitiesCompleted } = req.body;
+      const attendance = await storage.updateAttendance(attendanceId, {
+        checkOutTime: new Date(),
+        checkOutBy,
+        notes,
+        checkOutPhotoUrl,
+        activitiesCompleted,
+      });
+      res.json(attendance);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to check out child" });
+    }
+  });
+
+  // Parent Communication Routes
+  app.get("/api/messages", async (req, res) => {
+    try {
+      // Mock response for now - will implement storage methods
+      res.json([]);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch messages" });
+    }
+  });
+
+  app.post("/api/messages", async (req, res) => {
+    try {
+      const validatedData = insertMessageSchema.parse(req.body);
+      // Mock response for now - will implement storage methods
+      res.status(201).json({ id: "mock-id", ...validatedData });
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid data", errors: error.errors });
+      }
+      res.status(500).json({ message: "Failed to send message" });
+    }
+  });
+
+  // Media Sharing Routes
+  app.get("/api/media-shares", async (req, res) => {
+    try {
+      // Mock response for now - will implement storage methods
+      res.json([]);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch media shares" });
+    }
+  });
+
+  app.post("/api/media-shares", async (req, res) => {
+    try {
+      const validatedData = insertMediaShareSchema.parse(req.body);
+      // Mock response for now - will implement storage methods  
+      res.status(201).json({ id: "mock-id", ...validatedData });
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid data", errors: error.errors });
+      }
+      res.status(500).json({ message: "Failed to share media" });
     }
   });
 

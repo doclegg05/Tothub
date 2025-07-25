@@ -28,6 +28,11 @@ export default function Children() {
     parentPhone: "",
     emergencyContactName: "",
     emergencyContactPhone: "",
+    // Enhanced fields from competitor research
+    allergies: [] as string[],
+    medicalNotes: "",
+    immunizations: [] as string[],
+    tuitionRate: "",
   });
 
   const { data: children = [], isLoading } = useQuery({
@@ -53,6 +58,10 @@ export default function Children() {
         parentPhone: "",
         emergencyContactName: "",
         emergencyContactPhone: "",
+        allergies: [],
+        medicalNotes: "",
+        immunizations: [],
+        tuitionRate: "",
       });
     },
     onError: () => {
@@ -77,7 +86,7 @@ export default function Children() {
     });
   };
 
-  const filteredChildren = children.filter((child: any) =>
+  const filteredChildren = (children as any[]).filter((child: any) =>
     `${child.firstName} ${child.lastName}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
     child.room.toLowerCase().includes(searchTerm.toLowerCase()) ||
     child.parentName.toLowerCase().includes(searchTerm.toLowerCase())

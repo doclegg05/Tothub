@@ -3,6 +3,8 @@ import { cn } from "@/lib/utils";
 import { 
   Home,
   UserCheck,
+  Camera,
+  MessageSquare,
   Users,
   GraduationCap,
   BarChart3,
@@ -11,7 +13,9 @@ import {
 
 const navigation = [
   { name: "Dashboard", href: "/", icon: Home },
-  { name: "Check-In/Out", href: "/check-in-out", icon: UserCheck },
+  { name: "Basic Check-In/Out", href: "/check-in-out", icon: UserCheck },
+  { name: "Enhanced Check-In", href: "/enhanced-checkin", icon: Camera },
+  { name: "Parent Communication", href: "/parent-communication", icon: MessageSquare },
   { name: "Children", href: "/children", icon: Users },
   { name: "Staff Management", href: "/staff", icon: GraduationCap },
   { name: "Reports", href: "/reports", icon: BarChart3 },
@@ -24,8 +28,8 @@ export function Sidebar() {
   return (
     <div className="w-64 bg-white shadow-lg border-r border-gray-200">
       <div className="p-6 border-b border-gray-200">
-        <h1 className="text-xl font-bold text-gray-800">DaycarePro</h1>
-        <p className="text-sm text-gray-600">Little Steps Academy</p>
+        <h1 className="text-xl font-bold text-gray-800">KidSign Pro</h1>
+        <p className="text-sm text-gray-600">Enhanced Daycare Management</p>
       </div>
       
       <nav className="mt-6">

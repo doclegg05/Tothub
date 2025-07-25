@@ -1,8 +1,18 @@
-# Daycare Management System
+# KidSign Pro - Enhanced Daycare Management System
 
 ## Overview
 
-This is a comprehensive daycare management system built with a React frontend and Express.js backend. The application manages children enrollment, staff scheduling, attendance tracking, and compliance monitoring with West Virginia daycare ratio requirements. It features a modern UI built with shadcn/ui components and uses PostgreSQL with Drizzle ORM for data persistence.
+This is a comprehensive daycare management system built with a React frontend and Express.js backend, enhanced with competitor-inspired features from Brightwheel, Procare, Lillio, and Kangarootime. The application now includes advanced attendance tracking with photo capture, parent communication systems, enhanced child profiles with medical information, billing integration (QuickBooks ready), and role-based access control. It features multi-state compliance support for all 50 US states and uses PostgreSQL with Drizzle ORM for data persistence.
+
+## Recent Changes (January 2025)
+
+- ✓ Enhanced database schema with competitor-inspired features (medical info, billing, messaging)
+- ✓ Added Enhanced Check-In page with photo capture and mood tracking
+- ✓ Created Parent Communication system with messaging and media sharing
+- ✓ Implemented role-based access control foundation
+- ✓ Added billing system structure for QuickBooks integration
+- ✓ Enhanced child profiles with allergies, immunizations, and medical notes
+- ✓ Updated navigation to include new enhanced features
 
 ## User Preferences
 
