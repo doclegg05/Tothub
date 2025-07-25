@@ -10,7 +10,10 @@ import { Badge } from "@/components/ui/badge";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { Search, Plus, Users, Calendar, Mail, Phone } from "lucide-react";
+import { Search, Plus, Users, Calendar, Mail, Phone, Heart, Shield, FileText, AlertTriangle } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
 import { getAgeGroupFromBirthDate, calculateAge } from "@/lib/ratioCalculations";
 
 export default function Children() {
@@ -33,6 +36,32 @@ export default function Children() {
     medicalNotes: "",
     immunizations: [] as string[],
     tuitionRate: "",
+    // Comprehensive Health Information
+    medicalConditions: [] as string[],
+    currentMedications: "",
+    dietaryRestrictions: [] as string[],
+    foodAllergies: [] as string[],
+    specialCareInstructions: "",
+    physicalLimitations: "",
+    bloodType: "",
+    // Healthcare Provider Information
+    primaryPhysician: "",
+    physicianPhone: "",
+    pediatricianName: "",
+    pediatricianPhone: "",
+    preferredHospital: "",
+    insuranceProvider: "",
+    insurancePolicyNumber: "",
+    insuranceGroupNumber: "",
+    // Emergency Medical Information
+    emergencyMedicalAuthorization: false,
+    medicalActionPlan: "",
+    epiPenRequired: false,
+    inhalerRequired: false,
+    // Immunization Details
+    immunizationRecords: "",
+    immunizationExemptions: [] as string[],
+    nextImmunizationDue: "",
   });
 
   const { data: children = [], isLoading } = useQuery({
@@ -62,6 +91,29 @@ export default function Children() {
         medicalNotes: "",
         immunizations: [],
         tuitionRate: "",
+        // Reset comprehensive health fields
+        medicalConditions: [],
+        currentMedications: "",
+        dietaryRestrictions: [],
+        foodAllergies: [],
+        specialCareInstructions: "",
+        physicalLimitations: "",
+        bloodType: "",
+        primaryPhysician: "",
+        physicianPhone: "",
+        pediatricianName: "",
+        pediatricianPhone: "",
+        preferredHospital: "",
+        insuranceProvider: "",
+        insurancePolicyNumber: "",
+        insuranceGroupNumber: "",
+        emergencyMedicalAuthorization: false,
+        medicalActionPlan: "",
+        epiPenRequired: false,
+        inhalerRequired: false,
+        immunizationRecords: "",
+        immunizationExemptions: [],
+        nextImmunizationDue: "",
       });
     },
     onError: () => {
@@ -145,6 +197,20 @@ export default function Children() {
                 <DialogTitle>Add New Child</DialogTitle>
               </DialogHeader>
               <form onSubmit={handleSubmit} className="space-y-6">
+                <Tabs defaultValue="basic" className="w-full">
+                  <TabsList className="grid w-full grid-cols-4">
+                    <TabsTrigger value="basic" className="text-xs">Basic Info</TabsTrigger>
+                    <TabsTrigger value="health" className="text-xs">
+                      <Heart className="w-3 h-3 mr-1" />Health
+                    </TabsTrigger>
+                    <TabsTrigger value="emergency" className="text-xs">
+                      <AlertTriangle className="w-3 h-3 mr-1" />Emergency
+                    </TabsTrigger>
+                    <TabsTrigger value="insurance" className="text-xs">
+                      <Shield className="w-3 h-3 mr-1" />Healthcare
+                    </TabsTrigger>
+                  </TabsList>
+                <TabsContent value="basic" className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <Label htmlFor="firstName">First Name</Label>
@@ -253,8 +319,248 @@ export default function Children() {
                     </div>
                   </div>
                 </div>
+                </TabsContent>
 
-                <div className="flex justify-end space-x-3">
+                <TabsContent value="health" className="space-y-4">
+                  <div className="space-y-4">
+                    <h3 className="text-lg font-semibold flex items-center">
+                      <Heart className="w-5 h-5 mr-2" />
+                      Health Information
+                    </h3>
+                    
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <Label htmlFor="bloodType">Blood Type</Label>
+                        <Select 
+                          value={formData.bloodType}
+                          onValueChange={(value) => setFormData(prev => ({ ...prev, bloodType: value }))}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select blood type" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="A+">A+</SelectItem>
+                            <SelectItem value="A-">A-</SelectItem>
+                            <SelectItem value="B+">B+</SelectItem>
+                            <SelectItem value="B-">B-</SelectItem>
+                            <SelectItem value="AB+">AB+</SelectItem>
+                            <SelectItem value="AB-">AB-</SelectItem>
+                            <SelectItem value="O+">O+</SelectItem>
+                            <SelectItem value="O-">O-</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Emergency Requirements</Label>
+                        <div className="flex items-center space-x-4">
+                          <div className="flex items-center space-x-2">
+                            <Checkbox 
+                              id="epiPen"
+                              checked={formData.epiPenRequired}
+                              onCheckedChange={(checked) => setFormData(prev => ({ ...prev, epiPenRequired: !!checked }))}
+                            />
+                            <Label htmlFor="epiPen" className="text-sm">EpiPen Required</Label>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <Checkbox 
+                              id="inhaler"
+                              checked={formData.inhalerRequired}
+                              onCheckedChange={(checked) => setFormData(prev => ({ ...prev, inhalerRequired: !!checked }))}
+                            />
+                            <Label htmlFor="inhaler" className="text-sm">Inhaler Required</Label>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div>
+                      <Label htmlFor="medicalConditions">Medical Conditions</Label>
+                      <Input
+                        id="medicalConditions"
+                        placeholder="Enter conditions separated by commas (e.g., Asthma, Diabetes)"
+                        value={formData.medicalConditions.join(', ')}
+                        onChange={(e) => setFormData(prev => ({ 
+                          ...prev, 
+                          medicalConditions: e.target.value.split(',').map(s => s.trim()).filter(s => s) 
+                        }))}
+                      />
+                    </div>
+
+                    <div>
+                      <Label htmlFor="foodAllergies">Food Allergies</Label>
+                      <Input
+                        id="foodAllergies"
+                        placeholder="Enter allergies separated by commas (e.g., Peanuts, Dairy, Eggs)"
+                        value={formData.foodAllergies.join(', ')}
+                        onChange={(e) => setFormData(prev => ({ 
+                          ...prev, 
+                          foodAllergies: e.target.value.split(',').map(s => s.trim()).filter(s => s) 
+                        }))}
+                      />
+                    </div>
+
+                    <div>
+                      <Label htmlFor="dietaryRestrictions">Dietary Restrictions</Label>
+                      <Input
+                        id="dietaryRestrictions"
+                        placeholder="Enter restrictions separated by commas (e.g., Vegetarian, Gluten-free)"
+                        value={formData.dietaryRestrictions.join(', ')}
+                        onChange={(e) => setFormData(prev => ({ 
+                          ...prev, 
+                          dietaryRestrictions: e.target.value.split(',').map(s => s.trim()).filter(s => s) 
+                        }))}
+                      />
+                    </div>
+
+                    <div>
+                      <Label htmlFor="specialCareInstructions">Special Care Instructions</Label>
+                      <Textarea
+                        id="specialCareInstructions"
+                        placeholder="Enter any special care instructions or medical notes..."
+                        value={formData.specialCareInstructions}
+                        onChange={(e) => setFormData(prev => ({ ...prev, specialCareInstructions: e.target.value }))}
+                      />
+                    </div>
+                  </div>
+                </TabsContent>
+
+                <TabsContent value="emergency" className="space-y-4">
+                  <div className="space-y-4">
+                    <h3 className="text-lg font-semibold flex items-center">
+                      <AlertTriangle className="w-5 h-5 mr-2" />
+                      Emergency Medical Information
+                    </h3>
+                    
+                    <div className="flex items-center space-x-2">
+                      <Checkbox 
+                        id="emergencyAuth"
+                        checked={formData.emergencyMedicalAuthorization}
+                        onCheckedChange={(checked) => setFormData(prev => ({ ...prev, emergencyMedicalAuthorization: !!checked }))}
+                      />
+                      <Label htmlFor="emergencyAuth">I authorize emergency medical treatment</Label>
+                    </div>
+
+                    <div>
+                      <Label htmlFor="medicalActionPlan">Medical Action Plan</Label>
+                      <Textarea
+                        id="medicalActionPlan"
+                        placeholder="Enter detailed action plan for medical conditions (e.g., steps for asthma attack, allergy reaction procedures)..."
+                        value={formData.medicalActionPlan}
+                        onChange={(e) => setFormData(prev => ({ ...prev, medicalActionPlan: e.target.value }))}
+                      />
+                    </div>
+
+                    <div>
+                      <Label htmlFor="physicalLimitations">Physical Limitations</Label>
+                      <Textarea
+                        id="physicalLimitations"
+                        placeholder="Enter any physical limitations or accommodations needed..."
+                        value={formData.physicalLimitations}
+                        onChange={(e) => setFormData(prev => ({ ...prev, physicalLimitations: e.target.value }))}
+                      />
+                    </div>
+                  </div>
+                </TabsContent>
+
+                <TabsContent value="insurance" className="space-y-4">
+                  <div className="space-y-4">
+                    <h3 className="text-lg font-semibold flex items-center">
+                      <Shield className="w-5 h-5 mr-2" />
+                      Healthcare Provider Information
+                    </h3>
+                    
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <Label htmlFor="primaryPhysician">Primary Physician</Label>
+                        <Input
+                          id="primaryPhysician"
+                          value={formData.primaryPhysician}
+                          onChange={(e) => setFormData(prev => ({ ...prev, primaryPhysician: e.target.value }))}
+                          placeholder="Dr. Smith"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="physicianPhone">Physician Phone</Label>
+                        <Input
+                          id="physicianPhone"
+                          type="tel"
+                          value={formData.physicianPhone}
+                          onChange={(e) => setFormData(prev => ({ ...prev, physicianPhone: e.target.value }))}
+                          placeholder="(555) 123-4567"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <Label htmlFor="pediatricianName">Pediatrician</Label>
+                        <Input
+                          id="pediatricianName"
+                          value={formData.pediatricianName}
+                          onChange={(e) => setFormData(prev => ({ ...prev, pediatricianName: e.target.value }))}
+                          placeholder="Dr. Johnson"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="pediatricianPhone">Pediatrician Phone</Label>
+                        <Input
+                          id="pediatricianPhone"
+                          type="tel"
+                          value={formData.pediatricianPhone}
+                          onChange={(e) => setFormData(prev => ({ ...prev, pediatricianPhone: e.target.value }))}
+                          placeholder="(555) 123-4567"
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <Label htmlFor="preferredHospital">Preferred Hospital</Label>
+                      <Input
+                        id="preferredHospital"
+                        value={formData.preferredHospital}
+                        onChange={(e) => setFormData(prev => ({ ...prev, preferredHospital: e.target.value }))}
+                        placeholder="Children's Hospital"
+                      />
+                    </div>
+
+                    <div className="space-y-4">
+                      <h4 className="font-semibold">Insurance Information</h4>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <Label htmlFor="insuranceProvider">Insurance Provider</Label>
+                          <Input
+                            id="insuranceProvider"
+                            value={formData.insuranceProvider}
+                            onChange={(e) => setFormData(prev => ({ ...prev, insuranceProvider: e.target.value }))}
+                            placeholder="Blue Cross Blue Shield"
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="insurancePolicyNumber">Policy Number</Label>
+                          <Input
+                            id="insurancePolicyNumber"
+                            value={formData.insurancePolicyNumber}
+                            onChange={(e) => setFormData(prev => ({ ...prev, insurancePolicyNumber: e.target.value }))}
+                            placeholder="ABC123456789"
+                          />
+                        </div>
+                      </div>
+                      <div>
+                        <Label htmlFor="insuranceGroupNumber">Group Number</Label>
+                        <Input
+                          id="insuranceGroupNumber"
+                          value={formData.insuranceGroupNumber}
+                          onChange={(e) => setFormData(prev => ({ ...prev, insuranceGroupNumber: e.target.value }))}
+                          placeholder="GRP12345"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </TabsContent>
+
+                </Tabs>
+                
+                <div className="flex justify-end space-x-3 mt-6">
                   <Button type="button" variant="outline" onClick={() => setModalOpen(false)}>
                     Cancel
                   </Button>

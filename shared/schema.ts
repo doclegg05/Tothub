@@ -29,6 +29,35 @@ export const children = pgTable("children", {
   allergies: text("allergies").array().default(sql`'{}'::text[]`),
   medicalNotes: text("medical_notes"),
   immunizations: text("immunizations").array().default(sql`'{}'::text[]`),
+  // Comprehensive Health Information
+  medicalConditions: text("medical_conditions").array().default(sql`'{}'::text[]`),
+  currentMedications: text("current_medications"), // JSON string for complex medication data
+  dietaryRestrictions: text("dietary_restrictions").array().default(sql`'{}'::text[]`),
+  foodAllergies: text("food_allergies").array().default(sql`'{}'::text[]`),
+  specialCareInstructions: text("special_care_instructions"),
+  physicalLimitations: text("physical_limitations"),
+  bloodType: text("blood_type"),
+  // Healthcare Provider Information
+  primaryPhysician: text("primary_physician"),
+  physicianPhone: text("physician_phone"),
+  pediatricianName: text("pediatrician_name"),
+  pediatricianPhone: text("pediatrician_phone"),
+  preferredHospital: text("preferred_hospital"),
+  insuranceProvider: text("insurance_provider"),
+  insurancePolicyNumber: text("insurance_policy_number"),
+  insuranceGroupNumber: text("insurance_group_number"),
+  // Emergency Medical Information
+  emergencyMedicalAuthorization: boolean("emergency_medical_authorization").default(false),
+  medicalActionPlan: text("medical_action_plan"), // For conditions like asthma, allergies
+  epiPenRequired: boolean("epi_pen_required").default(false),
+  inhalerRequired: boolean("inhaler_required").default(false),
+  // Immunization Details
+  immunizationRecords: text("immunization_records"), // JSON string for detailed records
+  immunizationExemptions: text("immunization_exemptions").array().default(sql`'{}'::text[]`),
+  nextImmunizationDue: timestamp("next_immunization_due"),
+  // Daily Health Monitoring
+  lastHealthCheck: timestamp("last_health_check"),
+  healthCheckNotes: text("health_check_notes"),
   profilePhotoUrl: text("profile_photo_url"),
   enrollmentDate: timestamp("enrollment_date").default(sql`now()`),
   tuitionRate: integer("tuition_rate"), // Monthly rate in cents
@@ -433,6 +462,44 @@ export const staffSchedulesRelations = relations(staffSchedules, ({ one }) => ({
 export const insertChildSchema = createInsertSchema(children).omit({
   id: true,
   createdAt: true,
+  enrollmentDate: true,
+  faceDescriptor: true,
+  fingerprintHash: true,
+  biometricEnrolledAt: true,
+  biometricEnabled: true,
+  lastHealthCheck: true,
+}).extend({
+  // Enhanced validation for health information
+  bloodType: z.string().optional().refine((val) => 
+    !val || ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'].includes(val), 
+    { message: "Invalid blood type" }
+  ),
+  currentMedications: z.string().optional().refine((val) => {
+    if (!val) return true;
+    try {
+      JSON.parse(val);
+      return true;
+    } catch {
+      return false;
+    }
+  }, { message: "Current medications must be valid JSON" }),
+  immunizationRecords: z.string().optional().refine((val) => {
+    if (!val) return true;
+    try {
+      JSON.parse(val);
+      return true;
+    } catch {
+      return false;
+    }
+  }, { message: "Immunization records must be valid JSON" }),
+  physicianPhone: z.string().optional().refine((val) => 
+    !val || /^\(\d{3}\) \d{3}-\d{4}$/.test(val), 
+    { message: "Phone number must be in format (XXX) XXX-XXXX" }
+  ),
+  pediatricianPhone: z.string().optional().refine((val) => 
+    !val || /^\(\d{3}\) \d{3}-\d{4}$/.test(val), 
+    { message: "Phone number must be in format (XXX) XXX-XXXX" }
+  ),
 });
 
 export const insertStaffSchema = createInsertSchema(staff).omit({
@@ -526,6 +593,36 @@ export type Child = typeof children.$inferSelect;
 export type InsertChild = z.infer<typeof insertChildSchema>;
 export type Staff = typeof staff.$inferSelect;
 export type InsertStaff = z.infer<typeof insertStaffSchema>;
+
+// Health Information Types
+export interface MedicationRecord {
+  name: string;
+  dosage: string;
+  frequency: string;
+  prescribedBy: string;
+  startDate: string;
+  endDate?: string;
+  notes?: string;
+}
+
+export interface ImmunizationRecord {
+  vaccine: string;
+  dateAdministered: string;
+  nextDueDate?: string;
+  provider: string;
+  lotNumber?: string;
+  site?: string;
+  notes?: string;
+}
+
+export interface HealthCheckRecord {
+  date: string;
+  temperature?: number;
+  symptoms?: string[];
+  checkedBy: string;
+  cleared: boolean;
+  notes?: string;
+}
 export type Attendance = typeof attendance.$inferSelect;
 export type InsertAttendance = z.infer<typeof insertAttendanceSchema>;
 export type StaffSchedule = typeof staffSchedules.$inferSelect;
