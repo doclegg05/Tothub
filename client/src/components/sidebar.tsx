@@ -44,9 +44,9 @@ export function Sidebar() {
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-3">
             <img 
-              src="/tothub-logo.jpg" 
+              src="/tothub-logo-new.png" 
               alt="TotHub Logo" 
-              className="w-8 h-8 object-contain"
+              className="w-10 h-10 object-contain"
             />
             <div>
               <h1 className="text-xl font-bold text-gray-800">TotHub</h1>

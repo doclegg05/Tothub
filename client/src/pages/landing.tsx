@@ -67,9 +67,9 @@ export default function LandingPage() {
             <div className="flex items-center space-x-8">
               <div className="flex items-center space-x-2">
                 <img 
-                  src="/tothub-logo.jpg" 
+                  src="/tothub-logo-new.png" 
                   alt="TotHub Logo" 
-                  className="w-8 h-8 object-contain"
+                  className="w-10 h-10 object-contain"
                 />
                 <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 text-transparent bg-clip-text">
                   TotHub

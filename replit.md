@@ -138,6 +138,7 @@ TotHub is a comprehensive daycare management system built with a React frontend 
 
 Preferred communication style: Simple, everyday language.
 App complexity preference: Keep it simple and focused on core daycare management features. Don't lose sight of the main purpose.
+Logo preference: Use the new TotHub logo with blue circle background and yellow text (updated July 25, 2025).
 
 ## System Architecture
 
