@@ -8,6 +8,7 @@ import documentRoutes from "./routes/documentRoutes";
 import authRoutes from "./routes/authRoutes";
 import { healthRoutes } from "./routes/healthRoutes";
 import { securityHeaders, validateInput, generateCSRFToken } from "./middleware/security";
+import { authMiddleware } from "./middleware/auth";
 import { MonitoringService } from "./services/monitoringService";
 import { CachingService } from "./services/cachingService";
 
@@ -63,6 +64,9 @@ app.use((req, res, next) => {
   
   // Authentication routes (no auth required)
   app.use('/api/auth', authRoutes);
+  
+  // Apply auth middleware to all other API routes
+  app.use('/api', authMiddleware);
   
   // Security and compliance routes
   app.use('/api/security', securityRoutes);
