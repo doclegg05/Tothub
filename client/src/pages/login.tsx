@@ -34,19 +34,30 @@ export default function LoginPage() {
     setError('');
 
     try {
-      const success = await login(formData.username, formData.password);
-      
-      if (success) {
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        // Store auth token
+        localStorage.setItem('authToken', data.token);
+        localStorage.setItem('user', JSON.stringify(data.user));
+        
         toast({ 
           title: 'Welcome back!', 
-          description: `Successfully logged in` 
+          description: `Logged in as ${data.user.name}` 
         });
-        // Force a page reload to ensure auth state is properly detected
+        
+        // Force a complete page reload to ensure all components pick up the new auth state
         setTimeout(() => {
-          window.location.href = '/';
-        }, 100);
+          window.location.reload();
+        }, 500);
       } else {
-        setError('Invalid username or password');
+        setError(data.message || 'Login failed');
       }
     } catch (error) {
       setError('Unable to connect to server. Please try again.');
@@ -67,19 +78,30 @@ export default function LoginPage() {
     
     try {
       const user = users[role];
-      const success = await login(user.username, user.password);
-      
-      if (success) {
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username: user.username, password: user.password }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        // Store auth token
+        localStorage.setItem('authToken', data.token);
+        localStorage.setItem('user', JSON.stringify(data.user));
+        
         toast({ 
           title: 'Welcome back!', 
           description: `Logged in as ${user.name}` 
         });
-        // Force a page reload to ensure auth state is properly detected
+        
+        // Force a complete page reload to ensure all components pick up the new auth state
         setTimeout(() => {
-          window.location.href = '/';
-        }, 100);
+          window.location.reload();
+        }, 500);
       } else {
-        setError('Login failed');
+        setError(data.message || 'Login failed');
       }
     } catch (error) {
       setError('Unable to connect to server. Please try again.');
