@@ -156,15 +156,21 @@ export class IntegrationTestingService {
           name: 'QB Authentication',
           category: 'api',
           test: async () => {
+            const startTime = performance.now();
             try {
               // Test QuickBooks OAuth flow
               const authUrl = this.generateQuickBooksAuthUrl();
               return {
                 passed: authUrl.includes('apps.com'),
+                duration: performance.now() - startTime,
                 details: { authUrl },
               };
             } catch (error) {
-              return { passed: false, error: error instanceof Error ? error.message : String(error) };
+              return { 
+                passed: false, 
+                duration: performance.now() - startTime,
+                error: error instanceof Error ? error.message : String(error) 
+              };
             }
           },
         },
@@ -172,15 +178,21 @@ export class IntegrationTestingService {
           name: 'QB Company Info',
           category: 'api',
           test: async () => {
+            const startTime = performance.now();
             // Simulate sandbox API call
             try {
               const companyInfo = await this.testQuickBooksAPI('/v1/companyinfo', 'GET');
               return {
                 passed: companyInfo !== null,
+                duration: performance.now() - startTime,
                 details: companyInfo,
               };
             } catch (error) {
-              return { passed: false, error: error instanceof Error ? error.message : String(error) };
+              return { 
+                passed: false, 
+                duration: performance.now() - startTime,
+                error: error instanceof Error ? error.message : String(error) 
+              };
             }
           },
         },
