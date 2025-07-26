@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useLocation } from 'wouter';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -12,7 +12,7 @@ import { useAuth } from '@/lib/auth';
 export default function LoginPage() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
-  const { login } = useAuth();
+  const { login, isAuthenticated } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({
@@ -20,6 +20,13 @@ export default function LoginPage() {
     password: '',
   });
   const [error, setError] = useState('');
+
+  // Redirect when authentication state changes
+  useEffect(() => {
+    if (isAuthenticated) {
+      setLocation('/');
+    }
+  }, [isAuthenticated, setLocation]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -34,8 +41,10 @@ export default function LoginPage() {
           title: 'Welcome back!', 
           description: `Successfully logged in` 
         });
-        
-        setLocation('/');
+        // Force a page reload to ensure auth state is properly detected
+        setTimeout(() => {
+          window.location.href = '/';
+        }, 100);
       } else {
         setError('Invalid username or password');
       }
@@ -65,8 +74,10 @@ export default function LoginPage() {
           title: 'Welcome back!', 
           description: `Logged in as ${user.name}` 
         });
-        
-        setLocation('/');
+        // Force a page reload to ensure auth state is properly detected
+        setTimeout(() => {
+          window.location.href = '/';
+        }, 100);
       } else {
         setError('Login failed');
       }
