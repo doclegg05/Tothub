@@ -52,7 +52,9 @@ function AuthenticatedApp() {
 }
 
 function Router() {
-  const { isAuthenticated, isLoading } = useAuth();
+  const { isAuthenticated, isLoading, user } = useAuth();
+
+  console.log('Router - Auth state:', { isAuthenticated, isLoading, user });
 
   if (isLoading) {
     return (

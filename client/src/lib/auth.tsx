@@ -27,10 +27,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const token = localStorage.getItem('authToken');
     const userData = localStorage.getItem('user');
     
+    console.log('AuthProvider - Checking auth state:', { hasToken: !!token, hasUserData: !!userData });
+    
     if (token && userData) {
       try {
-        setUser(JSON.parse(userData));
+        const parsedUser = JSON.parse(userData);
+        console.log('AuthProvider - Setting user:', parsedUser);
+        setUser(parsedUser);
       } catch (error) {
+        console.error('AuthProvider - Failed to parse user data:', error);
         // Clear invalid data
         localStorage.removeItem('authToken');
         localStorage.removeItem('user');

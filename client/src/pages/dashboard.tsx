@@ -16,18 +16,22 @@ export default function Dashboard() {
 
   const { data: presentChildren = [], isLoading: presentLoading } = useQuery({
     queryKey: ["/api/attendance/present"],
+    enabled: !!localStorage.getItem('authToken'),
   });
 
   const { data: todaysSchedules = [], isLoading: schedulesLoading } = useQuery({
     queryKey: ["/api/staff-schedules/today"],
+    enabled: !!localStorage.getItem('authToken'),
   });
 
   const { data: alerts = [], isLoading: alertsLoading } = useQuery({
     queryKey: ["/api/alerts/unread"],
+    enabled: !!localStorage.getItem('authToken'),
   });
 
   const { data: settings = [] } = useQuery({
     queryKey: ["/api/settings"],
+    enabled: !!localStorage.getItem('authToken'),
   });
 
   const getSetting = (key: string, defaultValue: string = "") => {

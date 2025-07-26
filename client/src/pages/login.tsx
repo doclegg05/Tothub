@@ -43,9 +43,15 @@ export default function LoginPage() {
       const data = await response.json();
 
       if (response.ok) {
+        console.log('Login successful:', data);
+        
         // Store auth token
         localStorage.setItem('authToken', data.token);
         localStorage.setItem('user', JSON.stringify(data.user));
+        
+        // Verify storage
+        console.log('Stored token:', localStorage.getItem('authToken'));
+        console.log('Stored user:', localStorage.getItem('user'));
         
         toast({ 
           title: 'Welcome back!', 
@@ -54,6 +60,7 @@ export default function LoginPage() {
         
         // Force a complete page reload to ensure all components pick up the new auth state
         setTimeout(() => {
+          console.log('Reloading page...');
           window.location.reload();
         }, 500);
       } else {
