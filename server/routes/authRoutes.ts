@@ -94,7 +94,7 @@ router.post('/login', async (req: Request, res: Response) => {
         role: user.role 
       },
       JWT_SECRET,
-      { expiresIn: '8h' }
+      { expiresIn: '7d' }
     );
 
     // Create session tracking

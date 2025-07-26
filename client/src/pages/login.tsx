@@ -43,25 +43,21 @@ export default function LoginPage() {
       const data = await response.json();
 
       if (response.ok) {
-        console.log('Login successful:', data);
+        // Clear any old tokens first
+        localStorage.clear();
         
-        // Store auth token
+        // Store new auth data
         localStorage.setItem('authToken', data.token);
         localStorage.setItem('user', JSON.stringify(data.user));
-        
-        // Verify storage
-        console.log('Stored token:', localStorage.getItem('authToken'));
-        console.log('Stored user:', localStorage.getItem('user'));
         
         toast({ 
           title: 'Welcome back!', 
           description: `Logged in as ${data.user.name}` 
         });
         
-        // Force a complete page reload to ensure all components pick up the new auth state
+        // Navigate directly to dashboard
         setTimeout(() => {
-          console.log('Reloading page...');
-          window.location.reload();
+          window.location.href = '/';
         }, 500);
       } else {
         setError(data.message || 'Login failed');
@@ -94,7 +90,10 @@ export default function LoginPage() {
       const data = await response.json();
 
       if (response.ok) {
-        // Store auth token
+        // Clear any old tokens first
+        localStorage.clear();
+        
+        // Store new auth data
         localStorage.setItem('authToken', data.token);
         localStorage.setItem('user', JSON.stringify(data.user));
         
@@ -103,9 +102,9 @@ export default function LoginPage() {
           description: `Logged in as ${user.name}` 
         });
         
-        // Force a complete page reload to ensure all components pick up the new auth state
+        // Navigate directly to dashboard
         setTimeout(() => {
-          window.location.reload();
+          window.location.href = '/';
         }, 500);
       } else {
         setError(data.message || 'Login failed');

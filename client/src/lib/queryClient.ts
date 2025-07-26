@@ -43,16 +43,11 @@ export const getQueryFn: <T>(options: {
     const token = localStorage.getItem('authToken');
     const headers: Record<string, string> = {};
     
-    console.log('Query request - Token from localStorage:', token ? `${token.substring(0, 20)}...` : 'No token');
-    
     if (token) {
       headers['Authorization'] = `Bearer ${token}`;
     }
     
-    const url = queryKey.join("/") as string;
-    console.log('Making request to:', url, 'with headers:', headers);
-    
-    const res = await fetch(url, {
+    const res = await fetch(queryKey.join("/") as string, {
       headers,
       credentials: "include",
     });

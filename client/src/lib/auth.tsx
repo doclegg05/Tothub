@@ -27,21 +27,38 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const token = localStorage.getItem('authToken');
     const userData = localStorage.getItem('user');
     
-    console.log('AuthProvider - Checking auth state:', { hasToken: !!token, hasUserData: !!userData });
-    
     if (token && userData) {
-      try {
-        const parsedUser = JSON.parse(userData);
-        console.log('AuthProvider - Setting user:', parsedUser);
-        setUser(parsedUser);
-      } catch (error) {
-        console.error('AuthProvider - Failed to parse user data:', error);
-        // Clear invalid data
-        localStorage.removeItem('authToken');
-        localStorage.removeItem('user');
-      }
+      // Check if token might be expired by making a simple request
+      fetch('/api/auth/verify', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      }).then(response => {
+        if (response.ok) {
+          // Token is valid, set user
+          try {
+            const parsedUser = JSON.parse(userData);
+            setUser(parsedUser);
+          } catch (error) {
+            localStorage.clear();
+          }
+        } else {
+          // Token is expired or invalid, clear it
+          localStorage.clear();
+          console.log('Cleared expired authentication data');
+        }
+        setIsLoading(false);
+      }).catch(() => {
+        // Network error, keep existing auth state
+        try {
+          const parsedUser = JSON.parse(userData);
+          setUser(parsedUser);
+        } catch (error) {
+          localStorage.clear();
+        }
+        setIsLoading(false);
+      });
+    } else {
+      setIsLoading(false);
     }
-    setIsLoading(false);
   }, []);
 
   const login = async (username: string, password: string): Promise<boolean> => {
