@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { rateLimit } from 'express-rate-limit';
 import helmet from 'helmet';
+import crypto from 'crypto';
 
 // Extend Express Request type to include session
 declare module 'express-serve-static-core' {
@@ -12,7 +13,6 @@ declare module 'express-serve-static-core' {
     };
   }
 }
-import crypto from 'crypto';
 
 // Rate limiting middleware
 export const createRateLimit = (windowMs: number, max: number, message: string) => {
