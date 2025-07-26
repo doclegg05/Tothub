@@ -7,10 +7,12 @@ import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Loader2, Shield, Eye, EyeOff } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/lib/auth';
 
 export default function LoginPage() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
+  const { login } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({
@@ -25,27 +27,17 @@ export default function LoginPage() {
     setError('');
 
     try {
-      const response = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
-      });
-
-      const data = await response.json();
-
-      if (response.ok) {
-        // Store auth token
-        localStorage.setItem('authToken', data.token);
-        localStorage.setItem('user', JSON.stringify(data.user));
-        
+      const success = await login(formData.username, formData.password);
+      
+      if (success) {
         toast({ 
           title: 'Welcome back!', 
-          description: `Logged in as ${data.user.name}` 
+          description: `Successfully logged in` 
         });
         
         setLocation('/');
       } else {
-        setError(data.message || 'Login failed');
+        setError('Invalid username or password');
       }
     } catch (error) {
       setError('Unable to connect to server. Please try again.');
@@ -54,14 +46,35 @@ export default function LoginPage() {
     }
   };
 
-  const handleQuickLogin = (role: 'director' | 'teacher' | 'staff') => {
+  const handleQuickLogin = async (role: 'director' | 'teacher' | 'staff') => {
     const users = {
       director: { username: 'director', password: 'director123', name: 'Sarah Johnson (Director)' },
       teacher: { username: 'teacher', password: 'teacher123', name: 'Maria Garcia (Teacher)' },
       staff: { username: 'staff', password: 'staff123', name: 'John Smith (Staff)' }
     };
     
-    setFormData(users[role]);
+    setIsLoading(true);
+    setError('');
+    
+    try {
+      const user = users[role];
+      const success = await login(user.username, user.password);
+      
+      if (success) {
+        toast({ 
+          title: 'Welcome back!', 
+          description: `Logged in as ${user.name}` 
+        });
+        
+        setLocation('/');
+      } else {
+        setError('Login failed');
+      }
+    } catch (error) {
+      setError('Unable to connect to server. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
