@@ -19,6 +19,8 @@ export function UserMenu() {
   const { toast } = useToast();
   const [, setLocation] = useLocation();
 
+
+
   const handleLogout = () => {
     logout();
     toast({ 
