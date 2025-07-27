@@ -22,6 +22,7 @@ import Sessions from "@/pages/sessions";
 import Landing from "@/pages/landing";
 import Login from "@/pages/login";
 import NotFound from "@/pages/not-found";
+import Profile from "@/pages/profile";
 
 function AuthenticatedApp() {
   return (
@@ -43,6 +44,7 @@ function AuthenticatedApp() {
           <Route path="/compliance" component={Compliance} />
           <Route path="/performance-test" component={PerformanceTest} />
           <Route path="/sessions" component={Sessions} />
+          <Route path="/profile" component={Profile} />
           <Route component={NotFound} />
         </Switch>
       </div>

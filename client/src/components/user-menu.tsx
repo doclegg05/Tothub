@@ -12,10 +12,12 @@ import {
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { LogOut, User, Settings } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { useLocation } from 'wouter';
 
 export function UserMenu() {
   const { user, logout } = useAuth();
   const { toast } = useToast();
+  const [, setLocation] = useLocation();
 
   const handleLogout = () => {
     logout();
@@ -57,7 +59,7 @@ export function UserMenu() {
       </DropdownMenuTrigger>
       <DropdownMenuContent className="w-56" align="end" forceMount>
         <DropdownMenuLabel className="font-normal">
-          <div className="flex flex-col space-y-1">
+          <div className="flex flex-col space-y-1 cursor-pointer" onClick={() => setLocation('/profile')}>
             <p className="text-sm font-medium leading-none">{user.name}</p>
             <p className="text-xs leading-none text-muted-foreground">
               {user.role.charAt(0).toUpperCase() + user.role.slice(1)}
@@ -70,7 +72,7 @@ export function UserMenu() {
           </div>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
-        <DropdownMenuItem disabled>
+        <DropdownMenuItem onClick={() => setLocation('/profile')}>
           <User className="mr-2 h-4 w-4" />
           <span>Profile</span>
         </DropdownMenuItem>

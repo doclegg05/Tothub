@@ -1,6 +1,7 @@
-import { Bell, User } from "lucide-react";
+import { Bell } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useQuery } from "@tanstack/react-query";
+import { UserMenu } from "@/components/user-menu";
 
 interface HeaderProps {
   title: string;
@@ -37,12 +38,7 @@ export function Header({ title, subtitle }: HeaderProps) {
               </span>
             )}
           </Button>
-          <div className="flex items-center space-x-3">
-            <span className="text-gray-700 font-medium">Sarah Johnson</span>
-            <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center text-white font-semibold">
-              <User className="h-4 w-4" />
-            </div>
-          </div>
+          <UserMenu />
         </div>
       </div>
     </header>
