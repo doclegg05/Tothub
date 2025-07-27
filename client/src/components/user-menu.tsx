@@ -51,17 +51,23 @@ export function UserMenu() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" className="relative h-10 w-10 rounded-full">
-          <Avatar className="h-10 w-10">
-            <AvatarFallback className={`${getRoleColor(user.role)} text-white text-sm font-semibold`}>
-              {getInitials(user.name)}
-            </AvatarFallback>
-          </Avatar>
+        <Button variant="ghost" className="w-full justify-start p-3 h-auto">
+          <div className="flex items-center space-x-3">
+            <Avatar className="h-8 w-8">
+              <AvatarFallback className={`${getRoleColor(user.role)} text-white text-xs font-semibold`}>
+                {getInitials(user.name)}
+              </AvatarFallback>
+            </Avatar>
+            <div className="flex flex-col items-start text-left">
+              <p className="text-sm font-medium text-gray-900">{user.name}</p>
+              <p className="text-xs text-gray-500">{user.role.charAt(0).toUpperCase() + user.role.slice(1)}</p>
+            </div>
+          </div>
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent className="w-56" align="end" forceMount>
+      <DropdownMenuContent className="w-56" align="start" side="top">
         <DropdownMenuLabel className="font-normal">
-          <div className="flex flex-col space-y-1 cursor-pointer" onClick={() => setLocation('/profile')}>
+          <div className="flex flex-col space-y-1">
             <p className="text-sm font-medium leading-none">{user.name}</p>
             <p className="text-xs leading-none text-muted-foreground">
               {user.role.charAt(0).toUpperCase() + user.role.slice(1)}
