@@ -29,7 +29,12 @@ export function UserMenu() {
     });
   };
 
-  if (!user) return null;
+  console.log('UserMenu: user data:', user);
+  
+  if (!user) {
+    console.log('UserMenu: No user, returning null');
+    return null;
+  }
 
   const getInitials = (name: string) => {
     return name
@@ -80,7 +85,10 @@ export function UserMenu() {
           </div>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
-        <DropdownMenuItem onClick={() => setLocation('/profile')}>
+        <DropdownMenuItem onClick={() => {
+          console.log('Profile menu item clicked, navigating to /profile');
+          setLocation('/profile');
+        }}>
           <User className="mr-2 h-4 w-4" />
           <span>Profile</span>
         </DropdownMenuItem>
