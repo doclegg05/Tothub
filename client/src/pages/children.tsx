@@ -15,9 +15,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { getAgeGroupFromBirthDate, calculateAge } from "@/lib/ratioCalculations";
+import { useAuth } from "@/lib/auth";
 
 export default function Children() {
   const { toast } = useToast();
+  const { isAuthenticated } = useAuth();
   const queryClient = useQueryClient();
   const [searchTerm, setSearchTerm] = useState("");
   const [modalOpen, setModalOpen] = useState(false);
@@ -67,12 +69,28 @@ export default function Children() {
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 20;
 
-  const { data: childrenResponse, isLoading, refetch } = useQuery({
+  const { data: childrenResponse, isLoading, refetch, error } = useQuery<{
+    data: any[];
+    total: number;
+    page: number;
+    totalPages: number;
+  }>({
     queryKey: ["/api/children", currentPage],
+    enabled: isAuthenticated,
+    retry: 3,
+    retryDelay: 1000,
   });
 
   const children = childrenResponse?.data || [];
   const totalPages = childrenResponse?.totalPages || 1;
+  
+  // Debug logging
+  if (childrenResponse) {
+    console.log("Children response:", childrenResponse);
+  }
+  if (error) {
+    console.error("Children query error:", error);
+  }
 
   const createChildMutation = useMutation({
     mutationFn: (data: any) => {
@@ -89,10 +107,11 @@ export default function Children() {
         description: "Child enrolled successfully!",
       });
       
-      // Force reload to ensure fresh data
+      // Force refetch the data
       setTimeout(() => {
-        window.location.reload();
-      }, 500);
+        queryClient.invalidateQueries({ queryKey: ["/api/children"] });
+        refetch();
+      }, 100);
       
       // Reset form
       setFormData({
