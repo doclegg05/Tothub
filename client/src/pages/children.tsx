@@ -67,7 +67,7 @@ export default function Children() {
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 20;
 
-  const { data: childrenResponse, isLoading } = useQuery({
+  const { data: childrenResponse, isLoading, refetch } = useQuery({
     queryKey: ["/api/children", currentPage],
   });
 
@@ -89,8 +89,10 @@ export default function Children() {
         description: "Child enrolled successfully!",
       });
       
-      // Invalidate and refetch all children data
-      await queryClient.invalidateQueries({ queryKey: ["/api/children"] });
+      // Force reload to ensure fresh data
+      setTimeout(() => {
+        window.location.reload();
+      }, 500);
       
       // Reset form
       setFormData({
