@@ -221,6 +221,7 @@ TotHub is a comprehensive daycare management system built with a React frontend 
     - **template-generator**: Meta-framework for generating Context Engineering templates for any technology
   - Enables thorough context gathering and validation loops for one-pass AI implementation success
   - Commands can be invoked as `/generate-prp INITIAL.md` and `/execute-prp PRPs/feature.md`
+  - **Moved to Global Installation**: Context Engineering is now globally installed at `~/.context-engineering/` for use across all projects
 - ✓ **Child Record Management System (January 28, 2025)** - Complete enrollment lifecycle management:
   - Created individual child detail pages accessible by clicking on children in the list
   - Added comprehensive child profile editing with tabbed interface (Basic, Health, Emergency, Enrollment)
