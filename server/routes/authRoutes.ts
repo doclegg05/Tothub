@@ -30,7 +30,7 @@ const users = [
   {
     id: '1',
     username: 'director',
-    password: getPasswordHash('DIRECTOR_PASSWORD_HASH', 'director123'),
+    password: getPasswordHash('DIRECTOR_PASSWORD_HASH', 'WVvalues25!'),
     name: 'Sarah Johnson',
     role: 'director',
     email: 'director@daycare.com',
@@ -71,8 +71,8 @@ router.post('/login', async (req: Request, res: Response) => {
   try {
     const { username, password } = loginSchema.parse(req.body);
 
-    // Find user
-    const user = users.find(u => u.username === username);
+    // Find user (case-insensitive)
+    const user = users.find(u => u.username.toLowerCase() === username.toLowerCase());
     if (!user || !user.password) {
       console.log(`🔐 Login failed - user not found or no password hash: ${username}`);
       return res.status(401).json({ message: 'Invalid username or password' });
