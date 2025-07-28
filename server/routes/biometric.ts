@@ -1,10 +1,12 @@
-import express from 'express';
-import { storage } from '../storage';
+import { Router } from "express";
+import { storage } from "../storage";
+import { authMiddleware } from "../middleware/auth";
 
-const router = express.Router();
+const router = Router();
+const auth = authMiddleware;
 
-// Enroll biometric data for a user
-router.post('/enroll/:userType/:userId', async (req, res) => {
+// Enroll biometric data
+router.post('/enroll/:userType/:userId', auth, async (req, res) => {
   try {
     const { userType, userId } = req.params;
     const { faceDescriptor, fingerprintCredentialId } = req.body;
@@ -15,12 +17,14 @@ router.post('/enroll/:userType/:userId', async (req, res) => {
         return res.status(404).json({ error: 'Child not found' });
       }
 
-      await storage.updateChild(userId, {
-        faceDescriptor: faceDescriptor || child.faceDescriptor,
-        fingerprintHash: fingerprintCredentialId || child.fingerprintHash,
+      const updateData: any = {
         biometricEnrolledAt: new Date(),
         biometricEnabled: true,
-      });
+      };
+      if (faceDescriptor) updateData.faceDescriptor = faceDescriptor;
+      if (fingerprintCredentialId) updateData.fingerprintHash = fingerprintCredentialId;
+      
+      await storage.updateChild(userId, updateData);
     } else if (userType === 'staff') {
       const staff = await storage.getStaff(userId);
       if (!staff) {
@@ -44,8 +48,8 @@ router.post('/enroll/:userType/:userId', async (req, res) => {
   }
 });
 
-// Get biometric data for authentication
-router.get('/auth-data/:userType/:userId', async (req, res) => {
+// Get biometric auth data
+router.get('/auth-data/:userType/:userId', auth, async (req, res) => {
   try {
     const { userType, userId } = req.params;
 
@@ -62,11 +66,12 @@ router.get('/auth-data/:userType/:userId', async (req, res) => {
       return res.status(404).json({ error: 'User not found' });
     }
 
-    // Only return whether biometric data exists, not the actual data
     res.json({
       hasFaceData: !!user.faceDescriptor,
       hasFingerprintData: !!user.fingerprintHash,
       biometricEnabled: user.biometricEnabled || false,
+      faceDescriptor: user.faceDescriptor,
+      fingerprintHash: user.fingerprintHash,
     });
   } catch (error) {
     console.error('Get biometric data error:', error);
@@ -74,8 +79,8 @@ router.get('/auth-data/:userType/:userId', async (req, res) => {
   }
 });
 
-// Verify biometric authentication
-router.post('/verify/:userType/:userId', async (req, res) => {
+// Verify biometric data
+router.post('/verify/:userType/:userId', auth, async (req, res) => {
   try {
     const { userType, userId } = req.params;
     const { method, confidence } = req.body;
@@ -97,8 +102,6 @@ router.post('/verify/:userType/:userId', async (req, res) => {
       return res.status(400).json({ error: 'Biometric authentication not enabled for this user' });
     }
 
-    // In a real implementation, you would verify the biometric data here
-    // For this demo, we assume the client-side verification is sufficient
     const minimumConfidence = method === 'fingerprint' ? 0.9 : 0.6;
     
     if (confidence < minimumConfidence) {
@@ -114,30 +117,6 @@ router.post('/verify/:userType/:userId', async (req, res) => {
   } catch (error) {
     console.error('Biometric verification error:', error);
     res.status(500).json({ error: 'Failed to verify biometric data' });
-  }
-});
-
-// Disable biometric authentication
-router.post('/disable/:userType/:userId', async (req, res) => {
-  try {
-    const { userType, userId } = req.params;
-
-    if (userType === 'child') {
-      await storage.updateChild(userId, {
-        biometricEnabled: false,
-      });
-    } else if (userType === 'staff') {
-      await storage.updateStaff(userId, {
-        biometricEnabled: false,
-      });
-    } else {
-      return res.status(400).json({ error: 'Invalid user type' });
-    }
-
-    res.json({ success: true, message: 'Biometric authentication disabled' });
-  } catch (error) {
-    console.error('Disable biometric error:', error);
-    res.status(500).json({ error: 'Failed to disable biometric authentication' });
   }
 });
 

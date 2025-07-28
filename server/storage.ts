@@ -1,7 +1,7 @@
 import { children, staff, attendance, staffSchedules, settings, alerts, stateRatios, stateCompliance, parents, type Child, type InsertChild, type Staff, type InsertStaff, type Attendance, type InsertAttendance, type StaffSchedule, type InsertStaffSchedule, type Setting, type InsertSetting, type Alert, type InsertAlert, type StateRatio, type InsertStateRatio, type StateCompliance, type InsertStateCompliance, type Parent, type InsertParent } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, gte, lte, desc, asc, isNull, sql } from "drizzle-orm";
-import { memoryCache } from "./services/memoryOptimizationService";
+import { memoryCache } from "./services/simpleMemoryCache";
 
 export interface PaginationOptions {
   page?: number;

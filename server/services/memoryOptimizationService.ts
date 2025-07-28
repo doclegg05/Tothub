@@ -1,118 +1,146 @@
-import { LRUCache } from 'lru-cache';
+import { memoryCache } from './simpleMemoryCache';
+import { db } from '../db';
+import { sql } from 'drizzle-orm';
 
-// Simple in-memory LRU cache for frequently accessed data
-export class MemoryCacheService {
-  private childrenCache: LRUCache<string, any>;
-  private staffCache: LRUCache<string, any>;
-  private attendanceCache: LRUCache<string, any>;
-  private stateRatiosCache: LRUCache<string, any>;
+interface MemoryOptimizationConfig {
+  maxHeapUsage: number; // MB
+  gcInterval: number; // minutes
+  cacheCleanupThreshold: number; // percentage
+  aggressiveMode: boolean;
+}
+
+class MemoryOptimizationService {
+  private config: MemoryOptimizationConfig = {
+    maxHeapUsage: 140, // Target max 140MB heap
+    gcInterval: 2, // Run GC every 2 minutes
+    cacheCleanupThreshold: 0.7, // Clean caches at 70% memory
+    aggressiveMode: true
+  };
+
+  private gcIntervalId: NodeJS.Timeout | null = null;
+  private cacheCleanupId: NodeJS.Timeout | null = null;
 
   constructor() {
-    const options = {
-      max: 500, // Maximum number of items
-      ttl: 1000 * 60 * 5, // 5 minutes TTL
-      updateAgeOnGet: true,
-      updateAgeOnHas: true,
-    };
-
-    this.childrenCache = new LRUCache(options);
-    this.staffCache = new LRUCache(options);
-    this.attendanceCache = new LRUCache({
-      ...options,
-      ttl: 1000 * 60 * 2, // 2 minutes for attendance (more dynamic)
-    });
-    this.stateRatiosCache = new LRUCache({
-      ...options,
-      ttl: 1000 * 60 * 60 * 24, // 24 hours for state ratios (rarely changes)
-    });
+    this.startOptimization();
   }
 
-  // Children cache methods
-  getChild(id: string): any {
-    return this.childrenCache.get(id);
+  private startOptimization(): void {
+    console.log('🚀 Memory optimization service started');
+    
+    // Immediate cleanup
+    this.performCleanup();
+    
+    // Regular garbage collection
+    this.gcIntervalId = setInterval(() => {
+      this.forceGarbageCollection();
+    }, this.config.gcInterval * 60 * 1000);
+
+    // Cache cleanup when memory pressure
+    this.cacheCleanupId = setInterval(() => {
+      this.checkMemoryPressure();
+    }, 30 * 1000); // Check every 30 seconds
   }
 
-  setChild(id: string, data: any): void {
-    this.childrenCache.set(id, data);
+  private getMemoryUsagePercent(): number {
+    const usage = process.memoryUsage();
+    const totalMemory = require('os').totalmem();
+    return usage.rss / totalMemory;
   }
 
-  deleteChild(id: string): void {
-    this.childrenCache.delete(id);
+  private forceGarbageCollection(): void {
+    if (global.gc) {
+      const before = process.memoryUsage().heapUsed / 1024 / 1024;
+      global.gc();
+      const after = process.memoryUsage().heapUsed / 1024 / 1024;
+      console.log(`♻️ GC: ${before.toFixed(2)}MB → ${after.toFixed(2)}MB (freed ${(before - after).toFixed(2)}MB)`);
+    }
   }
 
-  clearChildrenCache(): void {
-    this.childrenCache.clear();
+  private checkMemoryPressure(): void {
+    const memPercent = this.getMemoryUsagePercent();
+    
+    if (memPercent > this.config.cacheCleanupThreshold) {
+      console.log(`⚠️ Memory pressure detected: ${(memPercent * 100).toFixed(1)}%`);
+      this.performCleanup();
+    }
   }
 
-  // Staff cache methods
-  getStaff(id: string): any {
-    return this.staffCache.get(id);
+  private performCleanup(): void {
+    console.log('🧹 Performing memory cleanup...');
+    
+    // Clear all caches
+    memoryCache.clearAllCaches();
+    
+    // Clear module cache for non-essential modules
+    this.clearModuleCache();
+    
+    // Force immediate GC if available
+    if (global.gc) {
+      global.gc();
+    }
+    
+    // Clear any accumulated buffers
+    this.clearBuffers();
+    
+    const after = process.memoryUsage();
+    console.log(`✅ Cleanup complete. Current memory: RSS=${(after.rss / 1024 / 1024).toFixed(2)}MB, Heap=${(after.heapUsed / 1024 / 1024).toFixed(2)}MB`);
   }
 
-  setStaff(id: string, data: any): void {
-    this.staffCache.set(id, data);
+  private clearModuleCache(): void {
+    // Clear require cache for non-critical modules
+    const protectedModules = [
+      'express', 'drizzle-orm', '@neondatabase/serverless',
+      'path', 'fs', 'os', 'util', 'events', 'http', 'https'
+    ];
+    
+    for (const key in require.cache) {
+      const isProtected = protectedModules.some(mod => key.includes(mod));
+      if (!isProtected && key.includes('node_modules')) {
+        delete require.cache[key];
+      }
+    }
   }
 
-  deleteStaff(id: string): void {
-    this.staffCache.delete(id);
+  private clearBuffers(): void {
+    // Clear any global buffers or arrays that might be holding memory
+    if (global.Buffer) {
+      // Force buffer pool to release unused memory
+      global.Buffer.poolSize = 0;
+    }
   }
 
-  clearStaffCache(): void {
-    this.staffCache.clear();
+  public async cleanupOldSessions(): Promise<void> {
+    try {
+      // Clean up old session data from database
+      await db.execute(sql`DELETE FROM session_activity WHERE created_at < NOW() - INTERVAL '7 days'`);
+      console.log('🗑️ Cleaned up old session data');
+    } catch (error) {
+      console.error('Error cleaning sessions:', error);
+    }
   }
 
-  // Attendance cache methods
-  getAttendance(key: string): any {
-    return this.attendanceCache.get(key);
-  }
-
-  setAttendance(key: string, data: any): void {
-    this.attendanceCache.set(key, data);
-  }
-
-  clearAttendanceCache(): void {
-    this.attendanceCache.clear();
-  }
-
-  // State ratios cache
-  getStateRatio(state: string): any {
-    return this.stateRatiosCache.get(state);
-  }
-
-  setStateRatio(state: string, data: any): void {
-    this.stateRatiosCache.set(state, data);
-  }
-
-  // Clear all caches
-  clearAllCaches(): void {
-    this.childrenCache.clear();
-    this.staffCache.clear();
-    this.attendanceCache.clear();
-    this.stateRatiosCache.clear();
-  }
-
-  // Get cache statistics
-  getStats() {
+  public getMemoryStats() {
+    const usage = process.memoryUsage();
+    const totalMemory = require('os').totalmem();
+    
     return {
-      children: {
-        size: this.childrenCache.size,
-        calculatedSize: this.childrenCache.calculatedSize,
-      },
-      staff: {
-        size: this.staffCache.size,
-        calculatedSize: this.staffCache.calculatedSize,
-      },
-      attendance: {
-        size: this.attendanceCache.size,
-        calculatedSize: this.attendanceCache.calculatedSize,
-      },
-      stateRatios: {
-        size: this.stateRatiosCache.size,
-        calculatedSize: this.stateRatiosCache.calculatedSize,
-      },
+      rss: `${(usage.rss / 1024 / 1024).toFixed(2)}MB`,
+      heapUsed: `${(usage.heapUsed / 1024 / 1024).toFixed(2)}MB`,
+      heapTotal: `${(usage.heapTotal / 1024 / 1024).toFixed(2)}MB`,
+      external: `${(usage.external / 1024 / 1024).toFixed(2)}MB`,
+      percentage: `${(this.getMemoryUsagePercent() * 100).toFixed(1)}%`
     };
+  }
+
+  public stop(): void {
+    if (this.gcIntervalId) {
+      clearInterval(this.gcIntervalId);
+    }
+    if (this.cacheCleanupId) {
+      clearInterval(this.cacheCleanupId);
+    }
   }
 }
 
-// Singleton instance
-export const memoryCache = new MemoryCacheService();
+// Export singleton instance
+export const memoryOptimizer = new MemoryOptimizationService();
