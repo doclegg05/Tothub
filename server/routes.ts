@@ -40,13 +40,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/children", async (req, res) => {
     try {
+      console.log("Creating child with data:", JSON.stringify(req.body, null, 2));
       const validatedData = insertChildSchema.parse(req.body);
       const child = await storage.createChild(validatedData);
       res.status(201).json(child);
     } catch (error) {
       if (error instanceof z.ZodError) {
+        console.error("Validation error:", JSON.stringify(error.errors, null, 2));
         return res.status(400).json({ message: "Invalid data", errors: error.errors });
       }
+      console.error("Error creating child:", error);
       res.status(500).json({ message: "Failed to create child" });
     }
   });

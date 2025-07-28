@@ -84,7 +84,10 @@ export default function Children() {
   const totalPages = childrenResponse?.totalPages || 1;
 
   const createChildMutation = useMutation({
-    mutationFn: (data: any) => apiRequest("POST", "/api/children", data),
+    mutationFn: (data: any) => {
+      console.log("Sending child data:", data);
+      return apiRequest("POST", "/api/children", data);
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/children"] });
       toast({
@@ -131,12 +134,25 @@ export default function Children() {
         nextImmunizationDue: "",
       });
     },
-    onError: () => {
-      toast({
-        title: "Error",
-        description: "Failed to add child. Please try again.",
-        variant: "destructive",
-      });
+    onError: (error: any) => {
+      console.error("Error creating child:", error);
+      const message = error?.response?.data?.message || error?.message || "Failed to add child. Please try again.";
+      const errors = error?.response?.data?.errors;
+      
+      if (errors && Array.isArray(errors)) {
+        const errorMessages = errors.map((e: any) => `${e.path?.join('.')}: ${e.message}`).join('\n');
+        toast({
+          title: "Validation Error",
+          description: errorMessages,
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Error",
+          description: message,
+          variant: "destructive",
+        });
+      }
     },
   });
 
