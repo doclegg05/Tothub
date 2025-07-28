@@ -76,6 +76,7 @@ export default function Children() {
     totalPages: number;
   }>({
     queryKey: ["/api/children", currentPage],
+
     enabled: isAuthenticated,
     retry: 3,
     retryDelay: 1000,
@@ -85,12 +86,12 @@ export default function Children() {
   const totalPages = childrenResponse?.totalPages || 1;
   
   // Debug logging
-  if (childrenResponse) {
-    console.log("Children response:", childrenResponse);
-  }
-  if (error) {
-    console.error("Children query error:", error);
-  }
+  console.log("Children data:", { 
+    response: childrenResponse,
+    childrenCount: children.length,
+    isLoading,
+    error 
+  });
 
   const createChildMutation = useMutation({
     mutationFn: (data: any) => {
