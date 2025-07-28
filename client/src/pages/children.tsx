@@ -69,15 +69,6 @@ export default function Children() {
 
   const { data: childrenResponse, isLoading } = useQuery({
     queryKey: ["/api/children", currentPage],
-    queryFn: async () => {
-      const response = await fetch(`/api/children?page=${currentPage}&limit=${pageSize}`, {
-        headers: {
-          "Authorization": `Bearer ${localStorage.getItem("token")}`,
-        },
-      });
-      if (!response.ok) throw new Error("Failed to fetch children");
-      return response.json();
-    },
   });
 
   const children = childrenResponse?.data || [];
@@ -89,12 +80,15 @@ export default function Children() {
       return apiRequest("POST", "/api/children", data);
     },
     onSuccess: () => {
+      // Invalidate all pages of children data
       queryClient.invalidateQueries({ queryKey: ["/api/children"] });
       toast({
         title: "Success",
-        description: "Child added successfully.",
+        description: "Child enrolled successfully!",
       });
       setModalOpen(false);
+      // Reset to first page to see the new child
+      setCurrentPage(1);
       setFormData({
         firstName: "",
         lastName: "",
