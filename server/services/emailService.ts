@@ -1,129 +1,141 @@
 import nodemailer from 'nodemailer';
+import sgMail from '@sendgrid/mail';
 
-interface EmailConfig {
-  host: string;
-  port: number;
-  secure: boolean;
-  auth: {
-    user: string;
-    pass: string;
-  };
+// Configure email service based on environment
+const isProduction = process.env.NODE_ENV === 'production';
+const hasSendGrid = !!process.env.SENDGRID_API_KEY;
+
+// Initialize SendGrid if API key is available
+if (hasSendGrid && process.env.SENDGRID_API_KEY) {
+  sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 }
 
-interface EmailOptions {
-  to: string | string[];
-  subject: string;
-  html: string;
-  text?: string;
-}
-
-class EmailService {
-  private transporter: nodemailer.Transporter | null = null;
-
-  constructor() {
-    this.initializeTransporter();
-  }
-
-  private initializeTransporter() {
-    const emailHost = process.env.EMAIL_HOST || 'smtp.gmail.com';
-    const emailPort = parseInt(process.env.EMAIL_PORT || '587');
-    const emailUser = process.env.EMAIL_USER || '';
-    const emailPass = process.env.EMAIL_PASS || '';
-
-    if (!emailUser || !emailPass) {
-      console.warn('Email credentials not configured. Email notifications will not work.');
-      return;
+// Development email transport (logs to console)
+const devTransport = {
+  sendMail: async (options: any) => {
+    console.log('📧 Development Email:');
+    console.log('To:', options.to);
+    console.log('Subject:', options.subject);
+    console.log('Text:', options.text);
+    if (options.html) {
+      console.log('HTML:', options.html);
     }
+    return { messageId: 'dev-' + Date.now() };
+  }
+};
 
-    const config: EmailConfig = {
-      host: emailHost,
-      port: emailPort,
-      secure: emailPort === 465,
+// Get email transport based on environment
+const getTransport = () => {
+  if (!isProduction) {
+    return devTransport;
+  }
+  
+  if (hasSendGrid) {
+    // Use SendGrid in production
+    return null; // We'll use sgMail directly
+  }
+  
+  // Fallback to SMTP if configured
+  if (process.env.SMTP_HOST) {
+    return nodemailer.createTransport({
+      host: process.env.SMTP_HOST,
+      port: parseInt(process.env.SMTP_PORT || '587'),
+      secure: process.env.SMTP_SECURE === 'true',
       auth: {
-        user: emailUser,
-        pass: emailPass,
-      },
-    };
-
-    this.transporter = nodemailer.createTransporter(config);
-  }
-
-  async sendEmail(options: EmailOptions): Promise<boolean> {
-    if (!this.transporter) {
-      console.error('Email transporter not configured');
-      return false;
-    }
-
-    try {
-      const mailOptions = {
-        from: process.env.EMAIL_FROM || process.env.EMAIL_USER,
-        to: Array.isArray(options.to) ? options.to.join(', ') : options.to,
-        subject: options.subject,
-        html: options.html,
-        text: options.text || options.html.replace(/<[^>]*>/g, ''), // Strip HTML tags for text version
-      };
-
-      await this.transporter.sendMail(mailOptions);
-      return true;
-    } catch (error) {
-      console.error('Failed to send email:', error);
-      return false;
-    }
-  }
-
-  async sendStaffingAlert(room: string, currentRatio: string, requiredRatio: string, recipients: string[]): Promise<boolean> {
-    const subject = `Staffing Alert: ${room} - Ratio Compliance Issue`;
-    const html = `
-      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-        <h2 style="color: #dc2626;">Staffing Alert - Little Steps Academy</h2>
-        <div style="background-color: #fef2f2; border: 1px solid #fecaca; border-radius: 8px; padding: 16px; margin: 16px 0;">
-          <h3 style="color: #991b1b; margin-top: 0;">Room: ${room}</h3>
-          <p><strong>Current Ratio:</strong> ${currentRatio}</p>
-          <p><strong>Required Ratio:</strong> ${requiredRatio}</p>
-          <p style="color: #dc2626;"><strong>Action Required:</strong> Additional staff member needed to maintain compliance with West Virginia regulations.</p>
-        </div>
-        <p>Please review staffing immediately to ensure regulatory compliance.</p>
-        <hr style="margin: 24px 0;">
-        <p style="color: #6b7280; font-size: 14px;">
-          This alert was generated automatically by DaycarePro.<br>
-          Time: ${new Date().toLocaleString()}
-        </p>
-      </div>
-    `;
-
-    return await this.sendEmail({
-      to: recipients,
-      subject,
-      html,
+        user: process.env.SMTP_USER,
+        pass: process.env.SMTP_PASS
+      }
     });
   }
+  
+  // No email service configured
+  return null;
+};
 
-  async sendDailyReport(attendanceCount: number, staffCount: number, complianceStatus: string, recipients: string[]): Promise<boolean> {
-    const subject = `Daily Report - Little Steps Academy - ${new Date().toLocaleDateString()}`;
-    const html = `
-      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-        <h2 style="color: #2563eb;">Daily Report - Little Steps Academy</h2>
-        <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px; margin: 16px 0;">
-          <h3 style="margin-top: 0;">Today's Summary</h3>
-          <p><strong>Children Present:</strong> ${attendanceCount}</p>
-          <p><strong>Staff On Duty:</strong> ${staffCount}</p>
-          <p><strong>Compliance Status:</strong> <span style="color: ${complianceStatus === 'Compliant' ? '#059669' : '#dc2626'};">${complianceStatus}</span></p>
-        </div>
-        <hr style="margin: 24px 0;">
-        <p style="color: #6b7280; font-size: 14px;">
-          Generated automatically by DaycarePro.<br>
-          Date: ${new Date().toLocaleDateString()}<br>
-          Time: ${new Date().toLocaleTimeString()}
-        </p>
-      </div>
-    `;
-
-    return await this.sendEmail({
-      to: recipients,
-      subject,
-      html,
-    });
-  }
+export interface EmailOptions {
+  to: string;
+  subject: string;
+  text: string;
+  html?: string;
 }
 
-export const emailService = new EmailService();
+export const sendEmail = async (options: EmailOptions): Promise<boolean> => {
+  try {
+    const fromEmail = process.env.EMAIL_FROM || 'noreply@tothub.com';
+    
+    if (hasSendGrid && isProduction) {
+      // Use SendGrid
+      await sgMail.send({
+        to: options.to,
+        from: fromEmail,
+        subject: options.subject,
+        text: options.text,
+        html: options.html
+      });
+      console.log(`✅ Email sent via SendGrid to ${options.to}`);
+      return true;
+    }
+    
+    // Use nodemailer or dev transport
+    const transport = getTransport();
+    if (!transport) {
+      console.warn('⚠️ No email service configured');
+      return false;
+    }
+    
+    await transport.sendMail({
+      from: fromEmail,
+      to: options.to,
+      subject: options.subject,
+      text: options.text,
+      html: options.html
+    });
+    
+    console.log(`✅ Email sent to ${options.to}`);
+    return true;
+    
+  } catch (error) {
+    console.error('❌ Email sending failed:', error);
+    return false;
+  }
+};
+
+// Email templates
+export const emailTemplates = {
+  passwordReset: (username: string, resetLink: string) => ({
+    subject: 'TotHub - Password Reset Request',
+    text: `Hello ${username},\n\nYou requested a password reset. Click the following link to reset your password:\n\n${resetLink}\n\nThis link will expire in 1 hour.\n\nIf you didn't request this, please ignore this email.\n\nBest regards,\nTotHub Team`,
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <h2 style="color: #2563eb;">Password Reset Request</h2>
+        <p>Hello ${username},</p>
+        <p>You requested a password reset. Click the button below to reset your password:</p>
+        <div style="text-align: center; margin: 30px 0;">
+          <a href="${resetLink}" style="background-color: #2563eb; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">Reset Password</a>
+        </div>
+        <p style="color: #666;">This link will expire in 1 hour.</p>
+        <p style="color: #666;">If you didn't request this, please ignore this email.</p>
+        <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;">
+        <p style="color: #999; font-size: 12px;">Best regards,<br>TotHub Team</p>
+      </div>
+    `
+  }),
+  
+  usernameRecovery: (username: string, email: string) => ({
+    subject: 'TotHub - Username Recovery',
+    text: `Hello,\n\nYou requested your username for the account associated with ${email}.\n\nYour username is: ${username}\n\nIf you didn't request this, please ignore this email.\n\nBest regards,\nTotHub Team`,
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <h2 style="color: #2563eb;">Username Recovery</h2>
+        <p>Hello,</p>
+        <p>You requested your username for the account associated with ${email}.</p>
+        <div style="background-color: #f3f4f6; padding: 20px; border-radius: 6px; margin: 20px 0;">
+          <p style="margin: 0;">Your username is: <strong>${username}</strong></p>
+        </div>
+        <p style="color: #666;">If you didn't request this, please ignore this email.</p>
+        <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;">
+        <p style="color: #999; font-size: 12px;">Best regards,<br>TotHub Team</p>
+      </div>
+    `
+  })
+};

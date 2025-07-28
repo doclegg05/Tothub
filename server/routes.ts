@@ -1,7 +1,6 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { emailService } from "./services/emailService";
 import { TimesheetService } from "./services/timesheetService";
 import { QuickBooksExporter } from "./services/quickbooksExporter";
 import { SchedulingService } from "./services/schedulingService";

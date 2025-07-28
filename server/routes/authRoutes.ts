@@ -3,6 +3,7 @@ import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
 import { z } from 'zod';
 import { sessionService } from '../services/sessionService';
+import { sendEmail, emailTemplates } from '../services/emailService';
 
 const router = Router();
 
@@ -205,6 +206,96 @@ router.get('/profile', (req, res) => {
     
   } catch (error) {
     res.status(401).json({ message: 'Invalid token' });
+  }
+});
+
+// Password reset request endpoint
+router.post('/forgot-password', async (req: Request, res: Response) => {
+  try {
+    const { email } = req.body;
+    
+    // Find user by email
+    const user = users.find(u => u.email === email);
+    
+    if (!user) {
+      // Don't reveal if email exists for security
+      return res.json({ 
+        success: true,
+        message: 'If an account exists with this email, a password reset link has been sent.' 
+      });
+    }
+    
+    // Generate reset token (in production, use crypto.randomBytes)
+    const resetToken = Math.random().toString(36).substring(2, 15);
+    const resetExpiry = new Date(Date.now() + 3600000); // 1 hour from now
+    
+    // In production, store this in database
+    console.log(`Password reset requested for ${user.email} with token: ${resetToken}`);
+    
+    // Generate reset link
+    const resetLink = `${process.env.BASE_URL || 'http://localhost:5000'}/reset-password?token=${resetToken}`;
+    
+    // Send password reset email
+    const emailTemplate = emailTemplates.passwordReset(user.username, resetLink);
+    const emailSent = await sendEmail({
+      to: user.email,
+      ...emailTemplate
+    });
+    
+    if (!emailSent) {
+      console.warn('Failed to send password reset email');
+    }
+    
+    res.json({ 
+      success: true,
+      message: 'If an account exists with this email, a password reset link has been sent.',
+      // In development only - remove in production
+      devToken: process.env.NODE_ENV === 'development' ? resetToken : undefined
+    });
+    
+  } catch (error) {
+    console.error('Password reset error:', error);
+    res.status(500).json({ message: 'Failed to process password reset request' });
+  }
+});
+
+// Username recovery endpoint
+router.post('/forgot-username', async (req: Request, res: Response) => {
+  try {
+    const { email } = req.body;
+    
+    // Find user by email
+    const user = users.find(u => u.email === email);
+    
+    if (!user) {
+      // Don't reveal if email exists for security
+      return res.json({ 
+        success: true,
+        message: 'If an account exists with this email, the username has been sent.' 
+      });
+    }
+    
+    // Send username recovery email
+    const emailTemplate = emailTemplates.usernameRecovery(user.username, user.email);
+    const emailSent = await sendEmail({
+      to: user.email,
+      ...emailTemplate
+    });
+    
+    if (!emailSent) {
+      console.warn('Failed to send username recovery email');
+    }
+    
+    res.json({ 
+      success: true,
+      message: 'If an account exists with this email, the username has been sent.',
+      // In development only - remove in production
+      devUsername: process.env.NODE_ENV === 'development' ? user.username : undefined
+    });
+    
+  } catch (error) {
+    console.error('Username recovery error:', error);
+    res.status(500).json({ message: 'Failed to process username recovery request' });
   }
 });
 
