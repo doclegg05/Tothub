@@ -47,8 +47,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const child = await storage.createChild(validatedData);
       console.log("Child created successfully:", child.id);
       
-      // Clear cache after creating
-      memoryCache.clearCache();
+      // Clear children cache after creating
+      memoryCache.clearChildrenCache();
       
       res.status(201).json(child);
     } catch (error) {
