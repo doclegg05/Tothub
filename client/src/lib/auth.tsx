@@ -25,7 +25,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     // Check for existing auth token on app load
-    const token = localStorage.getItem('authToken');
+    const token = localStorage.getItem('authToken') || localStorage.getItem('token');
     const userData = localStorage.getItem('user');
     
     if (token && userData) {
@@ -74,6 +74,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const data = await response.json();
         setUser(data.user);
         localStorage.setItem('authToken', data.token);
+        localStorage.setItem('token', data.token); // Also store as 'token' for backward compatibility
         localStorage.setItem('user', JSON.stringify(data.user));
         return true;
       }
@@ -87,6 +88,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const logout = () => {
     setUser(null);
     localStorage.removeItem('authToken');
+    localStorage.removeItem('token');
     localStorage.removeItem('user');
   };
 

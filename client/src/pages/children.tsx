@@ -79,16 +79,20 @@ export default function Children() {
       console.log("Sending child data:", data);
       return apiRequest("POST", "/api/children", data);
     },
-    onSuccess: () => {
-      // Invalidate all pages of children data
-      queryClient.invalidateQueries({ queryKey: ["/api/children"] });
+    onSuccess: async () => {
+      // Close modal immediately
+      setModalOpen(false);
+      
+      // Show success message
       toast({
         title: "Success",
         description: "Child enrolled successfully!",
       });
-      setModalOpen(false);
-      // Reset to first page to see the new child
-      setCurrentPage(1);
+      
+      // Invalidate and refetch all children data
+      await queryClient.invalidateQueries({ queryKey: ["/api/children"] });
+      
+      // Reset form
       setFormData({
         firstName: "",
         lastName: "",
