@@ -146,11 +146,34 @@ export default function Children() {
     const birthDate = new Date(formData.dateOfBirth);
     const ageGroup = getAgeGroupFromBirthDate(birthDate);
     
-    createChildMutation.mutate({
-      ...formData,
+    // Build submission data with only required fields
+    const submissionData: any = {
+      firstName: formData.firstName,
+      lastName: formData.lastName,
       dateOfBirth: birthDate,
       ageGroup,
-    });
+      room: formData.room,
+      parentName: formData.parentName,
+    };
+    
+    // Add optional fields if they have values
+    if (formData.parentEmail) submissionData.parentEmail = formData.parentEmail;
+    if (formData.parentPhone) submissionData.parentPhone = formData.parentPhone;
+    if (formData.emergencyContactName) submissionData.emergencyContactName = formData.emergencyContactName;
+    if (formData.emergencyContactPhone) submissionData.emergencyContactPhone = formData.emergencyContactPhone;
+    if (formData.tuitionRate) submissionData.tuitionRate = parseInt(formData.tuitionRate) * 100;
+    if (formData.allergies && formData.allergies.length > 0) submissionData.allergies = formData.allergies;
+    if (formData.medicalNotes) submissionData.medicalNotes = formData.medicalNotes;
+    if (formData.immunizations && formData.immunizations.length > 0) submissionData.immunizations = formData.immunizations;
+    
+    // JSON fields
+    if (formData.currentMedications) submissionData.currentMedications = JSON.stringify(formData.currentMedications);
+    if (formData.immunizationRecords) submissionData.immunizationRecords = JSON.stringify(formData.immunizationRecords);
+    
+    // Other optional fields
+    if (formData.nextImmunizationDue) submissionData.nextImmunizationDue = new Date(formData.nextImmunizationDue);
+    
+    createChildMutation.mutate(submissionData);
   };
 
   const filteredChildren = (children as any[]).filter((child: any) =>
@@ -263,6 +286,7 @@ export default function Children() {
                     <Select 
                       value={formData.room}
                       onValueChange={(value) => setFormData(prev => ({ ...prev, room: value }))}
+                      required
                     >
                       <SelectTrigger>
                         <SelectValue placeholder="Select room" />
