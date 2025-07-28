@@ -70,6 +70,9 @@ const JWT_SECRET = process.env.JWT_SECRET || 'daycare-jwt-secret-2024';
 router.post('/login', async (req: Request, res: Response) => {
   try {
     const { username, password } = loginSchema.parse(req.body);
+    
+    console.log(`🔐 Login attempt - username: "${username}" (lowercase: "${username.toLowerCase()}")`);
+    console.log(`🔐 Available users: ${users.map(u => `"${u.username}" (lowercase: "${u.username.toLowerCase()}")`).join(', ')}`);
 
     // Find user (case-insensitive)
     const user = users.find(u => u.username.toLowerCase() === username.toLowerCase());
