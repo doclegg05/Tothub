@@ -1,19 +1,33 @@
 import { children, staff, attendance, staffSchedules, settings, alerts, stateRatios, stateCompliance, type Child, type InsertChild, type Staff, type InsertStaff, type Attendance, type InsertAttendance, type StaffSchedule, type InsertStaffSchedule, type Setting, type InsertSetting, type Alert, type InsertAlert, type StateRatio, type InsertStateRatio, type StateCompliance, type InsertStateCompliance } from "@shared/schema";
 import { db } from "./db";
-import { eq, and, gte, lte, desc, asc, isNull } from "drizzle-orm";
+import { eq, and, gte, lte, desc, asc, isNull, sql } from "drizzle-orm";
+import { memoryCache } from "./services/memoryOptimizationService";
+
+export interface PaginationOptions {
+  page?: number;
+  limit?: number;
+}
+
+export interface PaginatedResult<T> {
+  data: T[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+}
 
 export interface IStorage {
   // Children
   getChild(id: string): Promise<Child | undefined>;
-  getAllChildren(): Promise<Child[]>;
-  getActiveChildren(): Promise<Child[]>;
+  getAllChildren(options?: PaginationOptions): Promise<PaginatedResult<Child>>;
+  getActiveChildren(options?: PaginationOptions): Promise<PaginatedResult<Child>>;
   createChild(child: InsertChild): Promise<Child>;
   updateChild(id: string, child: Partial<InsertChild>): Promise<Child>;
   
   // Staff
   getStaff(id: string): Promise<Staff | undefined>;
-  getAllStaff(): Promise<Staff[]>;
-  getActiveStaff(): Promise<Staff[]>;
+  getAllStaff(options?: PaginationOptions): Promise<PaginatedResult<Staff>>;
+  getActiveStaff(options?: PaginationOptions): Promise<PaginatedResult<Staff>>;
   createStaff(staff: InsertStaff): Promise<Staff>;
   updateStaff(id: string, staff: Partial<InsertStaff>): Promise<Staff>;
   
@@ -65,49 +79,175 @@ export interface IStorage {
 export class DatabaseStorage implements IStorage {
   // Children
   async getChild(id: string): Promise<Child | undefined> {
+    // Check cache first
+    const cached = memoryCache.getChild(id);
+    if (cached) return cached;
+
     const [child] = await db.select().from(children).where(eq(children.id, id));
+    if (child) {
+      memoryCache.setChild(id, child);
+    }
     return child || undefined;
   }
 
-  async getAllChildren(): Promise<Child[]> {
-    return await db.select().from(children).orderBy(asc(children.firstName), asc(children.lastName));
+  async getAllChildren(options: PaginationOptions = {}): Promise<PaginatedResult<Child>> {
+    const page = Math.max(1, options.page || 1);
+    const limit = Math.min(100, options.limit || 50); // Max 100 items per page
+    const offset = (page - 1) * limit;
+
+    // Get total count
+    const [{ count }] = await db.select({ count: sql<number>`count(*)` }).from(children);
+    
+    // Get paginated data
+    const data = await db.select()
+      .from(children)
+      .orderBy(asc(children.firstName), asc(children.lastName))
+      .limit(limit)
+      .offset(offset);
+
+    return {
+      data,
+      total: Number(count),
+      page,
+      limit,
+      totalPages: Math.ceil(Number(count) / limit)
+    };
   }
 
-  async getActiveChildren(): Promise<Child[]> {
-    return await db.select().from(children).where(eq(children.isActive, true)).orderBy(asc(children.firstName), asc(children.lastName));
+  async getActiveChildren(options: PaginationOptions = {}): Promise<PaginatedResult<Child>> {
+    const page = Math.max(1, options.page || 1);
+    const limit = Math.min(100, options.limit || 50);
+    const offset = (page - 1) * limit;
+
+    // Cache key for paginated results
+    const cacheKey = `active-children-${page}-${limit}`;
+    const cached = memoryCache.getAttendance(cacheKey);
+    if (cached) return cached;
+
+    // Get total count
+    const [{ count }] = await db.select({ count: sql<number>`count(*)` })
+      .from(children)
+      .where(eq(children.isActive, true));
+    
+    // Get paginated data
+    const data = await db.select()
+      .from(children)
+      .where(eq(children.isActive, true))
+      .orderBy(asc(children.firstName), asc(children.lastName))
+      .limit(limit)
+      .offset(offset);
+
+    const result = {
+      data,
+      total: Number(count),
+      page,
+      limit,
+      totalPages: Math.ceil(Number(count) / limit)
+    };
+
+    // Cache the result
+    memoryCache.setAttendance(cacheKey, result);
+    
+    return result;
   }
 
   async createChild(child: InsertChild): Promise<Child> {
     const [newChild] = await db.insert(children).values(child).returning();
+    // Clear cache when new child is added
+    memoryCache.clearChildrenCache();
     return newChild;
   }
 
   async updateChild(id: string, child: Partial<InsertChild>): Promise<Child> {
     const [updatedChild] = await db.update(children).set(child).where(eq(children.id, id)).returning();
+    // Clear specific child from cache
+    memoryCache.deleteChild(id);
+    // Clear children list cache
+    memoryCache.clearAttendanceCache(); // Using attendance cache for paginated results
     return updatedChild;
   }
 
   // Staff
   async getStaff(id: string): Promise<Staff | undefined> {
+    // Check cache first
+    const cached = memoryCache.getStaff(id);
+    if (cached) return cached;
+
     const [staffMember] = await db.select().from(staff).where(eq(staff.id, id));
+    if (staffMember) {
+      memoryCache.setStaff(id, staffMember);
+    }
     return staffMember || undefined;
   }
 
-  async getAllStaff(): Promise<Staff[]> {
-    return await db.select().from(staff).orderBy(asc(staff.firstName), asc(staff.lastName));
+  async getAllStaff(options: PaginationOptions = {}): Promise<PaginatedResult<Staff>> {
+    const page = Math.max(1, options.page || 1);
+    const limit = Math.min(100, options.limit || 50);
+    const offset = (page - 1) * limit;
+
+    const [{ count }] = await db.select({ count: sql<number>`count(*)` }).from(staff);
+    
+    const data = await db.select()
+      .from(staff)
+      .orderBy(asc(staff.firstName), asc(staff.lastName))
+      .limit(limit)
+      .offset(offset);
+
+    return {
+      data,
+      total: Number(count),
+      page,
+      limit,
+      totalPages: Math.ceil(Number(count) / limit)
+    };
   }
 
-  async getActiveStaff(): Promise<Staff[]> {
-    return await db.select().from(staff).where(eq(staff.isActive, true)).orderBy(asc(staff.firstName), asc(staff.lastName));
+  async getActiveStaff(options: PaginationOptions = {}): Promise<PaginatedResult<Staff>> {
+    const page = Math.max(1, options.page || 1);
+    const limit = Math.min(100, options.limit || 50);
+    const offset = (page - 1) * limit;
+
+    const cacheKey = `active-staff-${page}-${limit}`;
+    const cached = memoryCache.getAttendance(cacheKey);
+    if (cached) return cached;
+
+    const [{ count }] = await db.select({ count: sql<number>`count(*)` })
+      .from(staff)
+      .where(eq(staff.isActive, true));
+    
+    const data = await db.select()
+      .from(staff)
+      .where(eq(staff.isActive, true))
+      .orderBy(asc(staff.firstName), asc(staff.lastName))
+      .limit(limit)
+      .offset(offset);
+
+    const result = {
+      data,
+      total: Number(count),
+      page,
+      limit,
+      totalPages: Math.ceil(Number(count) / limit)
+    };
+
+    memoryCache.setAttendance(cacheKey, result);
+    
+    return result;
   }
 
   async createStaff(staffData: InsertStaff): Promise<Staff> {
     const [newStaff] = await db.insert(staff).values(staffData).returning();
+    // Clear cache when new staff is added
+    memoryCache.clearStaffCache();
     return newStaff;
   }
 
   async updateStaff(id: string, staffData: Partial<InsertStaff>): Promise<Staff> {
     const [updatedStaff] = await db.update(staff).set(staffData).where(eq(staff.id, id)).returning();
+    // Clear specific staff from cache
+    memoryCache.deleteStaff(id);
+    // Clear staff list cache
+    memoryCache.clearAttendanceCache();
     return updatedStaff;
   }
 

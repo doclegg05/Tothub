@@ -64,9 +64,24 @@ export default function Children() {
     nextImmunizationDue: "",
   });
 
-  const { data: children = [], isLoading } = useQuery({
-    queryKey: ["/api/children"],
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 20;
+
+  const { data: childrenResponse, isLoading } = useQuery({
+    queryKey: ["/api/children", currentPage],
+    queryFn: async () => {
+      const response = await fetch(`/api/children?page=${currentPage}&limit=${pageSize}`, {
+        headers: {
+          "Authorization": `Bearer ${localStorage.getItem("token")}`,
+        },
+      });
+      if (!response.ok) throw new Error("Failed to fetch children");
+      return response.json();
+    },
   });
+
+  const children = childrenResponse?.data || [];
+  const totalPages = childrenResponse?.totalPages || 1;
 
   const createChildMutation = useMutation({
     mutationFn: (data: any) => apiRequest("POST", "/api/children", data),
@@ -657,6 +672,31 @@ export default function Children() {
                 ) : (
                   <p className="text-sm">Add your first child to get started</p>
                 )}
+              </div>
+            )}
+            
+            {/* Pagination Controls */}
+            {totalPages > 1 && (
+              <div className="flex justify-center items-center space-x-2 mt-4">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                  disabled={currentPage === 1}
+                >
+                  Previous
+                </Button>
+                <span className="text-sm text-gray-600">
+                  Page {currentPage} of {totalPages}
+                </span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                  disabled={currentPage === totalPages}
+                >
+                  Next
+                </Button>
               </div>
             )}
           </CardContent>

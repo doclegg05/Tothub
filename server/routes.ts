@@ -4,6 +4,8 @@ import { storage } from "./storage";
 import { TimesheetService } from "./services/timesheetService";
 import { QuickBooksExporter } from "./services/quickbooksExporter";
 import { SchedulingService } from "./services/schedulingService";
+import { sendEmail } from "./services/emailService";
+import { memoryCache } from "./services/memoryOptimizationService";
 import { insertChildSchema, insertStaffSchema, insertAttendanceSchema, insertStaffScheduleSchema, insertSettingSchema, insertAlertSchema, insertMessageSchema, insertMediaShareSchema, insertBillingSchema, insertDailyReportSchema } from "@shared/schema";
 import { z } from "zod";
 
@@ -11,8 +13,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Children routes
   app.get("/api/children", async (req, res) => {
     try {
-      const children = await storage.getActiveChildren();
-      res.json(children);
+      const page = parseInt(req.query.page as string) || 1;
+      const limit = parseInt(req.query.limit as string) || 50;
+      const result = await storage.getActiveChildren({ page, limit });
+      res.json(result);
     } catch (error) {
       res.status(500).json({ message: "Failed to fetch children" });
     }
@@ -59,8 +63,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Staff routes
   app.get("/api/staff", async (req, res) => {
     try {
-      const staff = await storage.getActiveStaff();
-      res.json(staff);
+      const page = parseInt(req.query.page as string) || 1;
+      const limit = parseInt(req.query.limit as string) || 50;
+      const result = await storage.getActiveStaff({ page, limit });
+      res.json(result);
     } catch (error) {
       res.status(500).json({ message: "Failed to fetch staff" });
     }
@@ -525,9 +531,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/send-test-email", async (req, res) => {
     try {
       const { to, subject, message } = req.body;
-      const success = await emailService.sendEmail({
+      const success = await sendEmail({
         to,
         subject,
+        text: message,
         html: `<p>${message}</p>`
       });
       
@@ -867,12 +874,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
           return res.status(404).json({ error: 'Child not found' });
         }
 
-        await storage.updateChild(userId, {
-          faceDescriptor: faceDescriptor || child.faceDescriptor,
-          fingerprintHash: fingerprintCredentialId || child.fingerprintHash,
+        const updateData: any = {
           biometricEnrolledAt: new Date(),
           biometricEnabled: true,
-        });
+        };
+        if (faceDescriptor) updateData.faceDescriptor = faceDescriptor;
+        if (fingerprintCredentialId) updateData.fingerprintHash = fingerprintCredentialId;
+        
+        await storage.updateChild(userId, updateData);
       } else if (userType === 'staff') {
         const staff = await storage.getStaff(userId);
         if (!staff) {
@@ -1120,6 +1129,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Payroll routes
   app.use("/api/payroll", (await import("./routes/payroll")).default);
+
+  // Memory monitoring endpoint
+  app.get("/api/memory-stats", (_req, res) => {
+    const memUsage = process.memoryUsage();
+    const formatBytes = (bytes: number) => {
+      return (bytes / 1024 / 1024).toFixed(2) + ' MB';
+    };
+    
+    res.json({
+      memory: {
+        heapUsed: formatBytes(memUsage.heapUsed),
+        heapTotal: formatBytes(memUsage.heapTotal),
+        rss: formatBytes(memUsage.rss),
+        external: formatBytes(memUsage.external),
+        arrayBuffers: formatBytes(memUsage.arrayBuffers),
+      },
+      cache: memoryCache.getStats(),
+      uptime: process.uptime(),
+    });
+  });
 
   const httpServer = createServer(app);
   return httpServer;

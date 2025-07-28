@@ -34,9 +34,24 @@ export default function Staff() {
     date: new Date().toISOString().split('T')[0],
   });
 
-  const { data: staff = [], isLoading } = useQuery({
-    queryKey: ["/api/staff"],
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 20;
+
+  const { data: staffResponse, isLoading } = useQuery({
+    queryKey: ["/api/staff", currentPage],
+    queryFn: async () => {
+      const response = await fetch(`/api/staff?page=${currentPage}&limit=${pageSize}`, {
+        headers: {
+          "Authorization": `Bearer ${localStorage.getItem("token")}`,
+        },
+      });
+      if (!response.ok) throw new Error("Failed to fetch staff");
+      return response.json();
+    },
   });
+
+  const staff = staffResponse?.data || [];
+  const totalPages = staffResponse?.totalPages || 1;
 
   const { data: todaysSchedules = [], isLoading: schedulesLoading } = useQuery({
     queryKey: ["/api/staff-schedules/today"],
@@ -507,6 +522,31 @@ export default function Staff() {
                   ) : (
                     <p className="text-sm">Add your first staff member to get started</p>
                   )}
+                </div>
+              )}
+              
+              {/* Pagination Controls */}
+              {totalPages > 1 && (
+                <div className="flex justify-center items-center space-x-2 mt-4">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                    disabled={currentPage === 1}
+                  >
+                    Previous
+                  </Button>
+                  <span className="text-sm text-gray-600">
+                    Page {currentPage} of {totalPages}
+                  </span>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                    disabled={currentPage === totalPages}
+                  >
+                    Next
+                  </Button>
                 </div>
               )}
             </CardContent>
