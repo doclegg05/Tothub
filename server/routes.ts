@@ -454,6 +454,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Parent Portal API Routes
   app.use("/api/parent", (await import("./routes/parent")).default);
 
+  // Analytics API Routes
+  app.use("/api/analytics", (await import("./routes/analytics")).default);
+
   const httpServer = createServer(app);
   return httpServer;
 }

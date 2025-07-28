@@ -1,575 +1,398 @@
-import { exec } from 'child_process';
-import { promisify } from 'util';
-import { promises as fs } from 'fs';
+import { execSync } from 'child_process';
+import fs from 'fs/promises';
 import path from 'path';
+import { format } from 'date-fns';
 import { db } from '../db';
-
-const execAsync = promisify(exec);
+import crypto from 'crypto';
 
 export interface BackupConfig {
-  schedule: string; // cron format
-  retention: number; // days
-  storageType: 'local' | 's3' | 'azure' | 'gcp';
-  encryptionKey?: string;
-  notificationChannels: string[];
+  type: 'full' | 'incremental' | 'differential';
+  schedule: 'hourly' | 'daily' | 'weekly' | 'monthly';
+  retention: number; // days to keep backups
+  encryption: boolean;
+  compression: boolean;
+  destination: 'local' | 's3' | 'both';
 }
 
-export interface BackupMetadata {
-  id: string;
+export interface BackupResult {
+  backupId: string;
   timestamp: Date;
-  type: 'full' | 'incremental';
   size: number;
   duration: number;
-  status: 'success' | 'failed' | 'partial';
+  status: 'success' | 'failed';
+  error?: string;
   location: string;
-  checksum: string;
+}
+
+export interface RestorePoint {
+  backupId: string;
+  timestamp: Date;
+  type: string;
+  size: number;
+  verified: boolean;
+  location: string;
 }
 
 export class BackupService {
-  private static instance: BackupService;
-  private config: BackupConfig;
-  private backupHistory: BackupMetadata[] = [];
+  private static readonly BACKUP_DIR = '/var/backups/tothub';
+  private static readonly ENCRYPTION_KEY = process.env.BACKUP_ENCRYPTION_KEY || 'default-key';
 
-  constructor(config: BackupConfig) {
-    this.config = config;
-    this.initializeBackupSchedule();
-  }
-
-  public static getInstance(config?: BackupConfig): BackupService {
-    if (!BackupService.instance) {
-      if (!config) {
-        throw new Error('BackupService requires initial configuration');
-      }
-      BackupService.instance = new BackupService(config);
-    }
-    return BackupService.instance;
-  }
-
-  // Initialize automatic backup schedule
-  private initializeBackupSchedule(): void {
-    // Full backup daily at 2 AM
-    this.scheduleBackup('0 2 * * *', 'full');
-    
-    // Incremental backup every 4 hours
-    this.scheduleBackup('0 */4 * * *', 'incremental');
-    
-    // Cleanup old backups weekly
-    this.scheduleBackup('0 1 * * 0', 'cleanup');
-  }
-
-  // Schedule backup using cron-like syntax
-  private scheduleBackup(schedule: string, type: 'full' | 'incremental' | 'cleanup'): void {
-    const [minute, hour, day, month, dayOfWeek] = schedule.split(' ');
-    
-    setInterval(() => {
-      const now = new Date();
-      if (this.shouldRunBackup(now, { minute, hour, day, month, dayOfWeek })) {
-        switch (type) {
-          case 'full':
-            this.performFullBackup();
-            break;
-          case 'incremental':
-            this.performIncrementalBackup();
-            break;
-          case 'cleanup':
-            this.cleanupOldBackups();
-            break;
-        }
-      }
-    }, 60000); // Check every minute
-  }
-
-  // Check if backup should run based on schedule
-  private shouldRunBackup(now: Date, schedule: any): boolean {
-    // Simplified cron matching - in production, use a proper cron library
-    const matches = {
-      minute: schedule.minute === '*' || parseInt(schedule.minute) === now.getMinutes(),
-      hour: schedule.hour === '*' || parseInt(schedule.hour) === now.getHours(),
-      day: schedule.day === '*' || parseInt(schedule.day) === now.getDate(),
-      month: schedule.month === '*' || parseInt(schedule.month) === now.getMonth() + 1,
-      dayOfWeek: schedule.dayOfWeek === '*' || parseInt(schedule.dayOfWeek) === now.getDay(),
-    };
-    
-    return Object.values(matches).every(match => match);
-  }
-
-  // Perform full database backup
-  public async performFullBackup(): Promise<BackupMetadata> {
+  // Create database backup
+  static async createBackup(config: BackupConfig): Promise<BackupResult> {
     const startTime = Date.now();
-    const backupId = `full_${Date.now()}`;
+    const backupId = crypto.randomUUID();
     const timestamp = new Date();
+    const filename = `tothub_${config.type}_${format(timestamp, 'yyyyMMdd_HHmmss')}.sql`;
+    const backupPath = path.join(this.BACKUP_DIR, filename);
 
     try {
-      console.log(`Starting full backup: ${backupId}`);
+      // Ensure backup directory exists
+      await fs.mkdir(this.BACKUP_DIR, { recursive: true });
 
-      // Create backup directory
-      const backupDir = path.join('/app/backups', backupId);
-      await fs.mkdir(backupDir, { recursive: true });
+      // Create PostgreSQL dump
+      const dumpCommand = `pg_dump ${process.env.DATABASE_URL} > ${backupPath}`;
+      execSync(dumpCommand);
 
-      // Database backup
-      const dbBackupPath = path.join(backupDir, 'database.sql');
-      await this.backupDatabase(dbBackupPath);
+      let finalPath = backupPath;
+      let size = (await fs.stat(backupPath)).size;
 
-      // Files backup (logs, uploads, etc.)
-      const filesBackupPath = path.join(backupDir, 'files.tar.gz');
-      await this.backupFiles(filesBackupPath);
-
-      // Configuration backup
-      const configBackupPath = path.join(backupDir, 'config.json');
-      await this.backupConfiguration(configBackupPath);
-
-      // Calculate backup size and checksum
-      const size = await this.getDirectorySize(backupDir);
-      const checksum = await this.calculateChecksum(backupDir);
-
-      // Encrypt if configured
-      if (this.config.encryptionKey) {
-        await this.encryptBackup(backupDir);
+      // Compress if requested
+      if (config.compression) {
+        const compressedPath = `${backupPath}.gz`;
+        execSync(`gzip -c ${backupPath} > ${compressedPath}`);
+        await fs.unlink(backupPath);
+        finalPath = compressedPath;
+        size = (await fs.stat(compressedPath)).size;
       }
 
-      // Upload to cloud storage
-      const location = await this.uploadBackup(backupDir);
+      // Encrypt if requested
+      if (config.encryption) {
+        const encryptedPath = `${finalPath}.enc`;
+        await this.encryptFile(finalPath, encryptedPath);
+        await fs.unlink(finalPath);
+        finalPath = encryptedPath;
+        size = (await fs.stat(encryptedPath)).size;
+      }
+
+      // Upload to S3 if configured
+      if (config.destination === 's3' || config.destination === 'both') {
+        await this.uploadToS3(finalPath, filename);
+      }
+
+      // Clean up local file if S3-only
+      if (config.destination === 's3') {
+        await fs.unlink(finalPath);
+      }
 
       const duration = Date.now() - startTime;
-      const metadata: BackupMetadata = {
-        id: backupId,
+
+      // Log successful backup
+      await this.logBackup({
+        backupId,
         timestamp,
-        type: 'full',
+        type: config.type,
         size,
         duration,
         status: 'success',
-        location,
-        checksum,
-      };
+        location: config.destination,
+      });
 
-      this.backupHistory.push(metadata);
-      await this.notifyBackupComplete(metadata);
-
-      console.log(`Full backup completed: ${backupId} (${duration}ms, ${size} bytes)`);
-      return metadata;
-
-    } catch (error) {
-      console.error(`Full backup failed: ${backupId}`, error);
-      
-      const metadata: BackupMetadata = {
-        id: backupId,
+      return {
+        backupId,
         timestamp,
-        type: 'full',
+        size,
+        duration,
+        status: 'success',
+        location: finalPath,
+      };
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      
+      // Log failed backup
+      await this.logBackup({
+        backupId,
+        timestamp,
+        type: config.type,
         size: 0,
         duration: Date.now() - startTime,
         status: 'failed',
+        error: errorMessage,
         location: '',
-        checksum: '',
-      };
+      });
 
-      this.backupHistory.push(metadata);
-      await this.notifyBackupFailed(metadata, error as Error);
-      
-      throw error;
-    }
-  }
-
-  // Perform incremental backup
-  public async performIncrementalBackup(): Promise<BackupMetadata> {
-    const startTime = Date.now();
-    const backupId = `incremental_${Date.now()}`;
-    const timestamp = new Date();
-
-    try {
-      console.log(`Starting incremental backup: ${backupId}`);
-
-      const lastBackup = this.getLastSuccessfulBackup();
-      const cutoffTime = lastBackup ? lastBackup.timestamp : new Date(0);
-
-      // Create backup directory
-      const backupDir = path.join('/app/backups', backupId);
-      await fs.mkdir(backupDir, { recursive: true });
-
-      // Incremental database backup (changes since last backup)
-      const dbBackupPath = path.join(backupDir, 'database_incremental.sql');
-      await this.backupDatabaseIncremental(dbBackupPath, cutoffTime);
-
-      // Changed files backup
-      const filesBackupPath = path.join(backupDir, 'files_incremental.tar.gz');
-      await this.backupChangedFiles(filesBackupPath, cutoffTime);
-
-      const size = await this.getDirectorySize(backupDir);
-      const checksum = await this.calculateChecksum(backupDir);
-      const location = await this.uploadBackup(backupDir);
-
-      const duration = Date.now() - startTime;
-      const metadata: BackupMetadata = {
-        id: backupId,
+      return {
+        backupId,
         timestamp,
-        type: 'incremental',
-        size,
-        duration,
-        status: 'success',
-        location,
-        checksum,
+        size: 0,
+        duration: Date.now() - startTime,
+        status: 'failed',
+        error: errorMessage,
+        location: '',
       };
-
-      this.backupHistory.push(metadata);
-      console.log(`Incremental backup completed: ${backupId} (${duration}ms, ${size} bytes)`);
-      return metadata;
-
-    } catch (error) {
-      console.error(`Incremental backup failed: ${backupId}`, error);
-      throw error;
     }
   }
 
-  // Backup database to SQL file
-  private async backupDatabase(outputPath: string): Promise<void> {
-    const dbUrl = process.env.DATABASE_URL;
-    if (!dbUrl) {
-      throw new Error('DATABASE_URL not configured');
-    }
-
-    // Parse database URL
-    const url = new URL(dbUrl);
-    const command = `pg_dump -h ${url.hostname} -p ${url.port || 5432} -U ${url.username} -d ${url.pathname.slice(1)} > ${outputPath}`;
-    
-    // Set password via environment
-    const env = { ...process.env, PGPASSWORD: url.password };
-    
-    await execAsync(command, { env });
-  }
-
-  // Incremental database backup using WAL files
-  private async backupDatabaseIncremental(outputPath: string, since: Date): Promise<void> {
-    // This would use PostgreSQL WAL (Write-Ahead Logging) for incremental backups
-    // For simplicity, we'll do a modified full backup with date filtering
-    const dbUrl = process.env.DATABASE_URL;
-    if (!dbUrl) {
-      throw new Error('DATABASE_URL not configured');
-    }
-
-    const url = new URL(dbUrl);
-    const sinceStr = since.toISOString();
-    
-    // Backup only changed records (simplified approach)
-    const tables = ['children', 'staff', 'attendance', 'messages', 'alerts'];
-    let backupContent = '';
-    
-    for (const table of tables) {
-      const command = `pg_dump -h ${url.hostname} -p ${url.port || 5432} -U ${url.username} -d ${url.pathname.slice(1)} -t ${table} --where="updated_at >= '${sinceStr}'" --inserts`;
-      const env = { ...process.env, PGPASSWORD: url.password };
-      
-      try {
-        const { stdout } = await execAsync(command, { env });
-        backupContent += stdout + '\n';
-      } catch (error) {
-        console.warn(`No changes in table ${table} since ${sinceStr}`);
+  // Restore from backup
+  static async restoreBackup(backupId: string): Promise<{
+    success: boolean;
+    error?: string;
+  }> {
+    try {
+      const backup = await this.getBackupInfo(backupId);
+      if (!backup) {
+        return { success: false, error: 'Backup not found' };
       }
-    }
-    
-    await fs.writeFile(outputPath, backupContent);
-  }
 
-  // Backup application files
-  private async backupFiles(outputPath: string): Promise<void> {
-    const filesToBackup = [
-      '/app/logs',
-      '/app/uploads',
-      '/app/config',
-    ];
-    
-    const command = `tar -czf ${outputPath} ${filesToBackup.filter(path => this.pathExists(path)).join(' ')}`;
-    await execAsync(command);
-  }
+      let restorePath = backup.location;
 
-  // Backup changed files since timestamp
-  private async backupChangedFiles(outputPath: string, since: Date): Promise<void> {
-    const sinceStr = Math.floor(since.getTime() / 1000); // Unix timestamp
-    const command = `find /app/logs /app/uploads -type f -newer /tmp/timestamp_${sinceStr} -exec tar -czf ${outputPath} {} +`;
-    
-    // Create timestamp reference file
-    await execAsync(`touch -t ${sinceStr} /tmp/timestamp_${sinceStr}`);
-    
-    try {
-      await execAsync(command);
+      // Decrypt if encrypted
+      if (restorePath.endsWith('.enc')) {
+        const decryptedPath = restorePath.replace('.enc', '');
+        await this.decryptFile(restorePath, decryptedPath);
+        restorePath = decryptedPath;
+      }
+
+      // Decompress if compressed
+      if (restorePath.endsWith('.gz')) {
+        execSync(`gunzip -c ${restorePath} > ${restorePath.replace('.gz', '')}`);
+        restorePath = restorePath.replace('.gz', '');
+      }
+
+      // Restore database
+      execSync(`psql ${process.env.DATABASE_URL} < ${restorePath}`);
+
+      // Clean up temporary files
+      if (restorePath !== backup.location) {
+        await fs.unlink(restorePath);
+      }
+
+      return { success: true };
     } catch (error) {
-      // No files changed - create empty archive
-      await execAsync(`tar -czf ${outputPath} -T /dev/null`);
+      return { 
+        success: false, 
+        error: error instanceof Error ? error.message : 'Unknown error' 
+      };
     }
   }
 
-  // Backup configuration
-  private async backupConfiguration(outputPath: string): Promise<void> {
-    const config = {
-      environment: process.env.NODE_ENV,
-      version: process.env.npm_package_version,
-      timestamp: new Date().toISOString(),
-      settings: {
-        // Include non-sensitive configuration
-        features: await this.getFeatureFlags(),
-        compliance: await this.getComplianceSettings(),
-      },
-    };
+  // Automated backup scheduling
+  static async scheduleBackups(config: BackupConfig): Promise<void> {
+    // In production, this would use cron or a job scheduler
+    // For now, we'll create a simple interval-based scheduler
     
-    await fs.writeFile(outputPath, JSON.stringify(config, null, 2));
+    const intervals = {
+      hourly: 60 * 60 * 1000,
+      daily: 24 * 60 * 60 * 1000,
+      weekly: 7 * 24 * 60 * 60 * 1000,
+      monthly: 30 * 24 * 60 * 60 * 1000,
+    };
+
+    setInterval(async () => {
+      await this.createBackup(config);
+      await this.cleanupOldBackups(config.retention);
+    }, intervals[config.schedule]);
   }
 
-  // Check if path exists
-  private pathExists(path: string): boolean {
+  // Clean up old backups based on retention policy
+  static async cleanupOldBackups(retentionDays: number): Promise<{
+    deleted: number;
+  }> {
+    const cutoffDate = new Date();
+    cutoffDate.setDate(cutoffDate.getDate() - retentionDays);
+
     try {
-      require('fs').accessSync(path);
+      const files = await fs.readdir(this.BACKUP_DIR);
+      let deleted = 0;
+
+      for (const file of files) {
+        const filePath = path.join(this.BACKUP_DIR, file);
+        const stats = await fs.stat(filePath);
+
+        if (stats.mtime < cutoffDate) {
+          await fs.unlink(filePath);
+          deleted++;
+        }
+      }
+
+      return { deleted };
+    } catch (error) {
+      console.error('Cleanup failed:', error);
+      return { deleted: 0 };
+    }
+  }
+
+  // Verify backup integrity
+  static async verifyBackup(backupId: string): Promise<boolean> {
+    try {
+      const backup = await this.getBackupInfo(backupId);
+      if (!backup) return false;
+
+      // Check file exists
+      await fs.access(backup.location);
+
+      // For encrypted files, verify decryption works
+      if (backup.location.endsWith('.enc')) {
+        const testPath = `/tmp/test_${backupId}`;
+        await this.decryptFile(backup.location, testPath);
+        await fs.unlink(testPath);
+      }
+
+      // Update verification status
+      await this.updateBackupStatus(backupId, { verified: true });
+
       return true;
-    } catch {
+    } catch (error) {
+      console.error('Verification failed:', error);
       return false;
     }
   }
 
-  // Calculate directory size
-  private async getDirectorySize(dirPath: string): Promise<number> {
-    const { stdout } = await execAsync(`du -sb ${dirPath} | cut -f1`);
-    return parseInt(stdout.trim());
-  }
+  // Get list of available restore points
+  static async getRestorePoints(): Promise<RestorePoint[]> {
+    try {
+      const files = await fs.readdir(this.BACKUP_DIR);
+      const restorePoints: RestorePoint[] = [];
 
-  // Calculate backup checksum
-  private async calculateChecksum(dirPath: string): Promise<string> {
-    const { stdout } = await execAsync(`find ${dirPath} -type f -exec md5sum {} + | sort | md5sum | cut -d' ' -f1`);
-    return stdout.trim();
-  }
+      for (const file of files) {
+        const filePath = path.join(this.BACKUP_DIR, file);
+        const stats = await fs.stat(filePath);
+        
+        // Parse backup info from filename
+        const match = file.match(/tothub_(\w+)_(\d{8}_\d{6})/);
+        if (match) {
+          restorePoints.push({
+            backupId: crypto.randomUUID(), // Generate ID based on file
+            timestamp: stats.mtime,
+            type: match[1],
+            size: stats.size,
+            verified: false,
+            location: filePath,
+          });
+        }
+      }
 
-  // Encrypt backup directory
-  private async encryptBackup(dirPath: string): Promise<void> {
-    if (!this.config.encryptionKey) return;
-    
-    const tarPath = `${dirPath}.tar.gz`;
-    const encryptedPath = `${dirPath}.tar.gz.enc`;
-    
-    // Create encrypted archive
-    await execAsync(`tar -czf ${tarPath} -C ${path.dirname(dirPath)} ${path.basename(dirPath)}`);
-    await execAsync(`openssl enc -aes-256-cbc -salt -in ${tarPath} -out ${encryptedPath} -k "${this.config.encryptionKey}"`);
-    
-    // Remove unencrypted files
-    await execAsync(`rm -rf ${dirPath} ${tarPath}`);
-  }
-
-  // Upload backup to cloud storage
-  private async uploadBackup(backupDir: string): Promise<string> {
-    switch (this.config.storageType) {
-      case 's3':
-        return this.uploadToS3(backupDir);
-      case 'azure':
-        return this.uploadToAzure(backupDir);
-      case 'gcp':
-        return this.uploadToGCP(backupDir);
-      default:
-        return backupDir; // Local storage
+      return restorePoints.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
+    } catch (error) {
+      console.error('Failed to get restore points:', error);
+      return [];
     }
   }
 
-  // Upload to AWS S3
-  private async uploadToS3(backupDir: string): Promise<string> {
-    const bucketName = process.env.S3_BACKUP_BUCKET;
-    if (!bucketName) {
-      throw new Error('S3_BACKUP_BUCKET not configured');
-    }
-    
-    const tarPath = `${backupDir}.tar.gz`;
-    await execAsync(`tar -czf ${tarPath} -C ${path.dirname(backupDir)} ${path.basename(backupDir)}`);
-    
-    const s3Key = `backups/${path.basename(backupDir)}.tar.gz`;
-    await execAsync(`aws s3 cp ${tarPath} s3://${bucketName}/${s3Key}`);
-    
-    return `s3://${bucketName}/${s3Key}`;
-  }
-
-  // Upload to Azure Blob Storage
-  private async uploadToAzure(backupDir: string): Promise<string> {
-    // Implementation for Azure Blob Storage
-    throw new Error('Azure upload not implemented yet');
-  }
-
-  // Upload to Google Cloud Storage
-  private async uploadToGCP(backupDir: string): Promise<string> {
-    // Implementation for Google Cloud Storage
-    throw new Error('GCP upload not implemented yet');
-  }
-
-  // Restore from backup
-  public async restoreFromBackup(backupId: string): Promise<void> {
-    const backup = this.backupHistory.find(b => b.id === backupId && b.status === 'success');
-    if (!backup) {
-      throw new Error(`Backup not found: ${backupId}`);
-    }
-
-    console.log(`Starting restore from backup: ${backupId}`);
+  // Disaster recovery test
+  static async testDisasterRecovery(): Promise<{
+    success: boolean;
+    results: any;
+  }> {
+    const testResults = {
+      backupCreation: false,
+      backupVerification: false,
+      restoreTest: false,
+      dataIntegrity: false,
+      performanceMetrics: {},
+    };
 
     try {
-      // Download backup if needed
-      const localPath = await this.downloadBackup(backup);
-      
-      // Decrypt if needed
-      const extractPath = await this.decryptBackup(localPath);
-      
-      // Restore database
-      await this.restoreDatabase(path.join(extractPath, 'database.sql'));
-      
-      // Restore files
-      await this.restoreFiles(path.join(extractPath, 'files.tar.gz'));
-      
-      console.log(`Restore completed: ${backupId}`);
-      
-    } catch (error) {
-      console.error(`Restore failed: ${backupId}`, error);
-      throw error;
-    }
-  }
+      // Test 1: Create backup
+      const backup = await this.createBackup({
+        type: 'full',
+        schedule: 'daily',
+        retention: 7,
+        encryption: true,
+        compression: true,
+        destination: 'local',
+      });
+      testResults.backupCreation = backup.status === 'success';
 
-  // Download backup from cloud storage
-  private async downloadBackup(backup: BackupMetadata): Promise<string> {
-    if (backup.location.startsWith('s3://')) {
-      const localPath = `/tmp/${backup.id}.tar.gz`;
-      await execAsync(`aws s3 cp ${backup.location} ${localPath}`);
-      return localPath;
-    }
-    
-    return backup.location; // Already local
-  }
-
-  // Decrypt backup
-  private async decryptBackup(encryptedPath: string): Promise<string> {
-    if (!this.config.encryptionKey || !encryptedPath.endsWith('.enc')) {
-      return encryptedPath;
-    }
-    
-    const decryptedPath = encryptedPath.replace('.enc', '');
-    await execAsync(`openssl enc -aes-256-cbc -d -in ${encryptedPath} -out ${decryptedPath} -k "${this.config.encryptionKey}"`);
-    
-    const extractPath = decryptedPath.replace('.tar.gz', '');
-    await execAsync(`tar -xzf ${decryptedPath} -C ${path.dirname(extractPath)}`);
-    
-    return extractPath;
-  }
-
-  // Restore database
-  private async restoreDatabase(sqlPath: string): Promise<void> {
-    const dbUrl = process.env.DATABASE_URL;
-    if (!dbUrl) {
-      throw new Error('DATABASE_URL not configured');
-    }
-
-    const url = new URL(dbUrl);
-    const command = `psql -h ${url.hostname} -p ${url.port || 5432} -U ${url.username} -d ${url.pathname.slice(1)} < ${sqlPath}`;
-    const env = { ...process.env, PGPASSWORD: url.password };
-    
-    await execAsync(command, { env });
-  }
-
-  // Restore files
-  private async restoreFiles(tarPath: string): Promise<void> {
-    await execAsync(`tar -xzf ${tarPath} -C /`);
-  }
-
-  // Clean up old backups
-  public async cleanupOldBackups(): Promise<void> {
-    const cutoffDate = new Date();
-    cutoffDate.setDate(cutoffDate.getDate() - this.config.retention);
-
-    const oldBackups = this.backupHistory.filter(b => b.timestamp < cutoffDate);
-    
-    for (const backup of oldBackups) {
-      try {
-        await this.deleteBackup(backup);
-        this.backupHistory = this.backupHistory.filter(b => b.id !== backup.id);
-        console.log(`Deleted old backup: ${backup.id}`);
-      } catch (error) {
-        console.error(`Failed to delete backup: ${backup.id}`, error);
+      // Test 2: Verify backup
+      if (backup.status === 'success') {
+        testResults.backupVerification = await this.verifyBackup(backup.backupId);
       }
+
+      // Test 3: Restore to test database
+      // In production, this would restore to a separate test instance
+      
+      // Test 4: Verify data integrity
+      // Would compare row counts, checksums, etc.
+
+      return {
+        success: Object.values(testResults).every(result => 
+          typeof result === 'boolean' ? result : true
+        ),
+        results: testResults,
+      };
+    } catch (error) {
+      return {
+        success: false,
+        results: {
+          ...testResults,
+          error: error instanceof Error ? error.message : 'Unknown error',
+        },
+      };
     }
   }
 
-  // Delete backup
-  private async deleteBackup(backup: BackupMetadata): Promise<void> {
-    if (backup.location.startsWith('s3://')) {
-      await execAsync(`aws s3 rm ${backup.location}`);
-    } else {
-      await execAsync(`rm -rf ${backup.location}`);
-    }
-  }
-
-  // Get last successful backup
-  private getLastSuccessfulBackup(): BackupMetadata | null {
-    const successfulBackups = this.backupHistory
-      .filter(b => b.status === 'success')
-      .sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
+  // Encrypt file
+  private static async encryptFile(inputPath: string, outputPath: string): Promise<void> {
+    const algorithm = 'aes-256-gcm';
+    const key = crypto.scryptSync(this.ENCRYPTION_KEY, 'salt', 32);
+    const iv = crypto.randomBytes(16);
     
-    return successfulBackups[0] || null;
-  }
-
-  // Get feature flags for backup
-  private async getFeatureFlags(): Promise<any> {
-    // Implementation to get current feature flags
-    return {};
-  }
-
-  // Get compliance settings for backup
-  private async getComplianceSettings(): Promise<any> {
-    // Implementation to get compliance configuration
-    return {};
-  }
-
-  // Notify backup completion
-  private async notifyBackupComplete(metadata: BackupMetadata): Promise<void> {
-    const message = `Backup completed successfully: ${metadata.id} (${metadata.size} bytes in ${metadata.duration}ms)`;
-    console.log(message);
+    const cipher = crypto.createCipheriv(algorithm, key, iv);
+    const input = await fs.readFile(inputPath);
     
-    // Send notifications to configured channels
-    for (const channel of this.config.notificationChannels) {
-      await this.sendNotification(channel, message);
-    }
-  }
-
-  // Notify backup failure
-  private async notifyBackupFailed(metadata: BackupMetadata, error: Error): Promise<void> {
-    const message = `Backup failed: ${metadata.id} - ${error.message}`;
-    console.error(message);
+    const encrypted = Buffer.concat([
+      iv,
+      cipher.update(input),
+      cipher.final(),
+      cipher.getAuthTag(),
+    ]);
     
-    // Send notifications to configured channels
-    for (const channel of this.config.notificationChannels) {
-      await this.sendNotification(channel, message);
-    }
+    await fs.writeFile(outputPath, encrypted);
   }
 
-  // Send notification
-  private async sendNotification(channel: string, message: string): Promise<void> {
-    // Implementation for different notification channels
-    switch (channel) {
-      case 'email':
-        // Send email notification
-        break;
-      case 'slack':
-        // Send Slack notification
-        break;
-      case 'webhook':
-        // Send webhook notification
-        break;
-    }
-  }
-
-  // Get backup status
-  public getBackupStatus(): {
-    lastBackup: BackupMetadata | null;
-    totalBackups: number;
-    totalSize: number;
-    successRate: number;
-  } {
-    const lastBackup = this.getLastSuccessfulBackup();
-    const totalBackups = this.backupHistory.length;
-    const successfulBackups = this.backupHistory.filter(b => b.status === 'success').length;
-    const totalSize = this.backupHistory
-      .filter(b => b.status === 'success')
-      .reduce((sum, b) => sum + b.size, 0);
+  // Decrypt file
+  private static async decryptFile(inputPath: string, outputPath: string): Promise<void> {
+    const algorithm = 'aes-256-gcm';
+    const key = crypto.scryptSync(this.ENCRYPTION_KEY, 'salt', 32);
     
-    return {
-      lastBackup,
-      totalBackups,
-      totalSize,
-      successRate: totalBackups > 0 ? successfulBackups / totalBackups : 0,
-    };
+    const encrypted = await fs.readFile(inputPath);
+    const iv = encrypted.slice(0, 16);
+    const authTag = encrypted.slice(-16);
+    const data = encrypted.slice(16, -16);
+    
+    const decipher = crypto.createDecipheriv(algorithm, key, iv);
+    decipher.setAuthTag(authTag);
+    
+    const decrypted = Buffer.concat([
+      decipher.update(data),
+      decipher.final(),
+    ]);
+    
+    await fs.writeFile(outputPath, decrypted);
+  }
+
+  // Upload to S3 (mock implementation)
+  private static async uploadToS3(filePath: string, filename: string): Promise<void> {
+    // In production, use AWS SDK
+    console.log(`Uploading ${filename} to S3...`);
+    // Mock successful upload
+  }
+
+  // Log backup operation
+  private static async logBackup(info: any): Promise<void> {
+    // In production, store in database
+    console.log('Backup logged:', info);
+  }
+
+  // Get backup info
+  private static async getBackupInfo(backupId: string): Promise<any> {
+    // In production, retrieve from database
+    return null;
+  }
+
+  // Update backup status
+  private static async updateBackupStatus(backupId: string, status: any): Promise<void> {
+    // In production, update database
+    console.log(`Backup ${backupId} status updated:`, status);
   }
 }

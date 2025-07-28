@@ -26,6 +26,7 @@ import Profile from "@/pages/profile";
 import ParentPortal from "@/pages/parent-portal";
 import ParentLogin from "@/pages/parent-login";
 import ChildDetails from "@/pages/child-details";
+import Analytics from "@/pages/analytics";
 
 function AuthenticatedApp() {
   return (
@@ -43,6 +44,7 @@ function AuthenticatedApp() {
           <Route path="/payroll" component={Payroll} />
           <Route path="/scheduling" component={Scheduling} />
           <Route path="/reports" component={Reports} />
+          <Route path="/analytics" component={Analytics} />
           <Route path="/settings" component={Settings} />
           <Route path="/security" component={Security} />
           <Route path="/compliance" component={Compliance} />

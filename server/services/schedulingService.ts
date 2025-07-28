@@ -1,406 +1,323 @@
-import { db } from "../db";
-import { staffSchedules, childSchedules, children, staff } from "@shared/schema";
-import { eq, and, gte, lte, desc } from "drizzle-orm";
+import { db } from '../db';
+import { staff, staffSchedules, children, attendance } from '@shared/schema';
+import { sql, eq, and, gte, lte, ne, or } from 'drizzle-orm';
+import { addDays, startOfWeek, endOfWeek, format, differenceInMinutes } from 'date-fns';
+
+export interface ShiftRecommendation {
+  staffId: string;
+  staffName: string;
+  recommendedStart: Date;
+  recommendedEnd: Date;
+  reason: string;
+  score: number;
+}
+
+export interface ScheduleConflict {
+  staffId: string;
+  date: Date;
+  type: 'overlap' | 'understaffed' | 'overstaffed';
+  description: string;
+  severity: 'low' | 'medium' | 'high';
+}
+
+export interface StaffAvailability {
+  staffId: string;
+  dayOfWeek: number; // 0-6 (Sunday-Saturday)
+  preferredStartTime: string; // HH:MM
+  preferredEndTime: string; // HH:MM
+  maxHoursPerWeek: number;
+  unavailableDates: Date[];
+}
 
 export class SchedulingService {
-  /**
-   * Create staff schedule with recurring pattern support
-   */
-  static async createStaffSchedule(scheduleData: {
-    staffId: string;
-    room: string;
-    date: string;
-    scheduledStart: string;
-    scheduledEnd: string;
-    scheduleType?: string;
-    isRecurring?: boolean;
-    recurringPattern?: string;
-    recurringUntil?: string;
-    notes?: string;
-  }) {
-    try {
-      const startDateTime = new Date(`${scheduleData.date}T${scheduleData.scheduledStart}`);
-      const endDateTime = new Date(`${scheduleData.date}T${scheduleData.scheduledEnd}`);
-      const dateOnly = new Date(scheduleData.date);
+  // Generate AI-powered schedule recommendations
+  static async generateScheduleRecommendations(weekStart: Date): Promise<ShiftRecommendation[]> {
+    const weekEnd = endOfWeek(weekStart);
+    const recommendations: ShiftRecommendation[] = [];
 
-      // Create primary schedule
-      const [schedule] = await db
-        .insert(staffSchedules)
-        .values({
-          staffId: scheduleData.staffId,
-          room: scheduleData.room,
-          date: dateOnly,
-          scheduledStart: startDateTime,
-          scheduledEnd: endDateTime,
-          scheduleType: scheduleData.scheduleType || "regular",
-          isRecurring: scheduleData.isRecurring || false,
-          recurringPattern: scheduleData.recurringPattern,
-          recurringUntil: scheduleData.recurringUntil ? new Date(scheduleData.recurringUntil) : null,
-          notes: scheduleData.notes,
-          status: "scheduled",
-        })
-        .returning();
-
-      // If recurring, create additional schedules
-      if (scheduleData.isRecurring && scheduleData.recurringPattern && scheduleData.recurringUntil) {
-        await this.createRecurringSchedules('staff', schedule.id, scheduleData);
-      }
-
-      return schedule;
-    } catch (error) {
-      console.error('Create staff schedule error:', error);
-      throw error;
-    }
-  }
-
-  /**
-   * Create child schedule with meal plans and recurring days
-   */
-  static async createChildSchedule(scheduleData: {
-    childId: string;
-    room: string;
-    date: string;
-    scheduledArrival: string;
-    scheduledDeparture: string;
-    scheduleType?: string;
-    isRecurring?: boolean;
-    recurringPattern?: string;
-    recurringDays?: string[];
-    recurringUntil?: string;
-    mealPlan?: string[];
-    napTime?: string;
-    notes?: string;
-  }) {
-    try {
-      const arrivalDateTime = new Date(`${scheduleData.date}T${scheduleData.scheduledArrival}`);
-      const departureDateTime = new Date(`${scheduleData.date}T${scheduleData.scheduledDeparture}`);
-      const dateOnly = new Date(scheduleData.date);
-
-      // Create primary schedule
-      const [schedule] = await db
-        .insert(childSchedules)
-        .values({
-          childId: scheduleData.childId,
-          room: scheduleData.room,
-          date: dateOnly,
-          scheduledArrival: arrivalDateTime,
-          scheduledDeparture: departureDateTime,
-          scheduleType: scheduleData.scheduleType || "regular",
-          isRecurring: scheduleData.isRecurring || true,
-          recurringPattern: scheduleData.recurringPattern || "weekly",
-          recurringDays: scheduleData.recurringDays || [],
-          recurringUntil: scheduleData.recurringUntil ? new Date(scheduleData.recurringUntil) : null,
-          mealPlan: scheduleData.mealPlan || [],
-          napTime: scheduleData.napTime,
-          notes: scheduleData.notes,
-          status: "scheduled",
-        })
-        .returning();
-
-      // If recurring, create additional schedules based on recurring days
-      if (scheduleData.isRecurring && scheduleData.recurringDays && scheduleData.recurringDays.length > 0) {
-        await this.createRecurringChildSchedules(schedule.id, scheduleData);
-      }
-
-      return schedule;
-    } catch (error) {
-      console.error('Create child schedule error:', error);
-      throw error;
-    }
-  }
-
-  /**
-   * Get staff schedules for a specific date with staff details
-   */
-  static async getStaffSchedules(date: string) {
-    try {
-      const targetDate = new Date(date);
-      const startOfDay = new Date(targetDate.setHours(0, 0, 0, 0));
-      const endOfDay = new Date(targetDate.setHours(23, 59, 59, 999));
-
-      const schedules = await db
-        .select({
-          schedule: staffSchedules,
-          staff: {
-            firstName: staff.firstName,
-            lastName: staff.lastName,
-            position: staff.position,
-          },
-        })
-        .from(staffSchedules)
-        .innerJoin(staff, eq(staffSchedules.staffId, staff.id))
-        .where(
-          and(
-            gte(staffSchedules.date, startOfDay),
-            lte(staffSchedules.date, endOfDay)
-          )
+    // Get historical attendance patterns
+    const attendancePatterns = await this.getAttendancePatterns();
+    
+    // Get staff availability and preferences
+    const staffList = await db.select().from(staff).where(eq(staff.isActive, true));
+    
+    // Get current schedules for the week
+    const existingSchedules = await db
+      .select()
+      .from(staffSchedules)
+      .where(
+        and(
+          gte(staffSchedules.date, weekStart),
+          lte(staffSchedules.date, weekEnd)
         )
-        .orderBy(staffSchedules.scheduledStart);
+      );
 
-      return schedules.map(({ schedule, staff: staffInfo }) => ({
-        ...schedule,
-        staff: staffInfo,
-      }));
-    } catch (error) {
-      console.error('Get staff schedules error:', error);
-      throw error;
-    }
-  }
-
-  /**
-   * Get child schedules for a specific date with child details
-   */
-  static async getChildSchedules(date: string) {
-    try {
-      const targetDate = new Date(date);
-      const startOfDay = new Date(targetDate.setHours(0, 0, 0, 0));
-      const endOfDay = new Date(targetDate.setHours(23, 59, 59, 999));
-
-      const schedules = await db
-        .select({
-          schedule: childSchedules,
-          child: {
-            firstName: children.firstName,
-            lastName: children.lastName,
-            ageGroup: children.ageGroup,
-          },
-        })
-        .from(childSchedules)
-        .innerJoin(children, eq(childSchedules.childId, children.id))
-        .where(
-          and(
-            gte(childSchedules.date, startOfDay),
-            lte(childSchedules.date, endOfDay)
-          )
-        )
-        .orderBy(childSchedules.scheduledArrival);
-
-      return schedules.map(({ schedule, child: childInfo }) => ({
-        ...schedule,
-        child: childInfo,
-      }));
-    } catch (error) {
-      console.error('Get child schedules error:', error);
-      throw error;
-    }
-  }
-
-  /**
-   * Update schedule status (confirmed, cancelled, etc.)
-   */
-  static async updateScheduleStatus(
-    scheduleId: string, 
-    type: 'staff' | 'child', 
-    status: string,
-    updatedBy?: string
-  ) {
-    try {
-      const table = type === 'staff' ? staffSchedules : childSchedules;
+    // For each day of the week
+    for (let dayOffset = 0; dayOffset < 7; dayOffset++) {
+      const currentDate = addDays(weekStart, dayOffset);
+      const dayOfWeek = currentDate.getDay();
       
-      const [updated] = await db
-        .update(table)
-        .set({ 
-          status,
-          // Add audit fields if needed
-        })
-        .where(eq(table.id, scheduleId))
-        .returning();
-
-      return updated;
-    } catch (error) {
-      console.error('Update schedule status error:', error);
-      throw error;
-    }
-  }
-
-  /**
-   * Check for scheduling conflicts
-   */
-  static async checkSchedulingConflicts(
-    entityId: string,
-    type: 'staff' | 'child',
-    startTime: Date,
-    endTime: Date,
-    excludeScheduleId?: string
-  ) {
-    try {
-      const table = type === 'staff' ? staffSchedules : childSchedules;
-      const entityField = type === 'staff' ? 'staffId' : 'childId';
-
-      let query = db
-        .select()
-        .from(table)
-        .where(
-          and(
-            eq(table[entityField], entityId),
-            // Check for time overlap
-            and(
-              lte(table.scheduledStart, endTime),
-              gte(table.scheduledEnd, startTime)
-            ),
-            // Only check active schedules
-            eq(table.status, 'scheduled')
-          )
-        );
-
-      if (excludeScheduleId) {
-        query = query.where(and(
-          eq(table[entityField], entityId),
-          // Add not equal condition for excluding specific schedule
-        ));
-      }
-
-      const conflicts = await query;
-      return conflicts;
-    } catch (error) {
-      console.error('Check scheduling conflicts error:', error);
-      throw error;
-    }
-  }
-
-  /**
-   * Get room capacity and utilization
-   */
-  static async getRoomUtilization(date: string) {
-    try {
-      const targetDate = new Date(date);
-      const startOfDay = new Date(targetDate.setHours(0, 0, 0, 0));
-      const endOfDay = new Date(targetDate.setHours(23, 59, 59, 999));
-
-      // Get staff counts by room
-      const staffByRoom = await db
-        .select({
-          room: staffSchedules.room,
-          count: db.count(),
-        })
-        .from(staffSchedules)
-        .where(
-          and(
-            gte(staffSchedules.date, startOfDay),
-            lte(staffSchedules.date, endOfDay),
-            eq(staffSchedules.status, 'scheduled')
-          )
-        )
-        .groupBy(staffSchedules.room);
-
-      // Get children counts by room
-      const childrenByRoom = await db
-        .select({
-          room: childSchedules.room,
-          count: db.count(),
-        })
-        .from(childSchedules)
-        .where(
-          and(
-            gte(childSchedules.date, startOfDay),
-            lte(childSchedules.date, endOfDay),
-            eq(childSchedules.status, 'scheduled')
-          )
-        )
-        .groupBy(childSchedules.room);
-
-      // Combine results
-      const utilization = {};
+      // Get expected child count for this day
+      const expectedChildren = attendancePatterns[dayOfWeek] || { peak: 30, average: 25 };
       
-      staffByRoom.forEach(({ room, count }) => {
-        utilization[room] = { ...utilization[room], staffCount: count };
-      });
-
-      childrenByRoom.forEach(({ room, count }) => {
-        utilization[room] = { ...utilization[room], childCount: count };
-      });
-
-      return utilization;
-    } catch (error) {
-      console.error('Get room utilization error:', error);
-      throw error;
+      // Calculate required staff based on ratios
+      const requiredStaff = Math.ceil(expectedChildren.peak / 4); // Simplified ratio
+      
+      // Check existing coverage
+      const existingCoverage = existingSchedules.filter(
+        s => format(s.date, 'yyyy-MM-dd') === format(currentDate, 'yyyy-MM-dd')
+      );
+      
+      const staffNeeded = requiredStaff - existingCoverage.length;
+      
+      if (staffNeeded > 0) {
+        // Find available staff for this day
+        const availableStaff = staffList.filter(s => {
+          // Check if staff already scheduled
+          const alreadyScheduled = existingCoverage.some(es => es.staffId === s.id);
+          return !alreadyScheduled;
+        });
+        
+        // Score and rank staff
+        for (const staffMember of availableStaff) {
+          const score = await this.calculateStaffScore(staffMember, currentDate, expectedChildren);
+          
+          if (score > 0) {
+            recommendations.push({
+              staffId: staffMember.id,
+              staffName: `${staffMember.firstName} ${staffMember.lastName}`,
+              recommendedStart: new Date(currentDate.setHours(8, 0, 0, 0)),
+              recommendedEnd: new Date(currentDate.setHours(17, 0, 0, 0)),
+              reason: this.getRecommendationReason(score, dayOfWeek),
+              score
+            });
+          }
+        }
+      }
     }
+    
+    // Sort by score and limit recommendations
+    return recommendations
+      .sort((a, b) => b.score - a.score)
+      .slice(0, 20);
   }
 
-  /**
-   * Private method to create recurring schedules
-   */
-  private static async createRecurringSchedules(
-    type: 'staff' | 'child',
-    baseScheduleId: string,
-    scheduleData: any
-  ) {
-    // Implementation for creating recurring schedules
-    // This would generate schedules based on the recurring pattern
-    // until the recurringUntil date
-  }
-
-  /**
-   * Private method to create recurring child schedules based on specific days
-   */
-  private static async createRecurringChildSchedules(
-    baseScheduleId: string,
-    scheduleData: any
-  ) {
-    // Implementation for creating child schedules on specific days of the week
-    // This would create schedules for the next several weeks based on recurringDays
-  }
-
-  /**
-   * Get weekly schedule overview
-   */
-  static async getWeeklyScheduleOverview(startDate: string) {
-    try {
-      const start = new Date(startDate);
-      const end = new Date(start);
-      end.setDate(start.getDate() + 6); // 7 days total
-
-      const staffSchedulesData = await db
-        .select({
-          schedule: staffSchedules,
-          staff: {
-            firstName: staff.firstName,
-            lastName: staff.lastName,
-            position: staff.position,
-          },
-        })
-        .from(staffSchedules)
-        .innerJoin(staff, eq(staffSchedules.staffId, staff.id))
-        .where(
-          and(
-            gte(staffSchedules.date, start),
-            lte(staffSchedules.date, end)
-          )
+  // Detect scheduling conflicts
+  static async detectConflicts(weekStart: Date): Promise<ScheduleConflict[]> {
+    const weekEnd = endOfWeek(weekStart);
+    const conflicts: ScheduleConflict[] = [];
+    
+    // Get all schedules for the week
+    const schedules = await db
+      .select()
+      .from(staffSchedules)
+      .where(
+        and(
+          gte(staffSchedules.date, weekStart),
+          lte(staffSchedules.date, weekEnd)
         )
-        .orderBy(staffSchedules.date, staffSchedules.scheduledStart);
+      );
+    
+    // Group by staff to check for overlaps
+    const staffScheduleMap = new Map<string, typeof schedules>();
+    schedules.forEach(schedule => {
+      const staffSchedules = staffScheduleMap.get(schedule.staffId) || [];
+      staffSchedules.push(schedule);
+      staffScheduleMap.set(schedule.staffId, staffSchedules);
+    });
+    
+    // Check for time overlaps
+    staffScheduleMap.forEach((staffSchedules, staffId) => {
+      staffSchedules.sort((a, b) => a.date.getTime() - b.date.getTime());
+      
+      for (let i = 0; i < staffSchedules.length - 1; i++) {
+        const current = staffSchedules[i];
+        const next = staffSchedules[i + 1];
+        
+        if (current.date.getTime() === next.date.getTime()) {
+          // Same day schedules - check for time overlap
+          if (current.scheduledEnd > next.scheduledStart) {
+            conflicts.push({
+              staffId,
+              date: current.date,
+              type: 'overlap',
+              description: `Schedule overlap detected between ${format(current.scheduledStart, 'HH:mm')} - ${format(current.scheduledEnd, 'HH:mm')} and ${format(next.scheduledStart, 'HH:mm')} - ${format(next.scheduledEnd, 'HH:mm')}`,
+              severity: 'high'
+            });
+          }
+        }
+      }
+    });
+    
+    // Check for understaffing
+    const attendancePatterns = await this.getAttendancePatterns();
+    
+    for (let dayOffset = 0; dayOffset < 7; dayOffset++) {
+      const currentDate = addDays(weekStart, dayOffset);
+      const dayOfWeek = currentDate.getDay();
+      const expectedChildren = attendancePatterns[dayOfWeek] || { peak: 30, average: 25 };
+      
+      const scheduledStaff = schedules.filter(
+        s => format(s.date, 'yyyy-MM-dd') === format(currentDate, 'yyyy-MM-dd')
+      );
+      
+      const requiredStaff = Math.ceil(expectedChildren.peak / 4);
+      
+      if (scheduledStaff.length < requiredStaff) {
+        conflicts.push({
+          staffId: '',
+          date: currentDate,
+          type: 'understaffed',
+          description: `Only ${scheduledStaff.length} staff scheduled, but ${requiredStaff} needed for expected ${expectedChildren.peak} children`,
+          severity: scheduledStaff.length < requiredStaff * 0.75 ? 'high' : 'medium'
+        });
+      } else if (scheduledStaff.length > requiredStaff * 1.5) {
+        conflicts.push({
+          staffId: '',
+          date: currentDate,
+          type: 'overstaffed',
+          description: `${scheduledStaff.length} staff scheduled, but only ${requiredStaff} needed`,
+          severity: 'low'
+        });
+      }
+    }
+    
+    return conflicts;
+  }
 
-      const childSchedulesData = await db
-        .select({
-          schedule: childSchedules,
-          child: {
-            firstName: children.firstName,
-            lastName: children.lastName,
-            ageGroup: children.ageGroup,
-          },
-        })
-        .from(childSchedules)
-        .innerJoin(children, eq(childSchedules.childId, children.id))
-        .where(
-          and(
-            gte(childSchedules.date, start),
-            lte(childSchedules.date, end)
-          )
-        )
-        .orderBy(childSchedules.date, childSchedules.scheduledArrival);
-
-      return {
-        staffSchedules: staffSchedulesData.map(({ schedule, staff: staffInfo }) => ({
-          ...schedule,
-          staff: staffInfo,
-        })),
-        childSchedules: childSchedulesData.map(({ schedule, child: childInfo }) => ({
-          ...schedule,
-          child: childInfo,
-        })),
+  // Get historical attendance patterns
+  private static async getAttendancePatterns(): Promise<Record<number, { peak: number; average: number }>> {
+    const thirtyDaysAgo = addDays(new Date(), -30);
+    
+    const patterns = await db
+      .select({
+        dayOfWeek: sql<number>`EXTRACT(DOW FROM ${attendance.date})`,
+        avgCount: sql<number>`AVG(count)`,
+        maxCount: sql<number>`MAX(count)`
+      })
+      .from(
+        db
+          .select({
+            date: attendance.date,
+            count: sql<number>`COUNT(*)::int`
+          })
+          .from(attendance)
+          .where(gte(attendance.date, thirtyDaysAgo))
+          .groupBy(attendance.date)
+          .as('daily_counts')
+      )
+      .groupBy(sql`EXTRACT(DOW FROM date)`);
+    
+    const result: Record<number, { peak: number; average: number }> = {};
+    
+    patterns.forEach(p => {
+      result[p.dayOfWeek] = {
+        peak: p.maxCount || 30,
+        average: p.avgCount || 25
       };
-    } catch (error) {
-      console.error('Get weekly schedule overview error:', error);
-      throw error;
+    });
+    
+    // Fill in missing days with defaults
+    for (let i = 0; i < 7; i++) {
+      if (!result[i]) {
+        result[i] = { peak: 30, average: 25 };
+      }
+    }
+    
+    return result;
+  }
+
+  // Calculate staff scoring for recommendations
+  private static async calculateStaffScore(
+    staffMember: any,
+    date: Date,
+    expectedChildren: { peak: number; average: number }
+  ): Promise<number> {
+    let score = 100;
+    
+    // Check staff position compatibility
+    if (staffMember.position === 'Lead Teacher') {
+      score += 20;
+    } else if (staffMember.position === 'Assistant Teacher') {
+      score += 10;
+    }
+    
+    // Check recent hours worked (avoid overtime)
+    const weekStart = startOfWeek(date);
+    const recentSchedules = await db
+      .select()
+      .from(staffSchedules)
+      .where(
+        and(
+          eq(staffSchedules.staffId, staffMember.id),
+          gte(staffSchedules.date, weekStart),
+          lte(staffSchedules.date, date)
+        )
+      );
+    
+    const hoursWorked = recentSchedules.reduce((total, schedule) => {
+      return total + differenceInMinutes(schedule.scheduledEnd, schedule.scheduledStart) / 60;
+    }, 0);
+    
+    if (hoursWorked > 35) {
+      score -= (hoursWorked - 35) * 5; // Penalty for approaching overtime
+    }
+    
+    // Day of week preferences (mock data - would come from staff preferences)
+    const dayOfWeek = date.getDay();
+    if (dayOfWeek === 0 || dayOfWeek === 6) {
+      score -= 10; // Weekend penalty
+    }
+    
+    return Math.max(0, score);
+  }
+
+  // Generate recommendation reason
+  private static getRecommendationReason(score: number, dayOfWeek: number): string {
+    if (score >= 100) {
+      return 'Highly recommended - good availability and qualifications';
+    } else if (score >= 80) {
+      return 'Recommended - suitable for this shift';
+    } else if (score >= 60) {
+      return 'Available but approaching overtime limits';
+    } else {
+      return 'Available as backup option';
+    }
+  }
+
+  // Auto-generate optimal schedule
+  static async autoGenerateSchedule(weekStart: Date): Promise<void> {
+    const recommendations = await this.generateScheduleRecommendations(weekStart);
+    const conflicts = await this.detectConflicts(weekStart);
+    
+    // Only auto-schedule if no high-severity conflicts
+    const highSeverityConflicts = conflicts.filter(c => c.severity === 'high');
+    if (highSeverityConflicts.length > 0) {
+      throw new Error('Cannot auto-generate schedule due to existing conflicts');
+    }
+    
+    // Group recommendations by date
+    const recommendationsByDate = new Map<string, typeof recommendations>();
+    recommendations.forEach(rec => {
+      const dateKey = format(rec.recommendedStart, 'yyyy-MM-dd');
+      const dateRecs = recommendationsByDate.get(dateKey) || [];
+      dateRecs.push(rec);
+      recommendationsByDate.set(dateKey, dateRecs);
+    });
+    
+    // Create schedules from top recommendations
+    for (const [dateKey, recs] of recommendationsByDate) {
+      const topRecs = recs.slice(0, 3); // Take top 3 recommendations per day
+      
+      for (const rec of topRecs) {
+        await db.insert(staffSchedules).values({
+          staffId: rec.staffId,
+          date: rec.recommendedStart,
+          scheduledStart: rec.recommendedStart,
+          scheduledEnd: rec.recommendedEnd,
+          room: 'Main Room', // Default room assignment
+        });
+      }
     }
   }
 }
