@@ -5,7 +5,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider, useAuth, ProtectedRoute } from "./lib/auth";
 import { Sidebar } from "@/components/sidebar";
-import { Chatbot } from "@/components/chatbot";
+import { ChatbotNew } from "@/components/chatbot-new";
 import Dashboard from "@/pages/dashboard";
 import CheckIn from "@/pages/checkin";
 import Children from "@/pages/children";
@@ -48,7 +48,7 @@ function AuthenticatedApp() {
           <Route component={NotFound} />
         </Switch>
       </div>
-      <Chatbot />
+      <ChatbotNew />
     </div>
   );
 }
