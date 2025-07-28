@@ -493,6 +493,7 @@ export const insertChildSchema = createInsertSchema(children).omit({
   biometricEnabled: true,
   lastHealthCheck: true,
 }).extend({
+  dateOfBirth: z.coerce.date(),
   // Enhanced validation for health information
   bloodType: z.string().optional().refine((val) => 
     !val || ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'].includes(val), 
