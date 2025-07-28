@@ -90,7 +90,7 @@ export default function ChildDetails() {
   const unenrollChildMutation = useMutation({
     mutationFn: (reason: string) => apiRequest("PUT", `/api/children/${childId}`, {
       enrollmentStatus: "unenrolled",
-      unenrollmentDate: new Date().toISOString(),
+      unenrollmentDate: new Date(),
       unenrollmentReason: reason,
       isActive: false,
     }),
@@ -115,7 +115,7 @@ export default function ChildDetails() {
   const markAsAgedOutMutation = useMutation({
     mutationFn: () => apiRequest("PUT", `/api/children/${childId}`, {
       enrollmentStatus: "aged_out",
-      unenrollmentDate: new Date().toISOString(),
+      unenrollmentDate: new Date(),
       unenrollmentReason: "Aged out of program",
       isActive: false,
     }),
