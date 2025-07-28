@@ -215,6 +215,10 @@ TotHub is a comprehensive daycare management system built with a React frontend 
   - Added command files: generate-prp.md and execute-prp.md for structured feature development
   - Included comprehensive example PRP (EXAMPLE_multi_agent_prp.md) demonstrating best practices
   - Created examples folder for future context engineering examples
+  - Added use-cases folder with three specialized templates:
+    - **mcp-server**: Build production-ready Model Context Protocol servers with OAuth and database integration
+    - **pydantic-ai**: Create sophisticated AI agents with tools, structured outputs, and testing patterns
+    - **template-generator**: Meta-framework for generating Context Engineering templates for any technology
   - Enables thorough context gathering and validation loops for one-pass AI implementation success
   - Commands can be invoked as `/generate-prp INITIAL.md` and `/execute-prp PRPs/feature.md`
 - ✓ **Child Record Management System (January 28, 2025)** - Complete enrollment lifecycle management:
