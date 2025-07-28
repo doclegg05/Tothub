@@ -1,6 +1,7 @@
 import { Bell } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useQuery } from "@tanstack/react-query";
+import { UserMenu } from "@/components/user-menu";
 
 interface HeaderProps {
   title: string;
@@ -39,6 +40,7 @@ export function Header({ title, subtitle }: HeaderProps) {
               </span>
             )}
           </Button>
+          <UserMenu variant="header" />
         </div>
       </div>
     </header>

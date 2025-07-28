@@ -14,7 +14,11 @@ import { LogOut, User, Settings } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useLocation } from 'wouter';
 
-export function UserMenu() {
+interface UserMenuProps {
+  variant?: 'header' | 'sidebar';
+}
+
+export function UserMenu({ variant = 'sidebar' }: UserMenuProps) {
   const { user, logout } = useAuth();
   const { toast } = useToast();
   const [, setLocation] = useLocation();
@@ -53,6 +57,16 @@ export function UserMenu() {
     }
   };
 
+  // Simple display without dropdown for header
+  if (variant === 'header') {
+    return (
+      <div className="flex items-center">
+        <span className="text-sm font-medium text-gray-700">{user.name}</span>
+      </div>
+    );
+  }
+
+  // Original dropdown menu for sidebar
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
