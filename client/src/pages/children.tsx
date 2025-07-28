@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
@@ -75,29 +75,30 @@ export default function Children() {
     page: number;
     totalPages: number;
   }>({
-    queryKey: ["/api/children", currentPage],
-
+    queryKey: ["children"],
+    queryFn: async () => {
+      const res = await fetch("/api/children?page=" + currentPage, {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem('authToken') || localStorage.getItem('token')}`,
+        },
+      });
+      if (!res.ok) {
+        throw new Error(`${res.status}: ${await res.text()}`);
+      }
+      return res.json();
+    },
     enabled: isAuthenticated,
-    retry: 3,
-    retryDelay: 1000,
+    retry: false,
   });
 
   const children = childrenResponse?.data || [];
   const totalPages = childrenResponse?.totalPages || 1;
   
-  // Debug logging
-  console.log("Children data:", { 
-    response: childrenResponse,
-    children: children,
-    childrenCount: children.length,
-    isLoading,
-    error,
-    isAuthenticated
-  });
+  // Debug logging removed for cleaner output
 
   const createChildMutation = useMutation({
     mutationFn: (data: any) => {
-      console.log("Sending child data:", data);
+
       return apiRequest("POST", "/api/children", data);
     },
     onSuccess: async () => {
@@ -112,7 +113,7 @@ export default function Children() {
       
       // Force refetch the data
       setTimeout(() => {
-        queryClient.invalidateQueries({ queryKey: ["/api/children"] });
+        queryClient.invalidateQueries({ queryKey: ["children"] });
         refetch();
       }, 100);
       
@@ -226,11 +227,7 @@ export default function Children() {
            parentName.includes(searchLower);
   });
   
-  console.log("Filtered children:", {
-    searchTerm,
-    filteredCount: filteredChildren.length,
-    filteredChildren
-  });
+
 
   const getAgeGroupBadge = (ageGroup: string) => {
     const colors = {
@@ -284,6 +281,7 @@ export default function Children() {
               <DialogHeader>
                 <DialogTitle>Add New Child</DialogTitle>
               </DialogHeader>
+              <DialogDescription className="sr-only">Form to add a new child record</DialogDescription>
               <form onSubmit={handleSubmit} className="space-y-6">
                 <Tabs defaultValue="basic" className="w-full">
                   <TabsList className="grid w-full grid-cols-4">

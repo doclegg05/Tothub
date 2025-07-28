@@ -29,10 +29,7 @@ export function UserMenu() {
     });
   };
 
-  console.log('UserMenu: user data:', user);
-  
   if (!user) {
-    console.log('UserMenu: No user, returning null');
     return null;
   }
 

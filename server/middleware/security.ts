@@ -92,7 +92,7 @@ export const securityHeaders = helmet({
     directives: {
       defaultSrc: ["'self'"],
       styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
-      scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'"], // Allow inline scripts for Vite dev
+      scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'", "https://replit.com"], // Allow inline scripts for Vite dev and Replit
       imgSrc: ["'self'", "data:", "https:", "blob:"],
       connectSrc: ["'self'", "ws:", "wss:", "https:"],
       fontSrc: ["'self'", "https://fonts.gstatic.com"],
