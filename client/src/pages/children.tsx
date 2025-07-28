@@ -75,7 +75,7 @@ export default function Children() {
     page: number;
     totalPages: number;
   }>({
-    queryKey: ["children"],
+    queryKey: ["children", currentPage],
     queryFn: async () => {
       const res = await fetch("/api/children?page=" + currentPage, {
         headers: {
@@ -89,6 +89,8 @@ export default function Children() {
     },
     enabled: isAuthenticated,
     retry: false,
+    staleTime: 0,
+    gcTime: 0,
   });
 
   const children = childrenResponse?.data || [];
@@ -111,11 +113,9 @@ export default function Children() {
         description: "Child enrolled successfully!",
       });
       
-      // Force refetch the data
-      setTimeout(() => {
-        queryClient.invalidateQueries({ queryKey: ["children"] });
-        refetch();
-      }, 100);
+      // Force refetch the data with proper cache clearing
+      queryClient.removeQueries({ queryKey: ["children"] });
+      await queryClient.refetchQueries({ queryKey: ["children"] });
       
       // Reset form
       setFormData({
