@@ -25,6 +25,7 @@ import NotFound from "@/pages/not-found";
 import Profile from "@/pages/profile";
 import ParentPortal from "@/pages/parent-portal";
 import ParentLogin from "@/pages/parent-login";
+import ChildDetails from "@/pages/child-details";
 
 function AuthenticatedApp() {
   return (
@@ -37,6 +38,7 @@ function AuthenticatedApp() {
           <Route path="/checkin" component={CheckIn} />
           <Route path="/parent-communication" component={ParentCommunication} />
           <Route path="/children" component={Children} />
+          <Route path="/children/:id" component={ChildDetails} />
           <Route path="/staff" component={Staff} />
           <Route path="/payroll" component={Payroll} />
           <Route path="/scheduling" component={Scheduling} />

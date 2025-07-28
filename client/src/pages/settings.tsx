@@ -354,6 +354,77 @@ export default function SettingsPage() {
           </CardContent>
         </Card>
 
+        {/* Enrollment Settings */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center">
+              <Users className="w-5 h-5 mr-2" />
+              Enrollment Settings
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-6">
+              <div>
+                <Label htmlFor="ageOutLimit">Age Out Limit (years)</Label>
+                <div className="flex items-center space-x-4">
+                  <Input
+                    id="ageOutLimit"
+                    type="number"
+                    min="10"
+                    max="21"
+                    value={getSetting("age_out_limit", "14")}
+                    onChange={(e) => updateSetting("age_out_limit", e.target.value)}
+                    className="w-32"
+                  />
+                  <p className="text-sm text-gray-600">
+                    Children who reach this age will be marked for aging out of the program
+                  </p>
+                </div>
+              </div>
+
+              <div>
+                <Label htmlFor="gracePeriod">Age Out Grace Period (months)</Label>
+                <div className="flex items-center space-x-4">
+                  <Input
+                    id="gracePeriod"
+                    type="number"
+                    min="0"
+                    max="12"
+                    value={getSetting("age_out_grace_period", "3")}
+                    onChange={(e) => updateSetting("age_out_grace_period", e.target.value)}
+                    className="w-32"
+                  />
+                  <p className="text-sm text-gray-600">
+                    Additional time allowed after reaching age limit before automatic aging out
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center space-x-2">
+                <Switch
+                  id="autoAgeOut"
+                  checked={getSetting("auto_age_out", "false") === "true"}
+                  onCheckedChange={(checked) => updateSetting("auto_age_out", String(checked))}
+                />
+                <Label htmlFor="autoAgeOut">
+                  Automatically mark children as aged out when they exceed the age limit
+                </Label>
+              </div>
+
+              <div className="flex items-center space-x-2">
+                <Switch
+                  id="notifyAgeOut"
+                  checked={getSetting("notify_age_out", "true") === "true"}
+                  onCheckedChange={(checked) => updateSetting("notify_age_out", String(checked))}
+                />
+                <Label htmlFor="notifyAgeOut">
+                  Send notifications when children are approaching age-out date
+                </Label>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
         {/* Email Configuration */}
         <Card>
           <CardHeader>

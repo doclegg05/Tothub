@@ -14,8 +14,10 @@ import { eq, desc, sql } from "drizzle-orm";
 import { authMiddleware } from "./middleware/auth";
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  const auth = authMiddleware;
+  
   // Children routes
-  app.get("/api/children", async (req, res) => {
+  app.get("/api/children", auth, async (req, res) => {
     try {
       const page = parseInt(req.query.page as string) || 1;
       const limit = parseInt(req.query.limit as string) || 50;
@@ -28,7 +30,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/children/:id", async (req, res) => {
+  app.get("/api/children/:id", auth, async (req, res) => {
     try {
       const child = await storage.getChild(req.params.id);
       if (!child) {
@@ -40,7 +42,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/children", async (req, res) => {
+  app.post("/api/children", auth, async (req, res) => {
     try {
       console.log("Creating child with data:", JSON.stringify(req.body, null, 2));
       const validatedData = insertChildSchema.parse(req.body);
@@ -61,7 +63,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put("/api/children/:id", async (req, res) => {
+  app.put("/api/children/:id", auth, async (req, res) => {
     try {
       const validatedData = insertChildSchema.partial().parse(req.body);
       const child = await storage.updateChild(req.params.id, validatedData);
@@ -267,6 +269,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(settings);
     } catch (error) {
       res.status(500).json({ message: "Failed to fetch settings" });
+    }
+  });
+
+  app.get("/api/settings/:key", async (req, res) => {
+    try {
+      const setting = await storage.getSetting(req.params.key);
+      if (!setting) {
+        return res.json({ key: req.params.key, value: null });
+      }
+      res.json(setting);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch setting" });
     }
   });
 

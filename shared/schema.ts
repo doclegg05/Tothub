@@ -60,6 +60,9 @@ export const children = pgTable("children", {
   healthCheckNotes: text("health_check_notes"),
   profilePhotoUrl: text("profile_photo_url"),
   enrollmentDate: timestamp("enrollment_date").default(sql`now()`),
+  unenrollmentDate: timestamp("unenrollment_date"),
+  enrollmentStatus: text("enrollment_status").default("enrolled"), // enrolled, unenrolled, aged_out
+  unenrollmentReason: text("unenrollment_reason"),
   tuitionRate: integer("tuition_rate"), // Monthly rate in cents
   isActive: boolean("is_active").default(true),
   // Biometric authentication data

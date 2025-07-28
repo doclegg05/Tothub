@@ -16,13 +16,31 @@ import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { getAgeGroupFromBirthDate, calculateAge } from "@/lib/ratioCalculations";
 import { useAuth } from "@/lib/auth";
+import { useLocation } from "wouter";
 
 export default function Children() {
   const { toast } = useToast();
   const { isAuthenticated } = useAuth();
   const queryClient = useQueryClient();
+  const [, navigate] = useLocation();
   const [searchTerm, setSearchTerm] = useState("");
   const [modalOpen, setModalOpen] = useState(false);
+  const [enrollmentFilter, setEnrollmentFilter] = useState("enrolled");
+  
+  // Fetch age-out setting
+  const { data: ageOutSetting } = useQuery({
+    queryKey: ["settings", "age_out_limit"],
+    queryFn: async () => {
+      const res = await fetch("/api/settings/age_out_limit", {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem('authToken') || localStorage.getItem('token')}`,
+        },
+      });
+      if (!res.ok) return { value: "14" }; // Default to 14
+      return res.json();
+    },
+    enabled: isAuthenticated,
+  });
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
@@ -226,6 +244,14 @@ export default function Children() {
 
   const filteredChildren = (children as any[]).filter((child: any) => {
     if (!child) return false;
+    
+    // Filter by enrollment status
+    if (enrollmentFilter !== "all") {
+      const childStatus = child.enrollmentStatus || "enrolled";
+      if (childStatus !== enrollmentFilter) return false;
+    }
+    
+    // Apply search filter
     const searchLower = searchTerm.toLowerCase();
     const fullName = `${child.firstName || ''} ${child.lastName || ''}`.toLowerCase();
     const room = (child.room || '').toLowerCase();
@@ -270,14 +296,27 @@ export default function Children() {
       <main className="flex-1 p-6 space-y-6 overflow-y-auto">
         {/* Search and Actions */}
         <div className="flex items-center justify-between">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-            <Input
-              placeholder="Search children..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10 w-80"
-            />
+          <div className="flex items-center space-x-4">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+              <Input
+                placeholder="Search children..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10 w-80"
+              />
+            </div>
+            <Select value={enrollmentFilter} onValueChange={setEnrollmentFilter}>
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="Filter by status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Children</SelectItem>
+                <SelectItem value="enrolled">Enrolled</SelectItem>
+                <SelectItem value="unenrolled">Unenrolled</SelectItem>
+                <SelectItem value="aged_out">Aged Out</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
           <Dialog open={modalOpen} onOpenChange={setModalOpen}>
             <DialogTrigger asChild>
@@ -674,7 +713,9 @@ export default function Children() {
           <CardHeader>
             <CardTitle className="flex items-center">
               <Users className="w-5 h-5 mr-2" />
-              Enrolled Children ({filteredChildren.length})
+              {enrollmentFilter === "all" ? "All" : 
+               enrollmentFilter === "enrolled" ? "Enrolled" :
+               enrollmentFilter === "unenrolled" ? "Unenrolled" : "Aged Out"} Children ({filteredChildren.length})
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -700,7 +741,11 @@ export default function Children() {
             ) : filteredChildren.length > 0 ? (
               <div className="space-y-4">
                 {filteredChildren.map((child: any) => (
-                  <div key={child.id} className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:border-primary transition-colors">
+                  <div 
+                    key={child.id} 
+                    className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:border-primary transition-colors cursor-pointer"
+                    onClick={() => navigate(`/children/${child.id}`)}
+                  >
                     <div className="flex items-center space-x-4">
                       <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
                         <span className="text-primary font-bold">
@@ -711,10 +756,30 @@ export default function Children() {
                         <p className="font-medium text-gray-800">
                           {child.firstName} {child.lastName}
                         </p>
-                        <p className="text-sm text-gray-600 flex items-center">
-                          <Calendar className="w-4 h-4 mr-1" />
-                          Age: {calculateAge(new Date(child.dateOfBirth))} years • Room: {child.room}
-                        </p>
+                        <div className="flex items-center space-x-2">
+                          <p className="text-sm text-gray-600 flex items-center">
+                            <Calendar className="w-4 h-4 mr-1" />
+                            Age: {calculateAge(new Date(child.dateOfBirth))} years • Room: {child.room}
+                          </p>
+                          {(() => {
+                            const age = calculateAge(new Date(child.dateOfBirth));
+                            const ageLimit = parseInt(ageOutSetting?.value || "14");
+                            if (age >= ageLimit) {
+                              return (
+                                <Badge variant="destructive" className="text-xs">
+                                  Aged Out
+                                </Badge>
+                              );
+                            } else if (age >= ageLimit - 1) {
+                              return (
+                                <Badge variant="secondary" className="text-xs bg-yellow-100 text-yellow-800">
+                                  Near Age Limit
+                                </Badge>
+                              );
+                            }
+                            return null;
+                          })()}
+                        </div>
                         <div className="flex items-center space-x-4 text-xs text-gray-500">
                           <span className="flex items-center">
                             <Users className="w-3 h-3 mr-1" />

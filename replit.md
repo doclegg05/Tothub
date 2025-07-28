@@ -210,6 +210,17 @@ TotHub is a comprehensive daycare management system built with a React frontend 
   - **CRITICAL FIX**: Fixed storage layer caching issue where paginated results cached in attendance cache weren't cleared on child creation
   - Solution: Added `memoryCache.clearAttendanceCache()` in createChild() method to ensure fresh data after enrollment
   - Database confirmed working with 44+ enrolled children successfully displaying without page refresh
+- ✓ **Child Record Management System (January 28, 2025)** - Complete enrollment lifecycle management:
+  - Created individual child detail pages accessible by clicking on children in the list
+  - Added comprehensive child profile editing with tabbed interface (Basic, Health, Emergency, Enrollment)
+  - Implemented enrollment status tracking: enrolled, unenrolled, aged_out with database schema updates
+  - Added configurable age-out limit setting (default 14 years) in Settings page Enrollment section
+  - Visual indicators for children near aging out (yellow badge) or already aged out (red badge)
+  - Enrollment status filter dropdown to view all, enrolled, unenrolled, or aged out children
+  - One-click actions to unenroll children or mark as aged out with reason tracking
+  - Unenrollment dialog with required reason field for audit trail
+  - Age limit exceeded alert with automatic "Mark as Aged Out" button
+  - Complete edit functionality for all child fields including medical, emergency, and insurance info
 - ✓ **Comprehensive Profile Page (January 27, 2025)** - Added modern profile management system:
   - Created full-featured profile page with tabbed interface (Profile, Security, Notifications, Activity, Settings)
   - Personal Information tab: Edit name, email, phone, language preference, timezone with inline editing
@@ -254,6 +265,7 @@ TotHub is a comprehensive daycare management system built with a React frontend 
 Preferred communication style: Simple, everyday language.
 App complexity preference: Keep it simple and focused on core daycare management features. Don't lose sight of the main purpose.
 Logo preference: Use the new TotHub logo with blue circle background and yellow text (updated July 25, 2025).
+Age-out configuration: Default age limit is 14 years old (configurable per facility).
 
 ## System Architecture
 
