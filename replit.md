@@ -207,8 +207,9 @@ TotHub is a comprehensive daycare management system built with a React frontend 
   - Removed console.log statements from children.tsx and user-menu.tsx for cleaner output
   - Added DialogDescription to enrollment modal for accessibility compliance
   - Updated Content Security Policy to include https://replit.com in scriptSrc
-  - Fixed storage layer caching issue: paginated results cached in attendance cache now properly cleared on child creation
-  - Database confirmed working with 42+ enrolled children successfully displaying without page refresh
+  - **CRITICAL FIX**: Fixed storage layer caching issue where paginated results cached in attendance cache weren't cleared on child creation
+  - Solution: Added `memoryCache.clearAttendanceCache()` in createChild() method to ensure fresh data after enrollment
+  - Database confirmed working with 44+ enrolled children successfully displaying without page refresh
 - ✓ **Comprehensive Profile Page (January 27, 2025)** - Added modern profile management system:
   - Created full-featured profile page with tabbed interface (Profile, Security, Notifications, Activity, Settings)
   - Personal Information tab: Edit name, email, phone, language preference, timezone with inline editing
