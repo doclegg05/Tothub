@@ -23,6 +23,8 @@ import Landing from "@/pages/landing";
 import Login from "@/pages/login";
 import NotFound from "@/pages/not-found";
 import Profile from "@/pages/profile";
+import ParentPortal from "@/pages/parent-portal";
+import ParentLogin from "@/pages/parent-login";
 
 function AuthenticatedApp() {
   return (
@@ -56,8 +58,6 @@ function AuthenticatedApp() {
 function Router() {
   const { isAuthenticated, isLoading, user } = useAuth();
 
-
-
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
@@ -73,8 +73,18 @@ function Router() {
     return (
       <Switch>
         <Route path="/landing" component={Landing} />
+        <Route path="/parent-login" component={ParentLogin} />
         <Route component={Login} />
       </Switch>
+    );
+  }
+
+  // Parent users get a different experience
+  if (user?.role === 'parent') {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <ParentPortal />
+      </div>
     );
   }
 

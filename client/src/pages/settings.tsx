@@ -15,6 +15,19 @@ import { Settings, Bell, Mail, Shield, Users, Clock, DollarSign, AlertTriangle }
 import { WV_RATIO_REQUIREMENTS } from "@/lib/ratioCalculations";
 import { AutoRestartStatus } from "@/components/auto-restart-status";
 
+interface StateData {
+  state: string;
+  isInitialized: boolean;
+  compliance?: {
+    notes?: string;
+  };
+}
+
+interface AvailableState {
+  name: string;
+  hasData: boolean;
+}
+
 export default function SettingsPage() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -28,11 +41,11 @@ export default function SettingsPage() {
     queryKey: ["/api/settings"],
   });
 
-  const { data: availableStates = [] } = useQuery({
+  const { data: availableStates = [] } = useQuery<AvailableState[]>({
     queryKey: ["/api/compliance/available-states"],
   });
 
-  const { data: currentStateData, isLoading: isStateLoading } = useQuery({
+  const { data: currentStateData, isLoading: isStateLoading } = useQuery<StateData>({
     queryKey: ["/api/compliance/current-state"],
   });
 
@@ -75,13 +88,13 @@ export default function SettingsPage() {
   const updateStateMutation = useMutation({
     mutationFn: ({ state, auditNote }: { state: string; auditNote?: string }) =>
       apiRequest("POST", "/api/compliance/update-state", { state, auditNote }),
-    onSuccess: (data) => {
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/compliance/current-state"] });
       queryClient.invalidateQueries({ queryKey: ["/api/ratios"] });
       queryClient.invalidateQueries({ queryKey: ["/api/dashboard/stats"] });
       toast({
         title: "State Updated",
-        description: `${data.message} - ratios will automatically apply to calculations.`,
+        description: `State compliance settings updated - ratios will automatically apply to calculations.`,
       });
     },
     onError: (error: any) => {
@@ -145,7 +158,7 @@ export default function SettingsPage() {
                     <SelectValue placeholder="Select your state" />
                   </SelectTrigger>
                   <SelectContent>
-                    {(availableStates as any[]).map((stateData: any) => (
+                    {availableStates.map((stateData) => (
                       <SelectItem key={stateData.name} value={stateData.name} disabled={!stateData.hasData}>
                         <div className="flex items-center justify-between w-full">
                           <span>{stateData.name}</span>

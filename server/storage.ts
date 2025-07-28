@@ -1,4 +1,4 @@
-import { children, staff, attendance, staffSchedules, settings, alerts, stateRatios, stateCompliance, type Child, type InsertChild, type Staff, type InsertStaff, type Attendance, type InsertAttendance, type StaffSchedule, type InsertStaffSchedule, type Setting, type InsertSetting, type Alert, type InsertAlert, type StateRatio, type InsertStateRatio, type StateCompliance, type InsertStateCompliance } from "@shared/schema";
+import { children, staff, attendance, staffSchedules, settings, alerts, stateRatios, stateCompliance, parents, type Child, type InsertChild, type Staff, type InsertStaff, type Attendance, type InsertAttendance, type StaffSchedule, type InsertStaffSchedule, type Setting, type InsertSetting, type Alert, type InsertAlert, type StateRatio, type InsertStateRatio, type StateCompliance, type InsertStateCompliance, type Parent, type InsertParent } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, gte, lte, desc, asc, isNull, sql } from "drizzle-orm";
 import { memoryCache } from "./services/memoryOptimizationService";
@@ -74,6 +74,15 @@ export interface IStorage {
   getCurrentState(): Promise<string>;
   updateStateCompliance(state: string, auditNote?: string): Promise<StateCompliance>;
   initializeDefaultState(): Promise<StateCompliance>;
+  
+  // Parents
+  getParent(id: string): Promise<Parent | undefined>;
+  getParentByEmail(email: string): Promise<Parent | undefined>;
+  getParentByUsername(username: string): Promise<Parent | undefined>;
+  createParent(parent: InsertParent): Promise<Parent>;
+  updateParent(id: string, parent: Partial<InsertParent>): Promise<Parent>;
+  updateParentLastLogin(id: string): Promise<Parent>;
+  getParentChildren(parentId: string): Promise<Child[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -672,6 +681,57 @@ export class DatabaseStorage implements IStorage {
   async deleteSecurityZone(id: string): Promise<void> {
     const { securityZones } = await import("@shared/schema");
     await db.delete(securityZones).where(eq(securityZones.id, id));
+  }
+
+  // Parent operations
+  async getParent(id: string): Promise<Parent | undefined> {
+    const [parent] = await db.select().from(parents).where(eq(parents.id, id));
+    return parent || undefined;
+  }
+
+  async getParentByEmail(email: string): Promise<Parent | undefined> {
+    const [parent] = await db.select().from(parents).where(eq(parents.email, email));
+    return parent || undefined;
+  }
+
+  async getParentByUsername(username: string): Promise<Parent | undefined> {
+    const [parent] = await db.select().from(parents).where(eq(parents.username, username.toLowerCase()));
+    return parent || undefined;
+  }
+
+  async createParent(parent: InsertParent): Promise<Parent> {
+    const [newParent] = await db.insert(parents).values(parent).returning();
+    return newParent;
+  }
+
+  async updateParent(id: string, parent: Partial<InsertParent>): Promise<Parent> {
+    const [updated] = await db.update(parents)
+      .set({ ...parent, updatedAt: new Date() })
+      .where(eq(parents.id, id))
+      .returning();
+    return updated;
+  }
+
+  async updateParentLastLogin(id: string): Promise<Parent> {
+    const [updated] = await db.update(parents)
+      .set({ lastLogin: new Date() })
+      .where(eq(parents.id, id))
+      .returning();
+    return updated;
+  }
+
+  async getParentChildren(parentId: string): Promise<Child[]> {
+    const parent = await this.getParent(parentId);
+    if (!parent || !parent.childrenIds || parent.childrenIds.length === 0) {
+      return [];
+    }
+    
+    const childrenData = await db.select()
+      .from(children)
+      .where(sql`${children.id} = ANY(${parent.childrenIds})`)
+      .orderBy(asc(children.firstName));
+    
+    return childrenData;
   }
 
   // Test data management methods

@@ -381,6 +381,26 @@ export const payrollAudit = pgTable("payroll_audit", {
   createdAt: timestamp("created_at").default(sql`now()`),
 });
 
+// Parent Users Table for Parent Portal Access
+export const parents = pgTable("parents", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  username: varchar("username", { length: 255 }).notNull().unique(),
+  passwordHash: text("password_hash").notNull(),
+  email: text("email").notNull().unique(),
+  firstName: text("first_name").notNull(),
+  lastName: text("last_name").notNull(),
+  phone: text("phone"),
+  childrenIds: text("children_ids").array().default(sql`'{}'::text[]`), // Array of child IDs this parent can access
+  lastLogin: timestamp("last_login"),
+  emailVerified: boolean("email_verified").default(false),
+  resetToken: text("reset_token"),
+  resetTokenExpiry: timestamp("reset_token_expiry"),
+  notificationPreferences: text("notification_preferences"), // JSON string
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").default(sql`now()`),
+  updatedAt: timestamp("updated_at").default(sql`now()`),
+});
+
 // Relations
 export const childrenRelations = relations(children, ({ many }) => ({
   attendance: many(attendance),
@@ -388,6 +408,10 @@ export const childrenRelations = relations(children, ({ many }) => ({
   billing: many(billing),
   dailyReports: many(dailyReports),
   schedules: many(childSchedules),
+}));
+
+export const parentsRelations = relations(parents, ({ many }) => ({
+  messages: many(messages),
 }));
 
 export const staffRelations = relations(staff, ({ many }) => ({
@@ -588,11 +612,20 @@ export const insertPayrollAuditSchema = createInsertSchema(payrollAudit).omit({
   createdAt: true,
 });
 
+export const insertParentSchema = createInsertSchema(parents).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+  lastLogin: true,
+});
+
 // Types
 export type Child = typeof children.$inferSelect;
 export type InsertChild = z.infer<typeof insertChildSchema>;
 export type Staff = typeof staff.$inferSelect;
 export type InsertStaff = z.infer<typeof insertStaffSchema>;
+export type Parent = typeof parents.$inferSelect;
+export type InsertParent = z.infer<typeof insertParentSchema>;
 
 // Health Information Types
 export interface MedicationRecord {

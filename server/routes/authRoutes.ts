@@ -137,6 +137,86 @@ router.post('/login', async (req: Request, res: Response) => {
   }
 });
 
+// Parent login schema
+const parentLoginSchema = z.object({
+  email: z.string().email('Invalid email address'),
+  password: z.string().min(1, 'Password is required'),
+});
+
+// Parent login endpoint
+router.post('/parent/login', async (req: Request, res: Response) => {
+  try {
+    const { email, password } = parentLoginSchema.parse(req.body);
+    
+    console.log(`🔐 Parent login attempt - email: "${email}"`);
+    
+    // Import storage only when needed
+    const { storage } = await import('../storage');
+    
+    // Find parent by email
+    const parent = await storage.getParentByEmail(email);
+    
+    if (!parent) {
+      return res.status(401).json({ message: 'Invalid email or password' });
+    }
+    
+    const validPassword = await bcrypt.compare(password, parent.passwordHash);
+    
+    if (!validPassword) {
+      return res.status(401).json({ message: 'Invalid email or password' });
+    }
+    
+    // Update last login
+    await storage.updateParentLastLogin(parent.id);
+    
+    // Generate token with 7 days expiration
+    const token = jwt.sign(
+      { 
+        userId: parent.id,
+        username: parent.username,
+        role: 'parent',
+        parentId: parent.id
+      },
+      JWT_SECRET,
+      { expiresIn: '7d' }
+    );
+    
+    // Create session tracking
+    const sessionId = await sessionService.createSession({
+      userId: parent.id,
+      username: parent.username,
+      role: 'parent',
+      ipAddress: req.ip,
+      userAgent: req.headers['user-agent'],
+    });
+    
+    // Store session ID in express-session
+    req.session!.sessionId = sessionId;
+    req.session!.userId = parent.id;
+    
+    // Return parent data and token
+    res.json({
+      token,
+      user: {
+        id: parent.id,
+        username: parent.username,
+        name: `${parent.firstName} ${parent.lastName}`,
+        role: 'parent',
+        email: parent.email,
+        childrenIds: parent.childrenIds
+      },
+      sessionId,
+      message: 'Login successful'
+    });
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({ message: 'Invalid request data', errors: error.errors });
+    }
+    console.error('Parent login error:', error);
+    res.status(500).json({ message: 'Login failed' });
+  }
+});
+
 // Logout endpoint
 router.post('/logout', async (req: Request, res: Response) => {
   try {

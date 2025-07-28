@@ -9,6 +9,9 @@ import { memoryCache } from "./services/memoryOptimizationService";
 import { autoRestartService } from "./services/autoRestartService";
 import { insertChildSchema, insertStaffSchema, insertAttendanceSchema, insertStaffScheduleSchema, insertSettingSchema, insertAlertSchema, insertMessageSchema, insertMediaShareSchema, insertBillingSchema, insertDailyReportSchema } from "@shared/schema";
 import { z } from "zod";
+import { db } from "./db";
+import { eq, desc, sql } from "drizzle-orm";
+import { authMiddleware } from "./middleware/auth";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Children routes
@@ -1190,6 +1193,104 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error('Manual restart error:', error);
       res.status(500).json({ message: "Failed to trigger manual restart" });
+    }
+  });
+
+  // Parent Portal API Routes
+  app.get("/api/parent/children", authMiddleware, async (req, res) => {
+    try {
+      const user = req.user;
+      if (!user || user.role !== 'parent') {
+        return res.status(403).json({ message: "Access denied" });
+      }
+
+      const children = await storage.getParentChildren(user.parentId || user.userId);
+      res.json(children);
+    } catch (error) {
+      console.error('Get parent children error:', error);
+      res.status(500).json({ message: "Failed to fetch children" });
+    }
+  });
+
+  app.get("/api/parent/attendance/today", authMiddleware, async (req, res) => {
+    try {
+      const user = req.user;
+      if (!user || user.role !== 'parent') {
+        return res.status(403).json({ message: "Access denied" });
+      }
+
+      const children = await storage.getParentChildren(user.parentId || user.userId);
+      const childIds = children.map(c => c.id);
+      
+      const attendance = await storage.getTodaysAttendance();
+      const parentAttendance = attendance.filter(a => childIds.includes(a.childId));
+      
+      // Add child info to attendance records
+      const attendanceWithChild = parentAttendance.map(a => {
+        const child = children.find(c => c.id === a.childId);
+        return {
+          ...a,
+          child: {
+            firstName: child?.firstName || '',
+            lastName: child?.lastName || '',
+            room: child?.room || ''
+          }
+        };
+      });
+      
+      res.json(attendanceWithChild);
+    } catch (error) {
+      console.error('Get parent attendance error:', error);
+      res.status(500).json({ message: "Failed to fetch attendance" });
+    }
+  });
+
+  app.get("/api/parent/messages", authMiddleware, async (req, res) => {
+    try {
+      const user = req.user;
+      if (!user || user.role !== 'parent') {
+        return res.status(403).json({ message: "Access denied" });
+      }
+
+      // Get messages for this parent
+      const { messages } = await import("@shared/schema");
+      const parentMessages = await db
+        .select()
+        .from(messages)
+        .where(eq(messages.recipientId, user.parentId || user.userId))
+        .orderBy(desc(messages.createdAt))
+        .limit(50);
+      
+      res.json(parentMessages);
+    } catch (error) {
+      console.error('Get parent messages error:', error);
+      res.status(500).json({ message: "Failed to fetch messages" });
+    }
+  });
+
+  app.get("/api/parent/media", authMiddleware, async (req, res) => {
+    try {
+      const user = req.user;
+      if (!user || user.role !== 'parent') {
+        return res.status(403).json({ message: "Access denied" });
+      }
+
+      const children = await storage.getParentChildren(user.parentId || user.userId);
+      const childIds = children.map(c => c.id);
+      
+      // Get media shares for parent's children
+      const { mediaShares } = await import("@shared/schema");
+      const media = await db
+        .select()
+        .from(mediaShares)
+        .where(sql`${mediaShares.childId} = ANY(${childIds})`)
+        .orderBy(desc(mediaShares.createdAt))
+        .limit(50);
+      
+      res.json(media);
+    } catch (error) {
+      console.error('Get parent media error:', error);
+      res.status(500).json({ message: "Failed to fetch media" });
     }
   });
 

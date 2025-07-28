@@ -4,8 +4,9 @@ interface User {
   id: string;
   username: string;
   name: string;
-  role: 'director' | 'teacher' | 'staff';
+  role: 'director' | 'teacher' | 'staff' | 'parent';
   email?: string;
+  childrenIds?: string[];
 }
 
 interface AuthContextType {
