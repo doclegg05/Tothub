@@ -25,10 +25,15 @@ export function CheckInModal({ open, onOpenChange, mode, selectedChild }: CheckI
     room: selectedChild?.child?.room || "",
   });
 
-  const { data: children = [] } = useQuery({
+  const { data: childrenResponse } = useQuery({
     queryKey: ["/api/children"],
     enabled: mode === "check-in",
   });
+  
+  // Handle paginated response - childrenResponse could be array or object with data property
+  const children = Array.isArray(childrenResponse) 
+    ? childrenResponse 
+    : (childrenResponse as any)?.data || [];
 
   const { data: presentChildren = [] } = useQuery({
     queryKey: ["/api/attendance/present"],

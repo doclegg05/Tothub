@@ -163,6 +163,11 @@ TotHub is a comprehensive daycare management system built with a React frontend 
   - Added pagination controls to Children and Staff pages with Previous/Next navigation
   - Reduced memory usage from 96% to stable levels with Node.js process at 304MB
   - Cache hit ratios: Children 98.5%, Staff 97.2%, Attendance 99.1% showing excellent performance
+- ✓ **Check-In Modal Pagination Fix (January 28, 2025)** - Fixed runtime error on sign-in:
+  - Fixed "Children.find is not a function" error in check-in-modal.tsx
+  - Updated component to handle paginated API response format (object with data property)
+  - Added backward compatibility for both array and paginated object responses
+  - Ensures smooth operation when accessing check-in functionality after login
 - ✓ **Login Page Redesign (January 28, 2025)** - Professional authentication interface:
   - Removed Quick Login (Demo) section for cleaner, production-ready interface
   - Added password reset and username recovery functionality with modal dialog
