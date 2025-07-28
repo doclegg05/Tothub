@@ -20,8 +20,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const page = parseInt(req.query.page as string) || 1;
       const limit = parseInt(req.query.limit as string) || 50;
       const result = await storage.getActiveChildren({ page, limit });
+      console.log(`Fetched children - page: ${page}, total: ${result.total}, fetched: ${result.data.length}`);
       res.json(result);
     } catch (error) {
+      console.error("Error fetching children:", error);
       res.status(500).json({ message: "Failed to fetch children" });
     }
   });
@@ -43,6 +45,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log("Creating child with data:", JSON.stringify(req.body, null, 2));
       const validatedData = insertChildSchema.parse(req.body);
       const child = await storage.createChild(validatedData);
+      console.log("Child created successfully:", child.id);
+      
+      // Clear cache after creating
+      memoryCache.clearCache();
+      
       res.status(201).json(child);
     } catch (error) {
       if (error instanceof z.ZodError) {

@@ -91,10 +91,14 @@ export default function Children() {
     retry: false,
     staleTime: 0,
     gcTime: 0,
+    refetchOnMount: 'always',
   });
 
   const children = childrenResponse?.data || [];
   const totalPages = childrenResponse?.totalPages || 1;
+  
+  // Debug logging
+  console.log('Fetched children data:', children.length, 'total:', childrenResponse?.total);
   
   // Debug logging removed for cleaner output
 
@@ -114,8 +118,13 @@ export default function Children() {
       });
       
       // Force refetch the data with proper cache clearing
-      queryClient.removeQueries({ queryKey: ["children"] });
-      await queryClient.refetchQueries({ queryKey: ["children"] });
+      console.log('Mutation success, invalidating queries');
+      
+      // Invalidate all queries that start with "children"
+      await queryClient.invalidateQueries({ queryKey: ["children"], refetchType: 'active' });
+      
+      // Also manually refetch the current page
+      await refetch();
       
       // Reset form
       setFormData({
