@@ -29,7 +29,7 @@ export function Chatbot() {
   ]);
   const [input, setInput] = useState("");
   const [isTyping, setIsTyping] = useState(false);
-  const scrollRef = useRef<HTMLDivElement>(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const quickActions: QuickAction[] = [
     { label: "How does check-in work?", response: "Our digital check-in system allows parents to sign children in/out using a tablet or smartphone. Photos are captured for security, and staff are instantly notified. The system automatically tracks attendance for compliance reporting." },
@@ -38,11 +38,13 @@ export function Chatbot() {
     { label: "Schedule a demo", response: "I'd be happy to help you schedule a demo! Please contact our team at demo@tothub.com or call 1-800-TOTHUB. You can also start a free 30-day trial right from the dashboard." }
   ];
 
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+
   useEffect(() => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
-    }
-  }, [messages]);
+    scrollToBottom();
+  }, [messages, isTyping]);
 
   const generateBotResponse = (userMessage: string): string => {
     const lowerMessage = userMessage.toLowerCase();
@@ -72,20 +74,31 @@ export function Chatbot() {
       return "Yes! We offer a 30-day free trial with full access to all features. No credit card required to start. Our team will help you get set up and import your existing data. You can cancel anytime during the trial period.";
     }
     
+    // Integration questions
+    if (lowerMessage.includes("integrate") || lowerMessage.includes("quickbooks") || lowerMessage.includes("api")) {
+      return "TotHub integrates seamlessly with QuickBooks for accounting, supports biometric devices for secure check-ins, and offers a robust API for custom integrations. We also work with popular parent communication apps and payment processors.";
+    }
+    
+    // Mobile questions
+    if (lowerMessage.includes("mobile") || lowerMessage.includes("app") || lowerMessage.includes("phone")) {
+      return "Parents and staff can access TotHub from any device! Our mobile-responsive design works perfectly on smartphones and tablets. Parents can check in/out, view updates, and pay bills. Staff can manage attendance and communicate with parents on the go.";
+    }
+    
     // Default response
     return "I'm here to help you learn more about TotHub! I can answer questions about features, pricing, compliance, security, and more. Try asking me something like 'How does billing work?' or 'Is it secure?' You can also click the quick action buttons above.";
   };
 
   const handleSend = () => {
-    if (!input.trim()) return;
+    if (!input.trim() || isTyping) return;
     
     const userMessage: Message = {
       id: Date.now().toString(),
-      text: input,
+      text: input.trim(),
       sender: "user",
       timestamp: new Date()
     };
     
+    const currentInput = input.trim();
     setMessages(prev => [...prev, userMessage]);
     setInput("");
     setIsTyping(true);
@@ -94,7 +107,7 @@ export function Chatbot() {
     setTimeout(() => {
       const botResponse: Message = {
         id: (Date.now() + 1).toString(),
-        text: generateBotResponse(input),
+        text: generateBotResponse(currentInput),
         sender: "bot",
         timestamp: new Date()
       };
@@ -158,7 +171,7 @@ export function Chatbot() {
           </CardHeader>
 
           <CardContent className="flex-1 p-0 flex flex-col">
-            <ScrollArea className="flex-1 p-4" ref={scrollRef}>
+            <ScrollArea className="flex-1 p-4">
               <div className="space-y-4">
                 {messages.map((message) => (
                   <div
@@ -201,6 +214,7 @@ export function Chatbot() {
                     </div>
                   </div>
                 )}
+                <div ref={messagesEndRef} />
               </div>
             </ScrollArea>
 
@@ -236,8 +250,15 @@ export function Chatbot() {
                   onChange={(e) => setInput(e.target.value)}
                   placeholder="Type your message..."
                   className="flex-1"
+                  disabled={isTyping}
+                  autoFocus
                 />
-                <Button type="submit" size="icon" disabled={!input.trim()}>
+                <Button 
+                  type="submit" 
+                  size="icon" 
+                  disabled={!input.trim() || isTyping}
+                  className="bg-blue-600 hover:bg-blue-700"
+                >
                   <Send className="w-4 h-4" />
                 </Button>
               </form>

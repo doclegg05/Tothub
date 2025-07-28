@@ -168,6 +168,13 @@ TotHub is a comprehensive daycare management system built with a React frontend 
   - Updated component to handle paginated API response format (object with data property)
   - Added backward compatibility for both array and paginated object responses
   - Ensures smooth operation when accessing check-in functionality after login
+- ✓ **Chatbot Improvements (January 28, 2025)** - Fixed chatbot responsiveness and scrolling:
+  - Fixed automatic scrolling using scrollIntoView with messagesEndRef
+  - Improved message handling by capturing input value before clearing
+  - Added input/button disabling during bot typing to prevent duplicate messages
+  - Added autoFocus to input field for better user experience
+  - Enhanced response categories: integrations, mobile app questions
+  - Fixed state management to ensure all user messages receive responses
 - ✓ **Login Page Redesign (January 28, 2025)** - Professional authentication interface:
   - Removed Quick Login (Demo) section for cleaner, production-ready interface
   - Added password reset and username recovery functionality with modal dialog
