@@ -175,6 +175,15 @@ TotHub is a comprehensive daycare management system built with a React frontend 
   - Added autoFocus to input field for better user experience
   - Enhanced response categories: integrations, mobile app questions
   - Fixed state management to ensure all user messages receive responses
+- ✓ **Automatic Memory Management System (January 28, 2025)** - Prevents memory buildup issues:
+  - Created AutoRestartService that monitors memory usage every 5 minutes
+  - Automatically restarts server when memory exceeds 85% threshold
+  - Includes 30-minute cooldown between restarts to prevent restart loops
+  - Added API endpoints for monitoring and controlling auto-restart service
+  - Created UI component in Settings page showing memory status and controls
+  - Manual restart button with confirmation dialog for immediate restarts
+  - Graceful shutdown with 5-second delay for active requests to complete
+  - Real-time memory usage visualization with progress bar and alerts
 - ✓ **Login Page Redesign (January 28, 2025)** - Professional authentication interface:
   - Removed Quick Login (Demo) section for cleaner, production-ready interface
   - Added password reset and username recovery functionality with modal dialog

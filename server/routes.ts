@@ -6,6 +6,7 @@ import { QuickBooksExporter } from "./services/quickbooksExporter";
 import { SchedulingService } from "./services/schedulingService";
 import { sendEmail } from "./services/emailService";
 import { memoryCache } from "./services/memoryOptimizationService";
+import { autoRestartService } from "./services/autoRestartService";
 import { insertChildSchema, insertStaffSchema, insertAttendanceSchema, insertStaffScheduleSchema, insertSettingSchema, insertAlertSchema, insertMessageSchema, insertMediaShareSchema, insertBillingSchema, insertDailyReportSchema } from "@shared/schema";
 import { z } from "zod";
 
@@ -1148,6 +1149,48 @@ export async function registerRoutes(app: Express): Promise<Server> {
       cache: memoryCache.getStats(),
       uptime: process.uptime(),
     });
+  });
+
+  // Auto-restart service endpoints
+  app.get("/api/auto-restart/status", (_req, res) => {
+    try {
+      const status = autoRestartService.getStatus();
+      res.json(status);
+    } catch (error) {
+      console.error('Auto-restart status error:', error);
+      res.status(500).json({ message: "Failed to get auto-restart status" });
+    }
+  });
+
+  app.post("/api/auto-restart/config", (req, res) => {
+    try {
+      const { memoryThreshold, checkInterval, cooldownPeriod, enabled } = req.body;
+      
+      const config: any = {};
+      if (typeof memoryThreshold === 'number') config.memoryThreshold = memoryThreshold;
+      if (typeof checkInterval === 'number') config.checkInterval = checkInterval;
+      if (typeof cooldownPeriod === 'number') config.cooldownPeriod = cooldownPeriod;
+      if (typeof enabled === 'boolean') config.enabled = enabled;
+      
+      autoRestartService.updateConfig(config);
+      res.json({ message: "Auto-restart configuration updated", status: autoRestartService.getStatus() });
+    } catch (error) {
+      console.error('Auto-restart config error:', error);
+      res.status(500).json({ message: "Failed to update auto-restart configuration" });
+    }
+  });
+
+  app.post("/api/auto-restart/trigger", async (_req, res) => {
+    try {
+      res.json({ message: "Manual restart triggered. Server will restart in 5 seconds." });
+      // Trigger restart after response is sent
+      setTimeout(() => {
+        autoRestartService.triggerManualRestart();
+      }, 100);
+    } catch (error) {
+      console.error('Manual restart error:', error);
+      res.status(500).json({ message: "Failed to trigger manual restart" });
+    }
   });
 
   const httpServer = createServer(app);

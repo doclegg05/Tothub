@@ -13,6 +13,7 @@ import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Settings, Bell, Mail, Shield, Users, Clock, DollarSign, AlertTriangle } from "lucide-react";
 import { WV_RATIO_REQUIREMENTS } from "@/lib/ratioCalculations";
+import { AutoRestartStatus } from "@/components/auto-restart-status";
 
 export default function SettingsPage() {
   const { toast } = useToast();
@@ -437,6 +438,9 @@ export default function SettingsPage() {
             </div>
           </CardContent>
         </Card>
+
+        {/* Auto-Restart System */}
+        <AutoRestartStatus />
 
         {/* System Information */}
         <Card>
