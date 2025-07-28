@@ -40,7 +40,7 @@ export function Header({ title, subtitle }: HeaderProps) {
               </span>
             )}
           </Button>
-          <UserMenu variant="header" />
+          <UserMenu />
         </div>
       </div>
     </header>

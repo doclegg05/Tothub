@@ -14,11 +14,7 @@ import { LogOut, User, Settings } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useLocation } from 'wouter';
 
-interface UserMenuProps {
-  variant?: 'header' | 'sidebar';
-}
-
-export function UserMenu({ variant = 'sidebar' }: UserMenuProps) {
+export function UserMenu() {
   const { user, logout } = useAuth();
   const { toast } = useToast();
   const [, setLocation] = useLocation();
@@ -57,34 +53,22 @@ export function UserMenu({ variant = 'sidebar' }: UserMenuProps) {
     }
   };
 
-  // Simple display without dropdown for header
-  if (variant === 'header') {
-    return (
-      <div className="flex items-center">
-        <span className="text-sm font-medium text-gray-700">{user.name}</span>
-      </div>
-    );
-  }
-
-  // Original dropdown menu for sidebar
+  // Always show the full dropdown menu with avatar
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" className="w-full justify-start p-3 h-auto">
+        <Button variant="ghost" className="p-2">
           <div className="flex items-center space-x-3">
             <Avatar className="h-8 w-8">
               <AvatarFallback className={`${getRoleColor(user.role)} text-white text-xs font-semibold`}>
                 {getInitials(user.name)}
               </AvatarFallback>
             </Avatar>
-            <div className="flex flex-col items-start text-left">
-              <p className="text-sm font-medium text-gray-900">{user.name}</p>
-              <p className="text-xs text-gray-500">{user.role.charAt(0).toUpperCase() + user.role.slice(1)}</p>
-            </div>
+
           </div>
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent className="w-56" align="start" side="top">
+      <DropdownMenuContent className="w-56" align="end">
         <DropdownMenuLabel className="font-normal">
           <div className="flex flex-col space-y-1">
             <p className="text-sm font-medium leading-none">{user.name}</p>

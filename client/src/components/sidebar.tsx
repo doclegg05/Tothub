@@ -116,11 +116,7 @@ export function Sidebar() {
         </div>
       </nav>
       
-      {/* User Menu at bottom of sidebar */}
-      <div className="p-4 border-t border-gray-200 bg-red-50">
-        <div className="text-xs text-red-600 mb-2">DEBUG: UserMenu should appear below</div>
-        <UserMenu />
-      </div>
+
     </div>
   );
 }
