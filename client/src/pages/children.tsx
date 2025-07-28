@@ -88,9 +88,11 @@ export default function Children() {
   // Debug logging
   console.log("Children data:", { 
     response: childrenResponse,
+    children: children,
     childrenCount: children.length,
     isLoading,
-    error 
+    error,
+    isAuthenticated
   });
 
   const createChildMutation = useMutation({
@@ -212,11 +214,23 @@ export default function Children() {
     createChildMutation.mutate(submissionData);
   };
 
-  const filteredChildren = (children as any[]).filter((child: any) =>
-    `${child.firstName} ${child.lastName}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    child.room.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    child.parentName.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredChildren = (children as any[]).filter((child: any) => {
+    if (!child) return false;
+    const searchLower = searchTerm.toLowerCase();
+    const fullName = `${child.firstName || ''} ${child.lastName || ''}`.toLowerCase();
+    const room = (child.room || '').toLowerCase();
+    const parentName = (child.parentName || '').toLowerCase();
+    
+    return fullName.includes(searchLower) ||
+           room.includes(searchLower) ||
+           parentName.includes(searchLower);
+  });
+  
+  console.log("Filtered children:", {
+    searchTerm,
+    filteredCount: filteredChildren.length,
+    filteredChildren
+  });
 
   const getAgeGroupBadge = (ageGroup: string) => {
     const colors = {
