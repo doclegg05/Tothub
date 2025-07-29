@@ -80,7 +80,7 @@ export default function CheckIn() {
   });
 
   // Fetch data
-  const { data: children = [], isLoading: childrenLoading } = useQuery({
+  const { data: childrenResponse, isLoading: childrenLoading } = useQuery({
     queryKey: ["/api/children"],
   });
 
@@ -88,9 +88,13 @@ export default function CheckIn() {
     queryKey: ["/api/attendance/present"],
   });
 
-  const { data: staff = [] } = useQuery({
+  const { data: staffResponse } = useQuery({
     queryKey: ["/api/staff"],
   });
+
+  // Handle paginated responses
+  const children = Array.isArray(childrenResponse) ? childrenResponse : (childrenResponse?.data || []);
+  const staff = Array.isArray(staffResponse) ? staffResponse : (staffResponse?.data || []);
 
   // Filter children based on search
   const filteredPresentChildren = (presentChildren as any[]).filter((attendance: any) =>
