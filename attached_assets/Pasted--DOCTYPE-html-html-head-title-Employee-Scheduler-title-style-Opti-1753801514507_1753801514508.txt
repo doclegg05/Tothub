@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Employee Scheduler</title>
+    <style>
+        /* Optional: Basic styling for intuitiveness */
+        body { font-family: Arial, sans-serif; }
+        #dp { height: 600px; } /* Adjust height as needed */
+    </style>
+</head>
+<body>
+    <div id="dp"></div>
+
+    <script src="js/daypilot/daypilot-all.min.js"></script> <!-- Path to downloaded file -->
+    <script>
+        const dp = new DayPilot.Calendar("dp", {
+            viewType: "Resources",
+            columns: [
+                { name: "Employee 1", id: "E1" },
+                { name: "Employee 2", id: "E2" },
+                { name: "Employee 3", id: "E3" },
+                { name: "Employee 4", id: "E4" }
+            ],
+            startDate: "2025-07-29", // Current date or customize
+            timeRangeSelectedHandling: "Enabled", // Allows creating new events
+            eventMoveHandling: "Update", // Drag to move
+            eventResizeHandling: "Update", // Resize events
+            onTimeRangeSelected: function(args) {
+                // Prompt to create event (customize as needed)
+                const name = prompt("New shift name:", "Shift");
+                if (name) {
+                    dp.events.add({
+                        start: args.start,
+                        end: args.end,
+                        id: DayPilot.guid(), // Unique ID
+                        text: name,
+                        resource: args.resource
+                    });
+                }
+                dp.clearSelection();
+            },
+            events: [ // Sample static events (shifts)
+                { id: 1, start: "2025-07-29T09:00:00", end: "2025-07-29T17:00:00", text: "Day Shift", resource: "E1", backColor: "#6aa84f" },
+                { id: 2, start: "2025-07-29T13:00:00", end: "2025-07-29T21:00:00", text: "Afternoon Shift", resource: "E2", backColor: "#3d85c6" },
+                { id: 3, start: "2025-07-30T08:00:00", end: "2025-07-30T16:00:00", text: "Morning Shift", resource: "E3", backColor: "#e69138" },
+                { id: 4, start: "2025-07-30T10:00:00", end: "2025-07-30T18:00:00", text: "Full Day", resource: "E4", backColor: "#cc0000" }
+            ]
+        });
+        dp.init();
+    </script>
+</body>
+</html>

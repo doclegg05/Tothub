@@ -12,6 +12,13 @@ TotHub is a comprehensive daycare management system built with a React frontend 
   - Pattern matches other schemas in codebase (like insertDocumentSchema) for consistency
   - Simplified route handler in server/routes/schedules.ts since schema now handles date transformation
   - Schedules now successfully save to database with proper date handling
+- ✓ **Staff Scheduling Calendar Replacement (January 29, 2025)** - Replaced React Big Calendar with FullCalendar Resource Timeline:
+  - User requested DayPilot Lite but CDN download failed, so implemented FullCalendar Resource Timeline as better alternative
+  - New interface displays employees as columns with time on vertical axis (resource timeline view)
+  - Maintains all existing functionality: drag-and-drop scheduling, color-coded shift types, CRUD operations
+  - Installed dependencies: @fullcalendar/react, @fullcalendar/resource-timeline, @fullcalendar/interaction
+  - Created new component staff-scheduling-daypilot.tsx (name kept for consistency despite using FullCalendar)
+  - Better visualization for multi-employee scheduling with side-by-side staff columns
 - ✓ **Automated Daily Activity Reports (January 29, 2025)** - Complete parent communication system:
   - Implemented TeacherNotes database table for storing daily observations about children
   - Created comprehensive backend services: dailyReportService with email templates and formatting
