@@ -40,8 +40,11 @@ export function NotificationsPanel() {
     queryKey: ["/api/alerts/unread"],
   });
 
-  // State for managing read status
-  const [readStatus, setReadStatus] = useState<Record<string, boolean>>({});
+  // State for managing read status - persist in localStorage
+  const [readStatus, setReadStatus] = useState<Record<string, boolean>>(() => {
+    const saved = localStorage.getItem('notificationReadStatus');
+    return saved ? JSON.parse(saved) : {};
+  });
 
   // Combine alerts with other notification sources
   const alertNotifications: Notification[] = (alerts as any[]).map(alert => ({
@@ -132,10 +135,14 @@ export function NotificationsPanel() {
   };
 
   const markAsRead = (id: string) => {
-    setReadStatus(prev => ({
-      ...prev,
-      [id]: true
-    }));
+    setReadStatus(prev => {
+      const newStatus = {
+        ...prev,
+        [id]: true
+      };
+      localStorage.setItem('notificationReadStatus', JSON.stringify(newStatus));
+      return newStatus;
+    });
   };
 
   const markAllAsRead = () => {
@@ -144,12 +151,20 @@ export function NotificationsPanel() {
       newReadStatus[n.id] = true;
     });
     setReadStatus(newReadStatus);
+    localStorage.setItem('notificationReadStatus', JSON.stringify(newReadStatus));
   };
 
-  const [hiddenNotifications, setHiddenNotifications] = useState<Set<string>>(new Set());
+  const [hiddenNotifications, setHiddenNotifications] = useState<Set<string>>(() => {
+    const saved = localStorage.getItem('hiddenNotifications');
+    return saved ? new Set(JSON.parse(saved)) : new Set();
+  });
 
   const clearNotification = (id: string) => {
-    setHiddenNotifications(prev => new Set(prev).add(id));
+    setHiddenNotifications(prev => {
+      const newHidden = new Set(prev).add(id);
+      localStorage.setItem('hiddenNotifications', JSON.stringify(Array.from(newHidden)));
+      return newHidden;
+    });
   };
 
   // Filter out hidden notifications
@@ -252,6 +267,8 @@ export function NotificationsPanel() {
                 // Show all notifications including hidden ones
                 setHiddenNotifications(new Set());
                 setReadStatus({});
+                localStorage.removeItem('hiddenNotifications');
+                localStorage.removeItem('notificationReadStatus');
               }}
             >
               View all notifications
