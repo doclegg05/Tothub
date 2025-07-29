@@ -43,7 +43,18 @@ router.get("/today", auth, async (req, res) => {
 router.post("/", auth, async (req, res) => {
   try {
     console.log('Creating schedule with data:', JSON.stringify(req.body, null, 2));
-    const validatedData = insertStaffScheduleSchema.parse(req.body);
+    
+    // Convert date strings to Date objects
+    const dataWithDates = {
+      ...req.body,
+      date: new Date(req.body.date),
+      scheduledStart: new Date(req.body.scheduledStart),
+      scheduledEnd: new Date(req.body.scheduledEnd),
+      recurringUntil: req.body.recurringUntil ? new Date(req.body.recurringUntil) : undefined,
+    };
+    
+    console.log('Data with parsed dates:', JSON.stringify(dataWithDates, null, 2));
+    const validatedData = insertStaffScheduleSchema.parse(dataWithDates);
     console.log('Validated data:', JSON.stringify(validatedData, null, 2));
     const schedule = await storage.createStaffSchedule(validatedData);
     console.log('Created schedule:', JSON.stringify(schedule, null, 2));
