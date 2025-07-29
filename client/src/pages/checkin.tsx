@@ -27,8 +27,11 @@ import {
   Frown, 
   Meh, 
   Shield,
-  Settings
+  Settings,
+  MessageSquare,
+  Mail
 } from "lucide-react";
+import { TeacherNotesPanel } from "@/components/teacher-notes";
 
 interface CheckInData {
   childId: string;
@@ -267,6 +270,22 @@ export default function CheckIn() {
     });
   };
 
+  const sendAllDailyReports = async () => {
+    try {
+      const response = await apiRequest('/api/daily-reports/send-all', 'POST', { date: new Date() });
+      toast({
+        title: "Daily Reports Started",
+        description: "Daily report emails are being sent to parents of all present children.",
+      });
+    } catch (error) {
+      toast({
+        title: "Failed to Send Reports",
+        description: "Please try again later.",
+        variant: "destructive",
+      });
+    }
+  };
+
   const handleBiometricFailure = (error: string) => {
     toast({
       title: "Biometric Authentication Failed",
@@ -304,10 +323,16 @@ export default function CheckIn() {
               {new Date().toLocaleTimeString()}
             </div>
           </div>
-          <Button onClick={() => setCheckInModalOpen(true)}>
-            <LogIn className="w-4 h-4 mr-2" />
-            New Check-In
-          </Button>
+          <div className="flex items-center space-x-2">
+            <Button variant="outline" onClick={() => sendAllDailyReports()}>
+              <Mail className="w-4 h-4 mr-2" />
+              Send Daily Reports
+            </Button>
+            <Button onClick={() => setCheckInModalOpen(true)}>
+              <LogIn className="w-4 h-4 mr-2" />
+              New Check-In
+            </Button>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

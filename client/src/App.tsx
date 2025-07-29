@@ -27,6 +27,7 @@ import ParentPortal from "@/pages/parent-portal";
 import ParentLogin from "@/pages/parent-login";
 import ChildDetails from "@/pages/child-details";
 import Analytics from "@/pages/analytics";
+import DailyReports from "@/pages/daily-reports";
 
 function AuthenticatedApp() {
   return (
@@ -38,6 +39,7 @@ function AuthenticatedApp() {
           <Route path="/landing" component={Landing} />
           <Route path="/checkin" component={CheckIn} />
           <Route path="/parent-communication" component={ParentCommunication} />
+          <Route path="/daily-reports" component={DailyReports} />
           <Route path="/children" component={Children} />
           <Route path="/children/:id" component={ChildDetails} />
           <Route path="/staff" component={Staff} />

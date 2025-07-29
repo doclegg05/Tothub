@@ -456,6 +456,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Analytics API Routes
   app.use("/api/analytics", (await import("./routes/analytics")).default);
+  
+  // Teacher Notes and Daily Reports Routes
+  app.use("/api", (await import("./routes/teacherNotes")).teacherNotesRouter);
 
   const httpServer = createServer(app);
   return httpServer;

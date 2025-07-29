@@ -82,6 +82,14 @@ app.use((req, res, next) => {
 });
 
 (async () => {
+  // Initialize cron jobs
+  try {
+    const { initializeAllCronJobs } = await import('./services/cronJobs');
+    initializeAllCronJobs();
+  } catch (error) {
+    console.error('Failed to initialize cron jobs:', error);
+  }
+  
   // Health and infrastructure routes
   app.use('/api', healthRoutes);
   

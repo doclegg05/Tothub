@@ -83,6 +83,17 @@ export interface IStorage {
   updateParent(id: string, parent: Partial<InsertParent>): Promise<Parent>;
   updateParentLastLogin(id: string): Promise<Parent>;
   getParentChildren(parentId: string): Promise<Child[]>;
+  
+  // Daily Reports
+  getDailyReport(childId: string, date: Date): Promise<any | undefined>;
+  createDailyReport(report: any): Promise<any>;
+  updateDailyReport(id: string, updates: any): Promise<any>;
+  getChildDayData(childId: string, date: Date): Promise<any>;
+  getPresentChildrenForDate(date: Date): Promise<Attendance[]>;
+  
+  // Teacher Notes
+  addTeacherNote(note: any): Promise<any>;
+  getTeacherNotes(childId: string, date: Date): Promise<any[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -734,6 +745,110 @@ export class DatabaseStorage implements IStorage {
       .orderBy(asc(children.firstName));
     
     return childrenData;
+  }
+
+  // Daily Reports
+  async getDailyReport(childId: string, date: Date): Promise<any | undefined> {
+    const { dailyReports } = await import("@shared/schema");
+    const startOfDay = new Date(date);
+    startOfDay.setHours(0, 0, 0, 0);
+    const endOfDay = new Date(date);
+    endOfDay.setHours(23, 59, 59, 999);
+    
+    const [report] = await db.select()
+      .from(dailyReports)
+      .where(and(
+        eq(dailyReports.childId, childId),
+        gte(dailyReports.date, startOfDay),
+        lte(dailyReports.date, endOfDay)
+      ));
+    
+    return report || undefined;
+  }
+
+  async createDailyReport(report: any): Promise<any> {
+    const { dailyReports } = await import("@shared/schema");
+    const [newReport] = await db.insert(dailyReports).values(report).returning();
+    return newReport;
+  }
+
+  async updateDailyReport(id: string, updates: any): Promise<any> {
+    const { dailyReports } = await import("@shared/schema");
+    const [updated] = await db.update(dailyReports)
+      .set(updates)
+      .where(eq(dailyReports.id, id))
+      .returning();
+    return updated;
+  }
+
+  async getChildDayData(childId: string, date: Date): Promise<any> {
+    const startOfDay = new Date(date);
+    startOfDay.setHours(0, 0, 0, 0);
+    const endOfDay = new Date(date);
+    endOfDay.setHours(23, 59, 59, 999);
+    
+    // Get attendance data
+    const attendanceData = await db.select()
+      .from(attendance)
+      .where(and(
+        eq(attendance.childId, childId),
+        gte(attendance.date, startOfDay),
+        lte(attendance.date, endOfDay)
+      ));
+    
+    // Get any existing daily report
+    const dailyReport = await this.getDailyReport(childId, date);
+    
+    // Get teacher notes
+    const teacherNotes = await this.getTeacherNotes(childId, date);
+    
+    return {
+      attendance: attendanceData[0] || null,
+      dailyReport,
+      teacherNotes,
+      // Placeholder for additional data types to be added later
+      meals: dailyReport?.meals || [],
+      activities: dailyReport?.activities || [],
+      photos: dailyReport?.photoUrls || [],
+      naps: dailyReport?.naps || null,
+      behaviorNotes: dailyReport?.behaviorNotes || null
+    };
+  }
+
+  async getPresentChildrenForDate(date: Date): Promise<Attendance[]> {
+    const startOfDay = new Date(date);
+    startOfDay.setHours(0, 0, 0, 0);
+    const endOfDay = new Date(date);
+    endOfDay.setHours(23, 59, 59, 999);
+    
+    return await db.select()
+      .from(attendance)
+      .where(and(
+        gte(attendance.date, startOfDay),
+        lte(attendance.date, endOfDay),
+        isNull(attendance.checkOutTime)
+      ));
+  }
+
+  // Teacher Notes
+  async addTeacherNote(note: any): Promise<any> {
+    const { teacherNotes } = await import("@shared/schema");
+    const [newNote] = await db.insert(teacherNotes).values(note).returning();
+    return newNote;
+  }
+
+  async getTeacherNotes(childId: string, date: Date): Promise<any[]> {
+    const { teacherNotes } = await import("@shared/schema");
+    const targetDate = new Date(date);
+    targetDate.setHours(0, 0, 0, 0);
+    
+    return await db.select()
+      .from(teacherNotes)
+      .where(and(
+        eq(teacherNotes.childId, childId),
+        eq(teacherNotes.date, targetDate.toISOString().split('T')[0])
+      ))
+      .orderBy(desc(teacherNotes.createdAt));
   }
 
   // Test data management methods

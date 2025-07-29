@@ -296,8 +296,23 @@ export const dailyReports = pgTable("daily_reports", {
   photoUrls: text("photo_urls").array().default(sql`'{}'::text[]`),
   isGenerated: boolean("is_generated").default(false),
   sentToParent: boolean("sent_to_parent").default(false),
+  emailStatus: text('email_status').notNull().default('pending'), // pending, sent, failed
+  emailMessageId: text('email_message_id'),
   createdAt: timestamp("created_at").default(sql`now()`),
 });
+
+// Teacher notes for daily reports
+export const teacherNotes = pgTable('teacher_notes', {
+  id: varchar('id').primaryKey().default(sql`gen_random_uuid()`),
+  childId: varchar('child_id').notNull().references(() => children.id),
+  staffId: varchar('staff_id').notNull().references(() => staff.id),
+  date: timestamp('date').notNull(),
+  note: text('note').notNull(),
+  category: text('category'), // behavior, learning, health, general
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+});
+
+// Teacher notes types will be exported later with other schemas
 
 // Role-based Access Control
 export const userRoles = pgTable("user_roles", {
@@ -623,6 +638,11 @@ export const insertParentSchema = createInsertSchema(parents).omit({
   lastLogin: true,
 });
 
+export const insertTeacherNoteSchema = createInsertSchema(teacherNotes).omit({
+  id: true,
+  createdAt: true,
+});
+
 // Types
 export type Child = typeof children.$inferSelect;
 export type InsertChild = z.infer<typeof insertChildSchema>;
@@ -692,6 +712,8 @@ export type PayrollReport = typeof payrollReports.$inferSelect;
 export type InsertPayrollReport = z.infer<typeof insertPayrollReportSchema>;
 export type PayrollAudit = typeof payrollAudit.$inferSelect;
 export type InsertPayrollAudit = z.infer<typeof insertPayrollAuditSchema>;
+export type TeacherNote = typeof teacherNotes.$inferSelect;
+export type InsertTeacherNote = z.infer<typeof insertTeacherNoteSchema>;
 
 // Physical Security System Tables
 export const securityDevices = pgTable("security_devices", {

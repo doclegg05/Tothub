@@ -14,12 +14,14 @@ import {
   DollarSign,
   Calendar,
   CheckCircle,
-  Activity
+  Activity,
+  Mail
 } from "lucide-react";
 
 const navigation = [
   { name: "Dashboard", href: "/", icon: Home },
   { name: "Check-In/Out", href: "/checkin", icon: UserCheck },
+  { name: "Daily Reports", href: "/daily-reports", icon: Mail },
   { name: "Children", href: "/children", icon: Users },
   { name: "Staff", href: "/staff", icon: GraduationCap },
   { name: "Reports", href: "/reports", icon: BarChart3 },
