@@ -38,7 +38,18 @@ export default function Staff() {
   const pageSize = 20;
 
   const { data: staffResponse, isLoading } = useQuery({
-    queryKey: ["/api/staff", currentPage],
+    queryKey: ["staff", currentPage],
+    queryFn: async () => {
+      const res = await fetch(`/api/staff?page=${currentPage}&limit=${pageSize}`, {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem('authToken') || localStorage.getItem('token')}`,
+        },
+      });
+      if (!res.ok) {
+        throw new Error(`${res.status}: ${await res.text()}`);
+      }
+      return res.json();
+    },
   });
 
   const staff = staffResponse?.data || [];
@@ -52,7 +63,7 @@ export default function Staff() {
     mutationFn: (data: any) => apiRequest("POST", "/api/staff", data),
     onSuccess: () => {
       // Invalidate all staff queries regardless of page
-      queryClient.invalidateQueries({ queryKey: ["/api/staff"] });
+      queryClient.invalidateQueries({ queryKey: ["staff"] });
       toast({
         title: "Success",
         description: "Staff member added successfully.",
