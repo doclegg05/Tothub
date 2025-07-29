@@ -2,6 +2,7 @@ import { Bell } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useQuery } from "@tanstack/react-query";
 import { UserMenu } from "@/components/user-menu";
+import { NotificationsPanel } from "@/components/notifications-panel";
 
 interface HeaderProps {
   title: string;
@@ -32,14 +33,7 @@ export function Header({ title, subtitle }: HeaderProps) {
           </p>
         </div>
         <div className="flex items-center space-x-4">
-          <Button variant="ghost" size="sm" className="relative">
-            <Bell className="h-5 w-5" />
-            {alerts.length > 0 && (
-              <span className="absolute -top-1 -right-1 h-5 w-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">
-                {alerts.length}
-              </span>
-            )}
-          </Button>
+          <NotificationsPanel />
           <UserMenu />
         </div>
       </div>
