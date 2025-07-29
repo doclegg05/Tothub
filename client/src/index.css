@@ -1,3 +1,6 @@
+/* Import FullCalendar fixes */
+@import './styles/fullcalendar-fixes.css';
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;

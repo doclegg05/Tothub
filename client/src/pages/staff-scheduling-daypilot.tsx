@@ -312,6 +312,12 @@ export function StaffSchedulingDayPilot() {
                   center: 'title',
                   right: 'resourceTimelineDay,resourceTimelineWeek'
                 }}
+                buttonIcons={{
+                  prev: 'chevron-left',
+                  next: 'chevron-right',
+                  prevYear: 'chevrons-left',
+                  nextYear: 'chevrons-right'
+                }}
                 slotMinTime="06:00:00"
                 slotMaxTime="20:00:00"
                 slotDuration="00:30:00"
