@@ -175,8 +175,23 @@ export default function ChildDetails() {
             size="icon"
             onClick={() => navigate("/children")}
             className="hover:bg-gray-100 dark:hover:bg-gray-800"
+            aria-label="Go back to children list"
           >
-            <ArrowLeft className="h-4 w-4 text-gray-700 dark:text-gray-300" />
+            <svg 
+              xmlns="http://www.w3.org/2000/svg" 
+              width="16" 
+              height="16" 
+              viewBox="0 0 24 24" 
+              fill="none" 
+              stroke="currentColor" 
+              strokeWidth="2" 
+              strokeLinecap="round" 
+              strokeLinejoin="round"
+              className="text-gray-700 dark:text-gray-300"
+            >
+              <path d="m12 19-7-7 7-7"/>
+              <path d="M19 12H5"/>
+            </svg>
           </Button>
           <h1 className="text-3xl font-bold">
             {child.firstName} {child.lastName}
