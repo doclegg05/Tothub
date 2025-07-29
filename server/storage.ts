@@ -385,6 +385,14 @@ export class DatabaseStorage implements IStorage {
     }));
   }
 
+  async getAllStaffSchedules(): Promise<StaffSchedule[]> {
+    const result = await db.select()
+      .from(staffSchedules)
+      .orderBy(desc(staffSchedules.scheduledStart));
+    
+    return result;
+  }
+
   async getStaffSchedulesByDate(date: Date): Promise<(StaffSchedule & { staff: Staff })[]> {
     const startOfDay = new Date(date);
     startOfDay.setHours(0, 0, 0, 0);

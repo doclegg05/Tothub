@@ -24,6 +24,7 @@ const navigation = [
   { name: "Daily Reports", href: "/daily-reports", icon: Mail },
   { name: "Children", href: "/children", icon: Users },
   { name: "Staff", href: "/staff", icon: GraduationCap },
+  { name: "Staff Scheduling", href: "/staff-scheduling", icon: Calendar },
   { name: "Reports", href: "/reports", icon: BarChart3 },
   { name: "Analytics", href: "/analytics", icon: TrendingUp },
   { name: "Compliance", href: "/compliance", icon: CheckCircle },

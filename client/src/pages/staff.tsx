@@ -10,8 +10,9 @@ import { Badge } from "@/components/ui/badge";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { Search, Plus, GraduationCap, Mail, Phone, Clock, CheckCircle, AlertTriangle } from "lucide-react";
+import { Search, Plus, GraduationCap, Mail, Phone, Clock, CheckCircle, AlertTriangle, Calendar } from "lucide-react";
 import { StaffTimeClock } from "@/components/staff-timeclock";
+import { Link } from "wouter";
 
 export default function Staff() {
   const { toast } = useToast();
@@ -143,7 +144,7 @@ export default function Staff() {
     
     const scheduleDate = new Date(scheduleData.date);
     const startTime = scheduleData.scheduledStart.split(':');
-    const endTime = scheduledData.scheduledEnd.split(':');
+    const endTime = scheduleData.scheduledEnd.split(':');
     
     const scheduledStart = new Date(scheduleDate);
     scheduledStart.setHours(parseInt(startTime[0]), parseInt(startTime[1]));
@@ -191,11 +192,17 @@ export default function Staff() {
             />
           </div>
           <div className="flex space-x-3">
+            <Link href="/staff-scheduling">
+              <Button variant="outline">
+                <Calendar className="w-4 h-4 mr-2" />
+                View Calendar
+              </Button>
+            </Link>
             <Dialog open={scheduleModalOpen} onOpenChange={setScheduleModalOpen}>
               <DialogTrigger asChild>
                 <Button variant="outline">
                   <Clock className="w-4 h-4 mr-2" />
-                  Add Schedule
+                  Quick Schedule
                 </Button>
               </DialogTrigger>
               <DialogContent className="max-w-md">

@@ -8,6 +8,27 @@ import { authMiddleware } from "../middleware/auth";
 const router = Router();
 const auth = authMiddleware;
 
+// Get all staff schedules (for calendar view)
+router.get("/", auth, async (req, res) => {
+  try {
+    const schedules = await storage.getAllStaffSchedules();
+    const schedulesWithNames = await Promise.all(
+      schedules.map(async (schedule: any) => {
+        const staff = await storage.getStaff(schedule.staffId);
+        return {
+          ...schedule,
+          staffName: staff ? `${staff.firstName} ${staff.lastName}` : 'Unknown Staff',
+          type: schedule.scheduleType || 'regular'
+        };
+      })
+    );
+    res.json(schedulesWithNames);
+  } catch (error) {
+    console.error('Error fetching all schedules:', error);
+    res.status(500).json({ message: "Failed to fetch schedules" });
+  }
+});
+
 // Get today's staff schedules
 router.get("/today", auth, async (req, res) => {
   try {

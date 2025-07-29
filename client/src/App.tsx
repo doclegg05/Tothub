@@ -18,6 +18,7 @@ import Compliance from "@/pages/compliance";
 import ParentCommunication from "@/pages/parent-communication";
 import Payroll from "@/pages/payroll";
 import Scheduling from "@/pages/scheduling";
+import StaffScheduling from "@/pages/staff-scheduling";
 import Sessions from "@/pages/sessions";
 import Landing from "@/pages/landing";
 import Login from "@/pages/login";
@@ -43,6 +44,7 @@ function AuthenticatedApp() {
           <Route path="/children" component={Children} />
           <Route path="/children/:id" component={ChildDetails} />
           <Route path="/staff" component={Staff} />
+          <Route path="/staff-scheduling" component={StaffScheduling} />
           <Route path="/payroll" component={Payroll} />
           <Route path="/scheduling" component={Scheduling} />
           <Route path="/reports" component={Reports} />
