@@ -8,11 +8,13 @@ import { Badge } from "@/components/ui/badge";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { LogIn, LogOut, UserPlus, Clock, AlertTriangle, CheckCircle, MapPin } from "lucide-react";
+import { useLocation } from "wouter";
 
 export default function Dashboard() {
   const [checkInModalOpen, setCheckInModalOpen] = useState(false);
   const [checkOutModalOpen, setCheckOutModalOpen] = useState(false);
   const [selectedChild, setSelectedChild] = useState<any>(null);
+  const [, setLocation] = useLocation();
 
   const { data: presentChildren = [], isLoading: presentLoading } = useQuery({
     queryKey: ["/api/attendance/present"],
@@ -84,7 +86,13 @@ export default function Dashboard() {
             <Card>
               <CardHeader className="flex flex-row items-center justify-between">
                 <CardTitle>Quick Check-In/Out</CardTitle>
-                <Button variant="outline" size="sm">View All</Button>
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => setLocation('/checkin')}
+                >
+                  View All
+                </Button>
               </CardHeader>
               <CardContent>
                 {presentLoading ? (
@@ -159,7 +167,13 @@ export default function Dashboard() {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle>Today's Staff Schedule</CardTitle>
-              <Button variant="outline" size="sm">Manage Schedule</Button>
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => setLocation('/staff')}
+              >
+                Manage Schedule
+              </Button>
             </CardHeader>
             <CardContent>
               {schedulesLoading ? (
@@ -214,7 +228,13 @@ export default function Dashboard() {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle>Recent Activity</CardTitle>
-              <Button variant="outline" size="sm">View All</Button>
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => setLocation('/reports')}
+              >
+                View All
+              </Button>
             </CardHeader>
             <CardContent>
               {alertsLoading ? (
