@@ -13,9 +13,12 @@ router.get("/", auth, async (req, res) => {
   try {
     const page = parseInt(req.query.page as string) || 1;
     const limit = parseInt(req.query.limit as string) || 50;
+    console.log(`Fetching staff - page: ${page}, limit: ${limit}`);
     const result = await storage.getActiveStaff({ page, limit });
+    console.log(`Staff fetched - total: ${result.total}, returned: ${result.data.length}`);
     res.json(result);
   } catch (error) {
+    console.error('Error fetching staff:', error);
     res.status(500).json({ message: "Failed to fetch staff" });
   }
 });

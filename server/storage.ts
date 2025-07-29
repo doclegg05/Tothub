@@ -229,9 +229,10 @@ export class DatabaseStorage implements IStorage {
     const limit = Math.min(100, options.limit || 50);
     const offset = (page - 1) * limit;
 
-    const cacheKey = `active-staff-${page}-${limit}`;
-    const cached = memoryCache.getAttendance(cacheKey);
-    if (cached) return cached;
+    // Don't use cache for now - it's causing issues
+    // const cacheKey = `active-staff-${page}-${limit}`;
+    // const cached = memoryCache.getAttendance(cacheKey);
+    // if (cached) return cached;
 
     const [{ count }] = await db.select({ count: sql<number>`count(*)` })
       .from(staff)
@@ -252,7 +253,8 @@ export class DatabaseStorage implements IStorage {
       totalPages: Math.ceil(Number(count) / limit)
     };
 
-    memoryCache.setAttendance(cacheKey, result);
+    // Don't cache for now
+    // memoryCache.setAttendance(cacheKey, result);
     
     return result;
   }
