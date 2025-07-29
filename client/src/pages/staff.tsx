@@ -152,12 +152,14 @@ export default function Staff() {
     const scheduledEnd = new Date(scheduleDate);
     scheduledEnd.setHours(parseInt(endTime[0]), parseInt(endTime[1]));
 
-    createScheduleMutation.mutate({
+    const payload = {
       ...scheduleData,
       date: scheduleDate,
       scheduledStart,
       scheduledEnd,
-    });
+    };
+    console.log('Sending schedule data:', payload);
+    createScheduleMutation.mutate(payload);
   };
 
   const filteredStaff = staff.filter((member: any) =>
