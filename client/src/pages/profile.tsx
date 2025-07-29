@@ -199,7 +199,7 @@ export default function Profile() {
         <div className="mb-6">
           <Link href="/">
             <Button variant="ghost" size="sm">
-              <ArrowLeft className="h-4 w-4 mr-2" />
+              <ArrowLeft className="h-4 w-4 mr-2 text-gray-700 dark:text-gray-300" />
               Back to Dashboard
             </Button>
           </Link>

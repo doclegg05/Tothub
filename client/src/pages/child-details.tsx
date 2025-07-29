@@ -174,8 +174,9 @@ export default function ChildDetails() {
             variant="ghost"
             size="icon"
             onClick={() => navigate("/children")}
+            className="hover:bg-gray-100 dark:hover:bg-gray-800"
           >
-            <ArrowLeft className="h-4 w-4" />
+            <ArrowLeft className="h-4 w-4 text-gray-700 dark:text-gray-300" />
           </Button>
           <h1 className="text-3xl font-bold">
             {child.firstName} {child.lastName}
