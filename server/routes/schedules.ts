@@ -8,6 +8,11 @@ import { authMiddleware } from "../middleware/auth";
 const router = Router();
 const auth = authMiddleware;
 
+// Test endpoint to verify route is loaded
+router.get("/test", (req, res) => {
+  res.json({ message: "Schedules route is loaded correctly", timestamp: new Date() });
+});
+
 // Get all staff schedules (for calendar view)
 router.get("/", auth, async (req, res) => {
   try {
@@ -44,29 +49,20 @@ router.post("/", auth, async (req, res) => {
   try {
     console.log('Creating schedule with data:', JSON.stringify(req.body, null, 2));
     
-    // Convert date strings to Date objects
-    const dataWithDates = {
-      ...req.body,
-      date: new Date(req.body.date),
-      scheduledStart: new Date(req.body.scheduledStart),
-      scheduledEnd: new Date(req.body.scheduledEnd),
-      recurringUntil: req.body.recurringUntil ? new Date(req.body.recurringUntil) : undefined,
-    };
-    
-    console.log('Data with parsed dates:', JSON.stringify(dataWithDates, null, 2));
-    const validatedData = insertStaffScheduleSchema.parse(dataWithDates);
+    const validatedData = insertStaffScheduleSchema.parse(req.body);
     console.log('Validated data:', JSON.stringify(validatedData, null, 2));
+    
     const schedule = await storage.createStaffSchedule(validatedData);
     console.log('Created schedule:', JSON.stringify(schedule, null, 2));
+    
     res.status(201).json(schedule);
   } catch (error) {
     console.error('Schedule creation error:', error);
-    console.error('Error details:', JSON.stringify(error, null, 2));
     if (error instanceof z.ZodError) {
       console.error('Validation errors:', JSON.stringify(error.errors, null, 2));
       return res.status(400).json({ message: "Invalid data", errors: error.errors });
     }
-    res.status(500).json({ message: "Failed to create staff schedule", error: error.message });
+    res.status(500).json({ message: "Failed to create staff schedule" });
   }
 });
 

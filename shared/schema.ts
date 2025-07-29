@@ -558,6 +558,13 @@ export const insertAttendanceSchema = createInsertSchema(attendance).omit({
 export const insertStaffScheduleSchema = createInsertSchema(staffSchedules).omit({
   id: true,
   createdAt: true,
+}).extend({
+  date: z.string().transform((str) => new Date(str)),
+  scheduledStart: z.string().transform((str) => new Date(str)),
+  scheduledEnd: z.string().transform((str) => new Date(str)),
+  actualStart: z.string().optional().transform((str) => str ? new Date(str) : undefined),
+  actualEnd: z.string().optional().transform((str) => str ? new Date(str) : undefined),
+  recurringUntil: z.string().optional().transform((str) => str ? new Date(str) : undefined),
 });
 
 export const insertSettingSchema = createInsertSchema(settings).omit({
