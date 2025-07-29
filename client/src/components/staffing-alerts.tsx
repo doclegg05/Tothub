@@ -24,6 +24,30 @@ export function StaffingAlerts() {
     },
   });
 
+  const requestStaffMutation = useMutation({
+    mutationFn: (room: string) => 
+      apiRequest("POST", "/api/alerts", {
+        type: "RATIO_VIOLATION",
+        message: `Additional staff needed in ${room} to meet required ratios`,
+        severity: "HIGH",
+        metadata: { room }
+      }),
+    onSuccess: (_, room) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/alerts/unread"] });
+      toast({
+        title: "Staff Request Sent",
+        description: `Alert sent for additional staff in ${room}`,
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Request Failed",
+        description: "Could not send staff request. Please try again.",
+        variant: "destructive"
+      });
+    },
+  });
+
   if (isLoading) {
     return (
       <Card>
@@ -92,8 +116,10 @@ export function StaffingAlerts() {
                   size="sm"
                   variant="outline"
                   className="mt-2 text-xs"
+                  onClick={() => requestStaffMutation.mutate(ratio.room)}
+                  disabled={requestStaffMutation.isPending}
                 >
-                  Request Additional Staff
+                  {requestStaffMutation.isPending ? "Sending..." : "Request Additional Staff"}
                 </Button>
               )}
             </div>
