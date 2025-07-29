@@ -9,7 +9,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { LogOut, User, Settings } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useLocation } from 'wouter';
@@ -18,6 +18,9 @@ export function UserMenu() {
   const { user, logout } = useAuth();
   const { toast } = useToast();
   const [, setLocation] = useLocation();
+  const [avatarUrl] = useState<string | null>(() => {
+    return localStorage.getItem('userAvatar');
+  });
 
 
 
@@ -57,6 +60,7 @@ export function UserMenu() {
         <Button variant="ghost" className="p-2">
           <div className="flex items-center space-x-3">
             <Avatar className="h-8 w-8">
+              <AvatarImage src={avatarUrl || `https://api.dicebear.com/7.x/initials/svg?seed=${user.name}`} />
               <AvatarFallback className={`${getRoleColor(user.role)} text-white text-xs font-semibold`}>
                 {getInitials(user.name)}
               </AvatarFallback>

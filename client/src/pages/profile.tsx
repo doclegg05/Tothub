@@ -6,13 +6,20 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/lib/auth";
 import { 
   ArrowLeft, User, Mail, Shield, Calendar, Edit2, Lock, Bell, 
   Activity, Settings, Camera, Trash2, Download, Smartphone,
-  Globe, Moon, Sun, Key, AlertCircle, CheckCircle2
+  Globe, Moon, Sun, Key, AlertCircle, CheckCircle2, Upload, X
 } from "lucide-react";
 import { Link } from "wouter";
 import { format } from "date-fns";
@@ -27,6 +34,10 @@ export default function Profile() {
   const [activeTab, setActiveTab] = useState("profile");
   const [theme, setTheme] = useState<'light' | 'dark'>('light');
   const [twoFactorEnabled, setTwoFactorEnabled] = useState(false);
+  const [showUploadModal, setShowUploadModal] = useState(false);
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(() => {
+    return localStorage.getItem('userAvatar');
+  });
   const [notifications, setNotifications] = useState({
     email: true,
     push: false,
@@ -99,9 +110,56 @@ export default function Profile() {
   };
 
   const handleImageUpload = () => {
+    setShowUploadModal(true);
+  };
+
+  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      // Validate file type
+      const validTypes = ['image/png', 'image/jpeg', 'image/jpg', 'image/gif', 'image/webp'];
+      if (!validTypes.includes(file.type)) {
+        toast({
+          title: "Invalid file type",
+          description: "Please upload a PNG, JPG, GIF, or WebP image.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Validate file size (max 5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        toast({
+          title: "File too large",
+          description: "Please upload an image smaller than 5MB.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Read and store the image
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const result = e.target?.result as string;
+        setAvatarUrl(result);
+        localStorage.setItem('userAvatar', result);
+        setShowUploadModal(false);
+        toast({
+          title: "Profile Picture Updated",
+          description: "Your profile picture has been updated successfully.",
+        });
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleRemoveAvatar = () => {
+    setAvatarUrl(null);
+    localStorage.removeItem('userAvatar');
+    setShowUploadModal(false);
     toast({
-      title: "Profile Picture Updated",
-      description: "Your profile picture has been updated.",
+      title: "Profile Picture Removed",
+      description: "Your profile picture has been removed.",
     });
   };
 
@@ -152,8 +210,11 @@ export default function Profile() {
             <div className="flex items-start justify-between">
               <div className="flex items-center space-x-4">
                 <div className="relative">
-                  <Avatar className="h-24 w-24">
-                    <AvatarImage src={`https://api.dicebear.com/7.x/initials/svg?seed=${user.name}`} />
+                  <Avatar 
+                    className="h-24 w-24 cursor-pointer hover:opacity-80 transition-opacity"
+                    onClick={handleImageUpload}
+                  >
+                    <AvatarImage src={avatarUrl || `https://api.dicebear.com/7.x/initials/svg?seed=${user.name}`} />
                     <AvatarFallback className="text-2xl">{initials}</AvatarFallback>
                   </Avatar>
                   <Button
@@ -591,6 +652,63 @@ export default function Profile() {
           </Tabs>
         </div>
       </div>
+
+      {/* Avatar Upload Modal */}
+      <Dialog open={showUploadModal} onOpenChange={setShowUploadModal}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Upload Profile Picture</DialogTitle>
+            <DialogDescription>
+              Choose an image file to use as your profile picture. Supported formats: PNG, JPG, GIF, WebP (max 5MB)
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            {avatarUrl && (
+              <div className="flex justify-center">
+                <Avatar className="h-32 w-32">
+                  <AvatarImage src={avatarUrl} />
+                  <AvatarFallback>{initials}</AvatarFallback>
+                </Avatar>
+              </div>
+            )}
+            <div className="flex flex-col gap-4">
+              <label htmlFor="avatar-upload" className="cursor-pointer">
+                <div className="flex items-center justify-center w-full h-32 border-2 border-dashed border-gray-300 rounded-lg hover:border-gray-400 transition-colors">
+                  <div className="text-center">
+                    <Upload className="mx-auto h-12 w-12 text-gray-400" />
+                    <p className="mt-2 text-sm text-gray-600">Click to upload an image</p>
+                  </div>
+                </div>
+                <Input
+                  id="avatar-upload"
+                  type="file"
+                  accept="image/png,image/jpeg,image/jpg,image/gif,image/webp"
+                  className="hidden"
+                  onChange={handleFileSelect}
+                />
+              </label>
+              <div className="flex gap-2">
+                {avatarUrl && (
+                  <Button
+                    variant="destructive"
+                    onClick={handleRemoveAvatar}
+                    className="flex-1"
+                  >
+                    Remove Picture
+                  </Button>
+                )}
+                <Button
+                  variant="outline"
+                  onClick={() => setShowUploadModal(false)}
+                  className="flex-1"
+                >
+                  Cancel
+                </Button>
+              </div>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
