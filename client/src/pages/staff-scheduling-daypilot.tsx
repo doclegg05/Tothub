@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import FullCalendar from '@fullcalendar/react';
 import resourceTimelinePlugin from '@fullcalendar/resource-timeline';
 import interactionPlugin from '@fullcalendar/interaction';
@@ -37,6 +37,7 @@ export function StaffSchedulingDayPilot() {
   
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const calendarRef = useRef<any>(null);
 
   // Fetch staff data
   const { data: staffData } = useQuery({
@@ -69,7 +70,12 @@ export function StaffSchedulingDayPilot() {
   // Create schedule mutation
   const createScheduleMutation = useMutation({
     mutationFn: (data: any) => apiRequest('/api/schedules', 'POST', data),
-    onSuccess: () => {
+    onSuccess: (result, variables) => {
+      // Refetch events from the calendar
+      if (calendarRef.current) {
+        const calendarApi = calendarRef.current.getApi();
+        calendarApi.refetchEvents();
+      }
       queryClient.invalidateQueries({ queryKey: ['/api/schedules'] });
       toast({
         title: 'Success',
@@ -91,6 +97,11 @@ export function StaffSchedulingDayPilot() {
   const deleteScheduleMutation = useMutation({
     mutationFn: (id: string) => apiRequest(`/api/schedules/${id}`, 'DELETE'),
     onSuccess: () => {
+      // Refetch events from the calendar
+      if (calendarRef.current) {
+        const calendarApi = calendarRef.current.getApi();
+        calendarApi.refetchEvents();
+      }
       queryClient.invalidateQueries({ queryKey: ['/api/schedules'] });
       toast({
         title: 'Success',
@@ -100,25 +111,22 @@ export function StaffSchedulingDayPilot() {
     }
   });
 
-  // Transform schedules to FullCalendar format
-  const events = schedules.map((schedule: Schedule) => {
-    const staffMember = staff.find((s: any) => s.id === schedule.staffId);
-    return {
-      id: schedule.id,
-      resourceId: schedule.staffId,
-      start: schedule.scheduledStart,
-      end: schedule.scheduledEnd,
-      title: `${schedule.room}${schedule.notes ? ' - ' + schedule.notes : ''}`,
-      backgroundColor: getShiftColor(schedule.scheduleType || 'regular'),
-      borderColor: getShiftColor(schedule.scheduleType || 'regular'),
-      extendedProps: schedule
-    };
-  });
-
   // Transform staff to resources
   const resources = staff.map((member: any) => ({
     id: member.id,
     title: `${member.firstName} ${member.lastName}`
+  }));
+
+  // Transform schedules to FullCalendar format
+  const events = schedules.map((schedule: Schedule) => ({
+    id: schedule.id,
+    resourceId: schedule.staffId,
+    start: schedule.scheduledStart,
+    end: schedule.scheduledEnd,
+    title: `${schedule.room}${schedule.notes ? ' - ' + schedule.notes : ''}`,
+    backgroundColor: getShiftColor(schedule.scheduleType || 'regular'),
+    borderColor: getShiftColor(schedule.scheduleType || 'regular'),
+    extendedProps: schedule
   }));
 
   const handleEventClick = (clickInfo: any) => {
@@ -147,6 +155,72 @@ export function StaffSchedulingDayPilot() {
       staffId: selectInfo.resource?.id || ''
     });
     setShowEventModal(true);
+  };
+
+  // Handle event drag/drop
+  const handleEventDrop = async (dropInfo: any) => {
+    const event = dropInfo.event;
+    const updatedData = {
+      id: event.id,
+      staffId: event.getResources()[0]?.id || event.extendedProps.staffId,
+      room: event.extendedProps.room,
+      scheduledStart: event.start.toISOString(),
+      scheduledEnd: event.end.toISOString(),
+      date: moment(event.start).format('YYYY-MM-DD'),
+      scheduleType: event.extendedProps.scheduleType,
+      notes: event.extendedProps.notes
+    };
+
+    try {
+      await apiRequest(`/api/schedules/${event.id}`, 'PATCH', updatedData);
+      toast({
+        title: 'Success',
+        description: 'Shift updated successfully'
+      });
+      if (calendarRef.current) {
+        calendarRef.current.getApi().refetchEvents();
+      }
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to update shift',
+        variant: 'destructive'
+      });
+      dropInfo.revert();
+    }
+  };
+
+  // Handle event resize
+  const handleEventResize = async (resizeInfo: any) => {
+    const event = resizeInfo.event;
+    const updatedData = {
+      id: event.id,
+      staffId: event.extendedProps.staffId,
+      room: event.extendedProps.room,
+      scheduledStart: event.start.toISOString(),
+      scheduledEnd: event.end.toISOString(),
+      date: moment(event.start).format('YYYY-MM-DD'),
+      scheduleType: event.extendedProps.scheduleType,
+      notes: event.extendedProps.notes
+    };
+
+    try {
+      await apiRequest(`/api/schedules/${event.id}`, 'PATCH', updatedData);
+      toast({
+        title: 'Success',
+        description: 'Shift duration updated successfully'
+      });
+      if (calendarRef.current) {
+        calendarRef.current.getApi().refetchEvents();
+      }
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to update shift duration',
+        variant: 'destructive'
+      });
+      resizeInfo.revert();
+    }
   };
 
   const getShiftColor = (type: string) => {
@@ -228,6 +302,7 @@ export function StaffSchedulingDayPilot() {
           <CardContent>
             <div style={{ height: '600px' }}>
               <FullCalendar
+                ref={calendarRef}
                 plugins={[resourceTimelinePlugin, interactionPlugin]}
                 initialView="resourceTimelineWeek"
                 headerToolbar={{
@@ -241,6 +316,10 @@ export function StaffSchedulingDayPilot() {
                 resources={resources}
                 events={events}
                 eventClick={handleEventClick}
+                loading={(isLoading) => {
+                  // Optional: Show loading indicator
+                  console.log('Calendar loading:', isLoading);
+                }}
                 selectable={true}
                 select={handleDateSelect}
                 resourceAreaHeaderContent="Staff Members"
@@ -248,7 +327,9 @@ export function StaffSchedulingDayPilot() {
                 height="100%"
                 dayMaxEvents={true}
                 weekends={true}
-                editable={false}
+                editable={true}
+                eventDrop={handleEventDrop}
+                eventResize={handleEventResize}
                 eventDisplay="block"
               />
             </div>
