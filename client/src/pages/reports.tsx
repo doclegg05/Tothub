@@ -26,7 +26,7 @@ export default function Reports() {
   });
 
   const { data: todaysSchedules = [], isLoading: schedulesLoading } = useQuery({
-    queryKey: ["/api/staff-schedules/today"],
+    queryKey: ["/api/schedules/today"],
   });
 
   const { data: ratios = [], isLoading: ratiosLoading } = useQuery({

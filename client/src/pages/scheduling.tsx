@@ -110,7 +110,7 @@ export default function Scheduling() {
   });
 
   const { data: staffSchedules = [] } = useQuery<StaffSchedule[]>({
-    queryKey: ["/api/staff-schedules", selectedDate],
+    queryKey: ["/api/schedules", selectedDate],
   });
 
   const { data: childSchedules = [] } = useQuery<ChildSchedule[]>({
@@ -148,9 +148,9 @@ export default function Scheduling() {
 
   // Mutations
   const createStaffScheduleMutation = useMutation({
-    mutationFn: (data: any) => apiRequest("POST", "/api/staff-schedules", data),
+    mutationFn: (data: any) => apiRequest("POST", "/api/schedules", data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/staff-schedules"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/schedules"] });
       toast({ title: "Success", description: "Staff schedule created successfully." });
       setStaffModalOpen(false);
       resetStaffForm();
@@ -177,7 +177,7 @@ export default function Scheduling() {
     mutationFn: ({ id, type, status }: { id: string; type: 'staff' | 'child'; status: string }) => 
       apiRequest("PATCH", `/api/${type}-schedules/${id}/status`, { status }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/staff-schedules"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/schedules"] });
       queryClient.invalidateQueries({ queryKey: ["/api/child-schedules"] });
       toast({ title: "Success", description: "Schedule status updated." });
     },

@@ -22,7 +22,7 @@ export default function Dashboard() {
   });
 
   const { data: todaysSchedules = [], isLoading: schedulesLoading } = useQuery({
-    queryKey: ["/api/staff-schedules/today"],
+    queryKey: ["/api/schedules/today"],
     enabled: !!localStorage.getItem('authToken'),
   });
 
