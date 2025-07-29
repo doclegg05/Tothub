@@ -261,6 +261,8 @@ export class DatabaseStorage implements IStorage {
     const [newStaff] = await db.insert(staff).values(staffData).returning();
     // Clear cache when new staff is added
     memoryCache.clearStaffCache();
+    // Also clear attendance cache which holds paginated results
+    memoryCache.clearAttendanceCache();
     return newStaff;
   }
 
