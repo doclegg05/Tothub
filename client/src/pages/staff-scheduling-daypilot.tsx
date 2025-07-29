@@ -55,7 +55,7 @@ export function StaffSchedulingDayPilot() {
   const staff = staffData?.data || [];
 
   // Fetch schedules
-  const { data: schedules = [] } = useQuery({
+  const { data: schedulesData } = useQuery({
     queryKey: ['/api/schedules'],
     queryFn: async () => {
       const response = await fetch('/api/schedules', {
@@ -66,6 +66,8 @@ export function StaffSchedulingDayPilot() {
       return response.json();
     }
   });
+
+  const schedules = Array.isArray(schedulesData) ? schedulesData : (schedulesData?.data || []);
 
   // Create schedule mutation
   const createScheduleMutation = useMutation({
