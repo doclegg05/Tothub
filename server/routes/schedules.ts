@@ -42,10 +42,14 @@ router.get("/today", auth, async (req, res) => {
 // Create staff schedule
 router.post("/", auth, async (req, res) => {
   try {
+    console.log('Creating schedule with data:', req.body);
     const validatedData = insertStaffScheduleSchema.parse(req.body);
+    console.log('Validated data:', validatedData);
     const schedule = await storage.createStaffSchedule(validatedData);
+    console.log('Created schedule:', schedule);
     res.status(201).json(schedule);
   } catch (error) {
+    console.error('Schedule creation error:', error);
     if (error instanceof z.ZodError) {
       return res.status(400).json({ message: "Invalid data", errors: error.errors });
     }

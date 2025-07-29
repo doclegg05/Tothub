@@ -57,7 +57,7 @@ export default function Staff() {
   const totalPages = staffResponse?.totalPages || 1;
 
   const { data: todaysSchedules = [], isLoading: schedulesLoading } = useQuery({
-    queryKey: ["/api/staff-schedules/today"],
+    queryKey: ["/api/schedules/today"],
   });
 
   const createStaffMutation = useMutation({
@@ -91,7 +91,7 @@ export default function Staff() {
   const createScheduleMutation = useMutation({
     mutationFn: (data: any) => apiRequest("POST", "/api/schedules", data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/staff-schedules/today"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/schedules/today"] });
       toast({
         title: "Success",
         description: "Schedule created successfully.",
@@ -117,7 +117,7 @@ export default function Staff() {
   const markPresentMutation = useMutation({
     mutationFn: (scheduleId: string) => apiRequest("POST", `/api/schedules/${scheduleId}/mark-present`),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/staff-schedules/today"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/schedules/today"] });
       queryClient.invalidateQueries({ queryKey: ["/api/dashboard/stats"] });
       queryClient.invalidateQueries({ queryKey: ["/api/ratios"] });
       toast({
