@@ -10,28 +10,45 @@
 }
 
 /* Fix navigation arrows */
+.fc-icon {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 1em;
+  height: 1em;
+  line-height: 1;
+}
+
 .fc-icon-chevron-left::before {
   content: "‹" !important;
-  font-size: 1.5em;
-  font-weight: bold;
+  font-size: 1.8em;
+  font-weight: normal;
+  line-height: 0.5;
+  display: block;
 }
 
 .fc-icon-chevron-right::before {
   content: "›" !important;
-  font-size: 1.5em;
-  font-weight: bold;
+  font-size: 1.8em;
+  font-weight: normal;
+  line-height: 0.5;
+  display: block;
 }
 
 .fc-icon-chevrons-left::before {
   content: "«" !important;
   font-size: 1.5em;
-  font-weight: bold;
+  font-weight: normal;
+  line-height: 0.6;
+  display: block;
 }
 
 .fc-icon-chevrons-right::before {
   content: "»" !important;
   font-size: 1.5em;
-  font-weight: bold;
+  font-weight: normal;
+  line-height: 0.6;
+  display: block;
 }
 
 /* Ensure proper button styling */
