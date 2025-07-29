@@ -249,8 +249,9 @@ export function NotificationsPanel() {
               size="sm"
               className="w-full text-xs"
               onClick={() => {
-                setOpen(false);
-                // Navigate to notifications page if needed
+                // Show all notifications including hidden ones
+                setHiddenNotifications(new Set());
+                setReadStatus({});
               }}
             >
               View all notifications
