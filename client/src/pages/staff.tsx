@@ -89,7 +89,7 @@ export default function Staff() {
   });
 
   const createScheduleMutation = useMutation({
-    mutationFn: (data: any) => apiRequest("POST", "/api/staff-schedules", data),
+    mutationFn: (data: any) => apiRequest("POST", "/api/schedules", data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/staff-schedules/today"] });
       toast({
@@ -115,7 +115,7 @@ export default function Staff() {
   });
 
   const markPresentMutation = useMutation({
-    mutationFn: (scheduleId: string) => apiRequest("POST", `/api/staff-schedules/${scheduleId}/mark-present`),
+    mutationFn: (scheduleId: string) => apiRequest("POST", `/api/schedules/${scheduleId}/mark-present`),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/staff-schedules/today"] });
       queryClient.invalidateQueries({ queryKey: ["/api/dashboard/stats"] });
