@@ -28,7 +28,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use("/api/attendance", attendanceRoutes);
   app.use("/api/settings", settingsRoutes);
   app.use("/api/alerts", alertsRoutes);
-  app.use("/api/staff-schedules", (await import("./routes/schedules")).default);
+  app.use("/api/schedules", (await import("./routes/schedules")).default);
   app.use("/api/dashboard", (await import("./routes/dashboard")).default);
   app.use("/api", systemRoutes);
 
