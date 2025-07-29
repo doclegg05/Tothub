@@ -5,7 +5,7 @@ import { TimesheetService } from "./services/timesheetService";
 import { QuickBooksExporter } from "./services/quickbooksExporter";
 import { SchedulingService } from "./services/schedulingService";
 import { sendEmail } from "./services/emailService";
-import { insertStaffScheduleSchema, insertMessageSchema, insertMediaShareSchema, insertBillingSchema, insertDailyReportSchema } from "@shared/schema";
+import { insertStaffScheduleSchema, insertMessageSchema, insertMediaShareSchema, insertBillingSchema, insertDailyReportSchema, insertAttendanceSchema } from "@shared/schema";
 import { z } from "zod";
 import { db } from "./db";
 import { eq, desc, sql } from "drizzle-orm";
