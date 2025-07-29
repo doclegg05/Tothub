@@ -102,14 +102,26 @@ router.get("/:staffId/timesheet-summary", auth, async (req, res) => {
 // Create new staff member
 router.post("/", auth, async (req, res) => {
   try {
+    console.log('Staff creation request body:', req.body);
     const validatedData = insertStaffSchema.parse(req.body);
     const staff = await storage.createStaff(validatedData);
     res.status(201).json(staff);
-  } catch (error) {
+  } catch (error: any) {
+    console.error('Staff creation error:', error);
+    
     if (error instanceof z.ZodError) {
       return res.status(400).json({ message: "Invalid data", errors: error.errors });
     }
-    res.status(500).json({ message: "Failed to create staff member" });
+    
+    // Check for unique constraint violation (duplicate email)
+    if (error?.code === '23505' && error?.constraint === 'staff_email_unique') {
+      return res.status(400).json({ message: "A staff member with this email already exists" });
+    }
+    
+    res.status(500).json({ 
+      message: "Failed to create staff member",
+      details: error?.message || 'Unknown error'
+    });
   }
 });
 
