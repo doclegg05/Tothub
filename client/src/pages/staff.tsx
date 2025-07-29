@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Header } from "@/components/header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -37,34 +37,8 @@ export default function Staff() {
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 20;
 
-  // Debug token status
-  useEffect(() => {
-    const token = localStorage.getItem('authToken') || localStorage.getItem('token');
-    console.log('Staff page - Current token:', token ? 'exists' : 'null');
-  }, []);
-
   const { data: staffResponse, isLoading } = useQuery({
     queryKey: ["/api/staff", currentPage],
-    queryFn: async () => {
-      const token = localStorage.getItem('authToken') || localStorage.getItem('token');
-      console.log('Fetching staff with token:', token ? 'exists' : 'null');
-      
-      const response = await fetch(`/api/staff?page=${currentPage}&limit=${pageSize}`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-      });
-      
-      if (!response.ok) {
-        const error = await response.text();
-        console.error('Staff fetch error:', response.status, error);
-        throw new Error(error || 'Failed to fetch staff');
-      }
-      
-      return response.json();
-    },
-    enabled: !!localStorage.getItem('authToken') || !!localStorage.getItem('token'),
   });
 
   const staff = staffResponse?.data || [];
