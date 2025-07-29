@@ -74,10 +74,11 @@ export default function Staff() {
         position: "",
       });
     },
-    onError: () => {
+    onError: (error: any) => {
+      const errorMessage = error?.response?.data?.message || error?.message || "Failed to add staff member. Please try again.";
       toast({
         title: "Error",
-        description: "Failed to add staff member. Please try again.",
+        description: errorMessage,
         variant: "destructive",
       });
     },
