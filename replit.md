@@ -6,6 +6,12 @@ TotHub is a comprehensive daycare management system built with a React frontend 
 
 ## Recent Changes (July 2025)
 
+- ✓ **Staff Schedule Creation Fix (January 29, 2025)** - Fixed validation error preventing schedule creation:
+  - Identified issue: Server expected Date objects but client was sending date strings, causing "Expected date, received string" errors
+  - Modified insertStaffScheduleSchema in shared/schema.ts to use Zod's .transform() method for automatic date string conversion
+  - Pattern matches other schemas in codebase (like insertDocumentSchema) for consistency
+  - Simplified route handler in server/routes/schedules.ts since schema now handles date transformation
+  - Schedules now successfully save to database with proper date handling
 - ✓ **Automated Daily Activity Reports (January 29, 2025)** - Complete parent communication system:
   - Implemented TeacherNotes database table for storing daily observations about children
   - Created comprehensive backend services: dailyReportService with email templates and formatting
