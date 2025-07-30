@@ -1,51 +1,83 @@
 import { Link, useLocation } from "wouter";
 import { cn } from "@/lib/utils";
 import { UserMenu } from "@/components/user-menu";
+import { useState } from "react";
 import { 
   Home,
   UserCheck,
-  MessageSquare,
   Users,
   GraduationCap,
   BarChart3,
   Settings,
-  TrendingUp,
-  Shield,
   DollarSign,
   Calendar,
-  CheckCircle,
-  Activity,
-  Mail,
-  Zap
+  ChevronDown,
+  ChevronRight,
+  FileText,
+  Shield,
+  Zap,
+  ClipboardList
 } from "lucide-react";
 
-const navigation = [
-  { name: "Dashboard", href: "/", icon: Home },
-  { name: "Check-In/Out", href: "/checkin", icon: UserCheck },
-  { name: "Daily Reports", href: "/daily-reports", icon: Mail },
-  { name: "Children", href: "/children", icon: Users },
-  { name: "Staff", href: "/staff", icon: GraduationCap },
-  { name: "Staff Scheduling", href: "/staff-scheduling", icon: Calendar },
-  { name: "Billing", href: "/billing", icon: DollarSign },
-  { name: "Reports", href: "/reports", icon: BarChart3 },
-  { name: "Analytics", href: "/analytics", icon: TrendingUp },
-  { name: "Zapier Integration", href: "/zapier", icon: Zap },
-  { name: "Compliance", href: "/compliance", icon: CheckCircle },
-  { name: "Settings", href: "/settings", icon: Settings },
-];
+interface NavSection {
+  title: string;
+  items: { name: string; href: string; icon: any }[];
+  defaultOpen?: boolean;
+}
 
-// Advanced features (available but not in main nav)
-const advancedNavigation = [
-  { name: "Parent Communication", href: "/parent-communication", icon: MessageSquare },
-  { name: "Payroll", href: "/payroll", icon: DollarSign },
-  { name: "Scheduling", href: "/scheduling", icon: Calendar },
-  { name: "Physical Security", href: "/security", icon: Shield },
-  { name: "Performance Test", href: "/performance-test", icon: TrendingUp },
-  { name: "Sessions", href: "/sessions", icon: Activity },
+const navigationSections: NavSection[] = [
+  {
+    title: "Daily Operations",
+    defaultOpen: true,
+    items: [
+      { name: "Dashboard", href: "/", icon: Home },
+      { name: "Check-In/Out", href: "/checkin", icon: UserCheck },
+      { name: "Children", href: "/children", icon: Users },
+      { name: "Staff", href: "/staff", icon: GraduationCap },
+    ]
+  },
+  {
+    title: "Management",
+    defaultOpen: true,
+    items: [
+      { name: "Scheduling", href: "/staff-scheduling", icon: Calendar },
+      { name: "Daily Reports", href: "/daily-reports", icon: FileText },
+      { name: "Billing", href: "/billing", icon: DollarSign },
+    ]
+  },
+  {
+    title: "Insights & Compliance",
+    defaultOpen: false,
+    items: [
+      { name: "Reports", href: "/reports", icon: BarChart3 },
+      { name: "Analytics", href: "/analytics", icon: BarChart3 },
+      { name: "Compliance", href: "/compliance", icon: ClipboardList },
+    ]
+  },
+  {
+    title: "Advanced Tools",
+    defaultOpen: false,
+    items: [
+      { name: "Zapier Automation", href: "/zapier", icon: Zap },
+      { name: "Security", href: "/security", icon: Shield },
+      { name: "Settings", href: "/settings", icon: Settings },
+    ]
+  }
 ];
 
 export function Sidebar() {
   const [location] = useLocation();
+  const [openSections, setOpenSections] = useState<Record<string, boolean>>(() => {
+    const initial: Record<string, boolean> = {};
+    navigationSections.forEach(section => {
+      initial[section.title] = section.defaultOpen ?? false;
+    });
+    return initial;
+  });
+
+  const toggleSection = (title: string) => {
+    setOpenSections(prev => ({ ...prev, [title]: !prev[title] }));
+  };
 
   return (
     <div className="w-64 bg-white shadow-lg border-r border-gray-200 flex flex-col h-screen">
@@ -63,67 +95,59 @@ export function Sidebar() {
         </div>
       </div>
       
-      <nav className="mt-6 flex-1">
-        <div className="px-4 space-y-2">
-          <div className="mb-4">
-            <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
-              Core Features
-            </h3>
-            {navigation.map((item) => {
-              const Icon = item.icon;
-              const isActive = location === item.href || (item.href !== "/" && location.startsWith(item.href));
+      <nav className="mt-4 flex-1 overflow-y-auto">
+        <div className="px-3 space-y-1">
+          {navigationSections.map((section) => (
+            <div key={section.title} className="mb-2">
+              <button
+                onClick={() => toggleSection(section.title)}
+                className="flex items-center justify-between w-full px-3 py-2 text-sm font-semibold text-gray-600 hover:bg-gray-50 rounded-lg transition-colors"
+              >
+                <span>{section.title}</span>
+                {openSections[section.title] ? (
+                  <ChevronDown className="w-4 h-4" />
+                ) : (
+                  <ChevronRight className="w-4 h-4" />
+                )}
+              </button>
               
-              return (
-                <Link 
-                  key={item.name} 
-                  href={item.href}
-                  className={cn(
-                    "flex items-center px-4 py-3 rounded-lg transition-colors",
-                    isActive
-                      ? "text-gray-700 bg-blue-50 border-r-4 border-primary"
-                      : "text-gray-600 hover:bg-gray-50"
-                  )}
-                >
-                  <Icon className="w-5 h-5 mr-3" />
-                  <span className={cn("font-medium", isActive && "font-semibold")}>
-                    {item.name}
-                  </span>
-                </Link>
-              );
-            })}
-          </div>
-          
-          <div>
-            <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2 mt-6">
-              Advanced (Optional)
-            </h3>
-            {advancedNavigation.map((item) => {
-              const Icon = item.icon;
-              const isActive = location === item.href || (item.href !== "/" && location.startsWith(item.href));
-              
-              return (
-                <Link 
-                  key={item.name} 
-                  href={item.href}
-                  className={cn(
-                    "flex items-center px-4 py-2 rounded-lg transition-colors text-sm",
-                    isActive
-                      ? "text-gray-700 bg-blue-50 border-r-4 border-primary"
-                      : "text-gray-500 hover:bg-gray-50 hover:text-gray-600"
-                  )}
-                >
-                  <Icon className="w-4 h-4 mr-3" />
-                  <span className={cn("font-medium", isActive && "font-semibold")}>
-                    {item.name}
-                  </span>
-                </Link>
-              );
-            })}
-          </div>
+              {openSections[section.title] && (
+                <div className="mt-1 space-y-1 ml-2">
+                  {section.items.map((item) => {
+                    const Icon = item.icon;
+                    const isActive = location === item.href || (item.href !== "/" && location.startsWith(item.href));
+                    
+                    return (
+                      <Link 
+                        key={item.name} 
+                        href={item.href}
+                        className={cn(
+                          "flex items-center px-3 py-2 rounded-lg transition-all duration-200",
+                          isActive
+                            ? "bg-blue-50 text-blue-700 font-medium shadow-sm"
+                            : "text-gray-600 hover:bg-gray-50 hover:text-gray-800"
+                        )}
+                      >
+                        <Icon className={cn(
+                          "mr-3 transition-colors",
+                          isActive ? "w-5 h-5 text-blue-600" : "w-4 h-4"
+                        )} />
+                        <span className="text-sm">
+                          {item.name}
+                        </span>
+                      </Link>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          ))}
         </div>
       </nav>
       
-
+      <div className="p-4 border-t border-gray-200">
+        <UserMenu />
+      </div>
     </div>
   );
 }
