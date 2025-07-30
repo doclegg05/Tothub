@@ -92,13 +92,13 @@ export const securityHeaders = helmet({
     directives: {
       defaultSrc: ["'self'"],
       styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
-      scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'", "https://replit.com"], // Allow inline scripts for Vite dev and Replit
+      scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'", "https://replit.com", "https://js.stripe.com"], // Allow inline scripts for Vite dev and Replit
       imgSrc: ["'self'", "data:", "https:", "blob:"],
-      connectSrc: ["'self'", "ws:", "wss:", "https:"],
+      connectSrc: ["'self'", "ws:", "wss:", "https:", "https://api.stripe.com"],
       fontSrc: ["'self'", "https://fonts.gstatic.com"],
       objectSrc: ["'none'"],
       mediaSrc: ["'self'"],
-      frameSrc: ["'none'"],
+      frameSrc: ["'none'", "https://js.stripe.com", "https://hooks.stripe.com"],
       baseUri: ["'self'"],
       formAction: ["'self'"],
     },

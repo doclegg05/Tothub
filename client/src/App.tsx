@@ -29,6 +29,9 @@ import ParentLogin from "@/pages/parent-login";
 import ChildDetails from "@/pages/child-details";
 import Analytics from "@/pages/analytics";
 import DailyReports from "@/pages/daily-reports";
+import Payment from "@/pages/payment";
+import PaymentSuccess from "@/pages/payment-success";
+import Billing from "@/pages/billing";
 
 function AuthenticatedApp() {
   return (
@@ -55,6 +58,9 @@ function AuthenticatedApp() {
           <Route path="/performance-test" component={PerformanceTest} />
           <Route path="/sessions" component={Sessions} />
           <Route path="/profile" component={Profile} />
+          <Route path="/payment" component={Payment} />
+          <Route path="/payment-success" component={PaymentSuccess} />
+          <Route path="/billing" component={Billing} />
           <Route component={NotFound} />
         </Switch>
       </div>

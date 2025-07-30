@@ -70,6 +70,12 @@ export const children = pgTable("children", {
   fingerprintHash: text("fingerprint_hash"), // WebAuthn credential ID
   biometricEnrolledAt: timestamp("biometric_enrolled_at"),
   biometricEnabled: boolean("biometric_enabled").default(false),
+  
+  // Stripe payment information
+  stripeCustomerId: text("stripe_customer_id"),
+  stripeSubscriptionId: text("stripe_subscription_id"),
+  subscriptionStatus: text("subscription_status"), // active, cancelled, past_due, etc.
+  
   createdAt: timestamp("created_at").default(sql`now()`),
 });
 

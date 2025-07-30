@@ -25,6 +25,7 @@ const navigation = [
   { name: "Children", href: "/children", icon: Users },
   { name: "Staff", href: "/staff", icon: GraduationCap },
   { name: "Staff Scheduling", href: "/staff-scheduling", icon: Calendar },
+  { name: "Billing", href: "/billing", icon: DollarSign },
   { name: "Reports", href: "/reports", icon: BarChart3 },
   { name: "Analytics", href: "/analytics", icon: TrendingUp },
   { name: "Compliance", href: "/compliance", icon: CheckCircle },

@@ -30,6 +30,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use("/api/alerts", alertsRoutes);
   app.use("/api/schedules", (await import("./routes/schedules")).default);
   app.use("/api/dashboard", (await import("./routes/dashboard")).default);
+  app.use("/api/stripe", (await import("./routes/stripe")).stripeRouter);
+  app.use("/api/billing", (await import("./routes/billing")).default);
   app.use("/api", systemRoutes);
 
 

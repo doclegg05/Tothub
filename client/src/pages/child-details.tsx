@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useRoute, useLocation } from "wouter";
+import { useRoute, useLocation, Link } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useAuth } from "@/lib/auth";
 import { apiRequest } from "@/lib/queryClient";
@@ -14,7 +14,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { ArrowLeft, Save, UserX, Calendar, AlertTriangle, Heart, Shield, FileText, Clock } from "lucide-react";
+import { ArrowLeft, Save, UserX, Calendar, AlertTriangle, Heart, Shield, FileText, Clock, DollarSign } from "lucide-react";
 import { format, differenceInYears } from "date-fns";
 
 export default function ChildDetails() {
@@ -198,6 +198,14 @@ export default function ChildDetails() {
           </h1>
         </div>
         <div className="flex items-center space-x-2">
+          {child.enrollmentStatus === "enrolled" && (
+            <Link to={`/billing?childId=${child.id}`}>
+              <Button variant="outline">
+                <DollarSign className="h-4 w-4 mr-2" />
+                Billing
+              </Button>
+            </Link>
+          )}
           {!isEditing && child.enrollmentStatus === "enrolled" && (
             <Button onClick={() => setIsEditing(true)}>
               Edit Profile
