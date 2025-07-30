@@ -11,13 +11,17 @@ import { Link } from "wouter";
 import { formatDistance } from "date-fns";
 
 export default function Billing() {
-  const [selectedChildId, setSelectedChildId] = useState<string>("");
+  const [selectedChildId, setSelectedChildId] = useState<string>("all");
 
   // Fetch children list for the dropdown
   const { data: childrenData } = useQuery({
     queryKey: ["children", 1],
     queryFn: async () => {
-      const response = await fetch("/api/children?page=1&limit=100");
+      const response = await fetch("/api/children?page=1&limit=100", {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem('authToken') || localStorage.getItem('token')}`,
+        },
+      });
       if (!response.ok) throw new Error("Failed to fetch children");
       return response.json();
     },
@@ -27,10 +31,14 @@ export default function Billing() {
   const { data: billingRecords } = useQuery({
     queryKey: ["/api/billing", selectedChildId],
     queryFn: async () => {
-      const endpoint = selectedChildId 
-        ? `/api/billing?childId=${selectedChildId}`
-        : "/api/billing";
-      const response = await fetch(endpoint);
+      const endpoint = selectedChildId === "all" || !selectedChildId
+        ? "/api/billing"
+        : `/api/billing?childId=${selectedChildId}`;
+      const response = await fetch(endpoint, {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem('authToken') || localStorage.getItem('token')}`,
+        },
+      });
       if (!response.ok) throw new Error("Failed to fetch billing records");
       return response.json();
     },
@@ -41,12 +49,16 @@ export default function Billing() {
   const { data: paymentHistory } = useQuery({
     queryKey: ["/api/stripe/payment-history", selectedChildId],
     queryFn: async () => {
-      if (!selectedChildId) return { payments: [] };
-      const response = await fetch(`/api/stripe/payment-history/${selectedChildId}`);
+      if (!selectedChildId || selectedChildId === "all") return { payments: [] };
+      const response = await fetch(`/api/stripe/payment-history/${selectedChildId}`, {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem('authToken') || localStorage.getItem('token')}`,
+        },
+      });
       if (!response.ok) throw new Error("Failed to fetch payment history");
       return response.json();
     },
-    enabled: !!selectedChildId,
+    enabled: !!selectedChildId && selectedChildId !== "all",
   });
 
   const children = childrenData?.data || [];
@@ -61,7 +73,7 @@ export default function Billing() {
               <SelectValue placeholder="Select a child" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">All Children</SelectItem>
+              <SelectItem value="all">All Children</SelectItem>
               {children.map((child: any) => (
                 <SelectItem key={child.id} value={child.id}>
                   {child.firstName} {child.lastName}
@@ -235,7 +247,7 @@ export default function Billing() {
                   )) || (
                     <TableRow>
                       <TableCell colSpan={5} className="text-center text-muted-foreground">
-                        {selectedChildId ? 'No payment history found' : 'Select a child to view payment history'}
+                        {selectedChildId && selectedChildId !== "all" ? 'No payment history found' : 'Select a child to view payment history'}
                       </TableCell>
                     </TableRow>
                   )}
@@ -254,7 +266,7 @@ export default function Billing() {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              {selectedChildId ? (
+              {selectedChildId && selectedChildId !== "all" ? (
                 <>
                   <div className="space-y-4">
                     <div>
