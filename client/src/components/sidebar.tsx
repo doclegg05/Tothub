@@ -15,7 +15,8 @@ import {
   Calendar,
   CheckCircle,
   Activity,
-  Mail
+  Mail,
+  Zap
 } from "lucide-react";
 
 const navigation = [
@@ -28,6 +29,7 @@ const navigation = [
   { name: "Billing", href: "/billing", icon: DollarSign },
   { name: "Reports", href: "/reports", icon: BarChart3 },
   { name: "Analytics", href: "/analytics", icon: TrendingUp },
+  { name: "Zapier Integration", href: "/zapier", icon: Zap },
   { name: "Compliance", href: "/compliance", icon: CheckCircle },
   { name: "Settings", href: "/settings", icon: Settings },
 ];

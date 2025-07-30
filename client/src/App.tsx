@@ -28,6 +28,7 @@ import ParentPortal from "@/pages/parent-portal";
 import ParentLogin from "@/pages/parent-login";
 import ChildDetails from "@/pages/child-details";
 import Analytics from "@/pages/analytics";
+import ZapierIntegration from "@/pages/zapier-integration";
 import DailyReports from "@/pages/daily-reports";
 import Payment from "@/pages/payment";
 import PaymentSuccess from "@/pages/payment-success";
@@ -61,6 +62,7 @@ function AuthenticatedApp() {
           <Route path="/payment" component={Payment} />
           <Route path="/payment-success" component={PaymentSuccess} />
           <Route path="/billing" component={Billing} />
+          <Route path="/zapier" component={ZapierIntegration} />
           <Route component={NotFound} />
         </Switch>
       </div>
