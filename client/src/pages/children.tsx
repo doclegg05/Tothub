@@ -17,6 +17,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { getAgeGroupFromBirthDate, calculateAge } from "@/lib/ratioCalculations";
 import { useAuth } from "@/lib/auth";
 import { useLocation } from "wouter";
+import { useDebounce } from "@/hooks/use-debounce";
 
 export default function Children() {
   const { toast } = useToast();
@@ -24,6 +25,7 @@ export default function Children() {
   const queryClient = useQueryClient();
   const [, navigate] = useLocation();
   const [searchTerm, setSearchTerm] = useState("");
+  const debouncedSearchTerm = useDebounce(searchTerm, 300); // Debounce search by 300ms
   const [modalOpen, setModalOpen] = useState(false);
   const [enrollmentFilter, setEnrollmentFilter] = useState("enrolled");
   
@@ -251,8 +253,8 @@ export default function Children() {
       if (childStatus !== enrollmentFilter) return false;
     }
     
-    // Apply search filter
-    const searchLower = searchTerm.toLowerCase();
+    // Apply search filter with debounced term
+    const searchLower = debouncedSearchTerm.toLowerCase();
     const fullName = `${child.firstName || ''} ${child.lastName || ''}`.toLowerCase();
     const room = (child.room || '').toLowerCase();
     const parentName = (child.parentName || '').toLowerCase();

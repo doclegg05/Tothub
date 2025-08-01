@@ -17,7 +17,9 @@ import {
   Shield,
   Zap,
   ClipboardList,
-  Activity
+  Activity,
+  Briefcase,
+  Bell
 } from "lucide-react";
 
 interface NavSection {
@@ -62,6 +64,8 @@ const navigationSections: NavSection[] = [
       { name: "Zapier Automation", href: "/zapier", icon: Zap },
       { name: "Security", href: "/security", icon: Shield },
       { name: "Performance Monitor", href: "/performance-monitor", icon: Activity },
+      { name: "Background Jobs", href: "/background-jobs", icon: Briefcase },
+      { name: "Alert Rules", href: "/alert-rules", icon: Bell },
       { name: "Settings", href: "/settings", icon: Settings },
     ]
   }

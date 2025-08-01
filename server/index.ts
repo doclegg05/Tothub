@@ -11,11 +11,14 @@ import authRoutes from "./routes/authRoutes";
 import hardwareRoutes from "./routes/hardwareRoutes";
 import { healthRoutes } from "./routes/healthRoutes";
 import performanceRoutes from "./routes/performanceRoutes";
+import jobRoutes from "./routes/jobRoutes";
+import alertRoutes from "./routes/alertRoutes";
 import { securityHeaders, validateInput, generateCSRFToken } from "./middleware/security";
 import { authMiddleware } from "./middleware/auth";
 import { MonitoringService } from "./services/monitoringService";
 import { CachingService } from "./services/cachingService";
 import { pool } from "./db";
+import { compressionMiddleware } from "./middleware/compression";
 
 const app = express();
 
@@ -25,6 +28,9 @@ const cachingService = CachingService.getInstance();
 
 // Import memory utils
 import { runGarbageCollection, getMemoryUsageReport } from "./utils/memoryUtils";
+
+// Compression middleware (should be early in the chain)
+app.use(compressionMiddleware);
 
 // Monitoring middleware
 app.use(monitoringService.performanceMiddleware());
@@ -129,6 +135,8 @@ app.use((req, res, next) => {
   app.use('/api/documents', documentRoutes);
   app.use('/api/hardware', hardwareRoutes);
   app.use('/api/performance', performanceRoutes);
+  app.use('/api/jobs', jobRoutes);
+  app.use('/api/alerts', alertRoutes);
   
   const server = await registerRoutes(app);
 

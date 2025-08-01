@@ -34,6 +34,8 @@ import Payment from "@/pages/payment";
 import PaymentSuccess from "@/pages/payment-success";
 import Billing from "@/pages/billing";
 import PerformanceMonitor from "@/pages/performance-monitor";
+import BackgroundJobs from "@/pages/background-jobs";
+import AlertRules from "@/pages/alert-rules";
 
 function AuthenticatedApp() {
   return (
@@ -59,6 +61,8 @@ function AuthenticatedApp() {
           <Route path="/compliance" component={Compliance} />
           <Route path="/performance-test" component={PerformanceTest} />
           <Route path="/performance-monitor" component={PerformanceMonitor} />
+          <Route path="/background-jobs" component={BackgroundJobs} />
+          <Route path="/alert-rules" component={AlertRules} />
           <Route path="/sessions" component={Sessions} />
           <Route path="/profile" component={Profile} />
           <Route path="/payment" component={Payment} />
