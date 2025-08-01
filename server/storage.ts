@@ -854,11 +854,12 @@ export class DatabaseStorage implements IStorage {
     const targetDate = new Date(date);
     targetDate.setHours(0, 0, 0, 0);
     
+    const dateString = targetDate.toISOString().split('T')[0];
     return await db.select()
       .from(teacherNotes)
       .where(and(
         eq(teacherNotes.childId, childId),
-        eq(teacherNotes.date, targetDate.toISOString().split('T')[0])
+        eq(sql`DATE(${teacherNotes.date})`, sql`DATE(${dateString})`)
       ))
       .orderBy(desc(teacherNotes.createdAt));
   }

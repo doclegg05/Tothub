@@ -13,15 +13,31 @@ class SimpleMemoryCache {
   private stateRatios: LRUCache<string, any>;
 
   constructor() {
-    const options: CacheOptions = {
-      max: 1000,
-      ttl: 15 * 60 * 1000 // 15 minutes
+    // Reduce cache sizes to save memory
+    const childrenOptions: CacheOptions = {
+      max: 200, // Reduced from 1000
+      ttl: 5 * 60 * 1000 // 5 minutes
     };
 
-    this.children = new LRUCache(options);
-    this.staff = new LRUCache(options);
-    this.attendance = new LRUCache(options);
-    this.stateRatios = new LRUCache(options);
+    const staffOptions: CacheOptions = {
+      max: 100, // Reduced from 1000
+      ttl: 10 * 60 * 1000 // 10 minutes
+    };
+
+    const attendanceOptions: CacheOptions = {
+      max: 300, // Reduced from 1000
+      ttl: 3 * 60 * 1000 // 3 minutes (shorter as this changes frequently)
+    };
+
+    const stateRatiosOptions: CacheOptions = {
+      max: 50, // Reduced from 1000
+      ttl: 30 * 60 * 1000 // 30 minutes (longer as this rarely changes)
+    };
+
+    this.children = new LRUCache(childrenOptions);
+    this.staff = new LRUCache(staffOptions);
+    this.attendance = new LRUCache(attendanceOptions);
+    this.stateRatios = new LRUCache(stateRatiosOptions);
   }
 
   // Children cache methods

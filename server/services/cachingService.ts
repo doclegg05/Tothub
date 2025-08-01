@@ -39,7 +39,6 @@ export class CachingService {
         port: config.port,
         password: config.password,
         keyPrefix: config.keyPrefix,
-        retryDelayOnFailover: 100,
         maxRetriesPerRequest: config.maxRetries,
         lazyConnect: true,
       });

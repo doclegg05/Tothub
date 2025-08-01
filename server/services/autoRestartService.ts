@@ -13,9 +13,9 @@ interface RestartConfig {
 
 class AutoRestartService {
   private config: RestartConfig = {
-    memoryThreshold: 0.85, // Restart at 85% memory usage
-    checkInterval: 5, // Check every 5 minutes
-    cooldownPeriod: 30, // Wait 30 minutes between restarts
+    memoryThreshold: 0.75, // Restart at 75% memory usage (lowered from 85%)
+    checkInterval: 3, // Check every 3 minutes (more frequent)
+    cooldownPeriod: 15, // Wait 15 minutes between restarts (reduced)
     enabled: true
   };
 

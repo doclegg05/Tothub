@@ -1,146 +1,122 @@
-import { memoryCache } from './simpleMemoryCache';
-import { db } from '../db';
-import { sql } from 'drizzle-orm';
+import { LRUCache } from 'lru-cache';
 
-interface MemoryOptimizationConfig {
-  maxHeapUsage: number; // MB
-  gcInterval: number; // minutes
-  cacheCleanupThreshold: number; // percentage
-  aggressiveMode: boolean;
+export interface MemoryCacheConfig {
+  maxSize: number; // Maximum number of items
+  maxAge: number; // Maximum age in milliseconds
+  sizeCalculation?: (value: any, key: string) => number;
 }
 
 class MemoryOptimizationService {
-  private config: MemoryOptimizationConfig = {
-    maxHeapUsage: 140, // Target max 140MB heap
-    gcInterval: 2, // Run GC every 2 minutes
-    cacheCleanupThreshold: 0.7, // Clean caches at 70% memory
-    aggressiveMode: true
-  };
-
-  private gcIntervalId: NodeJS.Timeout | null = null;
-  private cacheCleanupId: NodeJS.Timeout | null = null;
-
+  private caches: Map<string, LRUCache<string, any>> = new Map();
+  private gcInterval: NodeJS.Timeout | null = null;
+  
   constructor() {
-    this.startOptimization();
+    // Start garbage collection optimization
+    this.startGarbageCollectionOptimization();
   }
 
-  private startOptimization(): void {
-    console.log('🚀 Memory optimization service started');
+  createCache(name: string, config: MemoryCacheConfig): LRUCache<string, any> {
+    const cache = new LRUCache<string, any>({
+      max: config.maxSize,
+      ttl: config.maxAge,
+      sizeCalculation: config.sizeCalculation,
+      updateAgeOnGet: true,
+      updateAgeOnHas: true,
+      // Automatically prune old entries
+      ttlAutopurge: true,
+    });
+
+    this.caches.set(name, cache);
+    return cache;
+  }
+
+  getCache(name: string): LRUCache<string, any> | undefined {
+    return this.caches.get(name);
+  }
+
+  clearCache(name: string): void {
+    const cache = this.caches.get(name);
+    if (cache) {
+      cache.clear();
+    }
+  }
+
+  clearAllCaches(): void {
+    console.log('🧹 Clearing all memory caches...');
+    this.caches.forEach(cache => cache.clear());
+  }
+
+  getCacheStats(): { [key: string]: { size: number; maxSize: number } } {
+    const stats: { [key: string]: { size: number; maxSize: number } } = {};
+    this.caches.forEach((cache, name) => {
+      stats[name] = {
+        size: cache.size,
+        maxSize: cache.max,
+      };
+    });
+    return stats;
+  }
+
+  private startGarbageCollectionOptimization(): void {
+    // Run garbage collection every 5 minutes
+    this.gcInterval = setInterval(() => {
+      this.optimizeMemory();
+    }, 5 * 60 * 1000);
+
+    // Also optimize on startup
+    setTimeout(() => this.optimizeMemory(), 10000);
+  }
+
+  private optimizeMemory(): void {
+    const before = process.memoryUsage();
     
-    // Immediate cleanup
-    this.performCleanup();
-    
-    // Regular garbage collection
-    this.gcIntervalId = setInterval(() => {
-      this.forceGarbageCollection();
-    }, this.config.gcInterval * 60 * 1000);
+    // Clear expired entries from all caches
+    this.caches.forEach(cache => {
+      cache.purgeStale();
+    });
 
-    // Cache cleanup when memory pressure
-    this.cacheCleanupId = setInterval(() => {
-      this.checkMemoryPressure();
-    }, 30 * 1000); // Check every 30 seconds
-  }
-
-  private getMemoryUsagePercent(): number {
-    const usage = process.memoryUsage();
-    const totalMemory = require('os').totalmem();
-    return usage.rss / totalMemory;
-  }
-
-  private forceGarbageCollection(): void {
+    // Force garbage collection if available
     if (global.gc) {
-      const before = process.memoryUsage().heapUsed / 1024 / 1024;
-      global.gc();
-      const after = process.memoryUsage().heapUsed / 1024 / 1024;
-      console.log(`♻️ GC: ${before.toFixed(2)}MB → ${after.toFixed(2)}MB (freed ${(before - after).toFixed(2)}MB)`);
-    }
-  }
-
-  private checkMemoryPressure(): void {
-    const memPercent = this.getMemoryUsagePercent();
-    
-    if (memPercent > this.config.cacheCleanupThreshold) {
-      console.log(`⚠️ Memory pressure detected: ${(memPercent * 100).toFixed(1)}%`);
-      this.performCleanup();
-    }
-  }
-
-  private performCleanup(): void {
-    console.log('🧹 Performing memory cleanup...');
-    
-    // Clear all caches
-    memoryCache.clearAllCaches();
-    
-    // Clear module cache for non-essential modules
-    this.clearModuleCache();
-    
-    // Force immediate GC if available
-    if (global.gc) {
       global.gc();
     }
-    
-    // Clear any accumulated buffers
-    this.clearBuffers();
-    
+
     const after = process.memoryUsage();
-    console.log(`✅ Cleanup complete. Current memory: RSS=${(after.rss / 1024 / 1024).toFixed(2)}MB, Heap=${(after.heapUsed / 1024 / 1024).toFixed(2)}MB`);
-  }
-
-  private clearModuleCache(): void {
-    // Clear require cache for non-critical modules
-    const protectedModules = [
-      'express', 'drizzle-orm', '@neondatabase/serverless',
-      'path', 'fs', 'os', 'util', 'events', 'http', 'https'
-    ];
+    const freed = (before.heapUsed - after.heapUsed) / 1024 / 1024;
     
-    for (const key in require.cache) {
-      const isProtected = protectedModules.some(mod => key.includes(mod));
-      if (!isProtected && key.includes('node_modules')) {
-        delete require.cache[key];
-      }
+    if (freed > 0) {
+      console.log(`🧹 Memory optimization freed ${freed.toFixed(2)}MB`);
     }
   }
 
-  private clearBuffers(): void {
-    // Clear any global buffers or arrays that might be holding memory
-    if (global.Buffer) {
-      // Force buffer pool to release unused memory
-      global.Buffer.poolSize = 0;
+  destroy(): void {
+    if (this.gcInterval) {
+      clearInterval(this.gcInterval);
+      this.gcInterval = null;
     }
-  }
-
-  public async cleanupOldSessions(): Promise<void> {
-    try {
-      // Clean up old session data from database
-      await db.execute(sql`DELETE FROM session_activity WHERE created_at < NOW() - INTERVAL '7 days'`);
-      console.log('🗑️ Cleaned up old session data');
-    } catch (error) {
-      console.error('Error cleaning sessions:', error);
-    }
-  }
-
-  public getMemoryStats() {
-    const usage = process.memoryUsage();
-    const totalMemory = require('os').totalmem();
-    
-    return {
-      rss: `${(usage.rss / 1024 / 1024).toFixed(2)}MB`,
-      heapUsed: `${(usage.heapUsed / 1024 / 1024).toFixed(2)}MB`,
-      heapTotal: `${(usage.heapTotal / 1024 / 1024).toFixed(2)}MB`,
-      external: `${(usage.external / 1024 / 1024).toFixed(2)}MB`,
-      percentage: `${(this.getMemoryUsagePercent() * 100).toFixed(1)}%`
-    };
-  }
-
-  public stop(): void {
-    if (this.gcIntervalId) {
-      clearInterval(this.gcIntervalId);
-    }
-    if (this.cacheCleanupId) {
-      clearInterval(this.cacheCleanupId);
-    }
+    this.clearAllCaches();
   }
 }
 
 // Export singleton instance
-export const memoryOptimizer = new MemoryOptimizationService();
+export const memoryCache = new MemoryOptimizationService();
+
+// Create optimized caches for different data types
+export const childrenCache = memoryCache.createCache('children', {
+  maxSize: 500, // Store max 500 children
+  maxAge: 10 * 60 * 1000, // 10 minutes
+});
+
+export const staffCache = memoryCache.createCache('staff', {
+  maxSize: 200, // Store max 200 staff
+  maxAge: 10 * 60 * 1000, // 10 minutes
+});
+
+export const attendanceCache = memoryCache.createCache('attendance', {
+  maxSize: 1000, // Store max 1000 attendance records
+  maxAge: 5 * 60 * 1000, // 5 minutes (shorter as this changes frequently)
+});
+
+export const settingsCache = memoryCache.createCache('settings', {
+  maxSize: 50, // Store max 50 settings
+  maxAge: 30 * 60 * 1000, // 30 minutes
+});

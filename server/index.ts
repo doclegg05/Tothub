@@ -22,8 +22,26 @@ const app = express();
 const monitoringService = MonitoringService.getInstance();
 const cachingService = CachingService.getInstance();
 
+// Import memory utils
+import { runGarbageCollection, getMemoryUsageReport } from "./utils/memoryUtils";
+
 // Monitoring middleware
 app.use(monitoringService.performanceMiddleware());
+
+// Memory usage endpoint
+app.get('/api/memory-status', (req: Request, res: Response) => {
+  const memoryReport = getMemoryUsageReport();
+  res.json(memoryReport);
+});
+
+// Periodic memory cleanup
+setInterval(() => {
+  runGarbageCollection();
+  const memoryReport = getMemoryUsageReport();
+  if (parseFloat(memoryReport.percentUsed) > 70) {
+    console.log('⚠️ High memory usage detected:', memoryReport);
+  }
+}, 60 * 1000); // Every minute
 
 // Configure session middleware
 const PgStore = pgSession(session);
