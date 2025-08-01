@@ -33,6 +33,7 @@ import DailyReports from "@/pages/daily-reports";
 import Payment from "@/pages/payment";
 import PaymentSuccess from "@/pages/payment-success";
 import Billing from "@/pages/billing";
+import PerformanceMonitor from "@/pages/performance-monitor";
 
 function AuthenticatedApp() {
   return (
@@ -57,6 +58,7 @@ function AuthenticatedApp() {
           <Route path="/security" component={Security} />
           <Route path="/compliance" component={Compliance} />
           <Route path="/performance-test" component={PerformanceTest} />
+          <Route path="/performance-monitor" component={PerformanceMonitor} />
           <Route path="/sessions" component={Sessions} />
           <Route path="/profile" component={Profile} />
           <Route path="/payment" component={Payment} />

@@ -74,6 +74,50 @@ class SimpleMemoryCache {
     this.staff.clear();
   }
 
+  // Cache statistics methods
+  getChildrenCacheStats() {
+    return {
+      hits: 0, // TODO: Track hits
+      misses: 0, // TODO: Track misses
+      size: this.children.size,
+      max: this.children.max
+    };
+  }
+
+  getStaffCacheStats() {
+    return {
+      hits: 0,
+      misses: 0,
+      size: this.staff.size,
+      max: this.staff.max
+    };
+  }
+
+  getAttendanceCacheStats() {
+    return {
+      hits: 0,
+      misses: 0,
+      size: this.attendance.size,
+      max: this.attendance.max
+    };
+  }
+
+  getStateRatiosCacheStats() {
+    return {
+      hits: 0,
+      misses: 0,
+      size: this.stateRatios.size,
+      max: this.stateRatios.max
+    };
+  }
+
+  clearAllCaches(): void {
+    this.children.clear();
+    this.staff.clear();
+    this.attendance.clear();
+    this.stateRatios.clear();
+  }
+
   // Attendance cache methods
   getAttendance(key: string): any {
     return this.attendance.get(key);

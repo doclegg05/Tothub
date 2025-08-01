@@ -41,6 +41,10 @@ export class MonitoringService {
   private systemMetrics: SystemMetrics[] = [];
   private alerts: AlertConfig[] = [];
   private errorCounts: Map<string, number> = new Map();
+  private endpointMetrics: Map<string, { count: number; totalTime: number; slowCount: number }> = new Map();
+  private totalRequests: number = 0;
+  private totalResponseTime: number = 0;
+  private slowQueries: Array<{ query: string; duration: number; timestamp: Date }> = [];
 
   constructor() {
     this.initializeSentry();
@@ -173,6 +177,18 @@ export class MonitoringService {
     if (metric.duration > 1000) {
       console.warn(`Slow request detected: ${metric.method} ${metric.endpoint} - ${metric.duration}ms`);
     }
+
+    // Update endpoint metrics
+    const endpointKey = `${metric.method} ${metric.endpoint}`;
+    const endpointStats = this.endpointMetrics.get(endpointKey) || { count: 0, totalTime: 0, slowCount: 0 };
+    endpointStats.count++;
+    endpointStats.totalTime += metric.duration;
+    if (metric.duration > 1000) endpointStats.slowCount++;
+    this.endpointMetrics.set(endpointKey, endpointStats);
+
+    // Update totals
+    this.totalRequests++;
+    this.totalResponseTime += metric.duration;
 
     // Send to external monitoring (Sentry, New Relic, etc.)
     if (process.env.NODE_ENV === 'production') {
@@ -407,5 +423,60 @@ export class MonitoringService {
       uptime,
       metrics: latestMetric || null,
     };
+  }
+
+  // Get performance metrics for the performance monitor
+  public getMetrics() {
+    const errorCount = Array.from(this.errorCounts.values()).reduce((a, b) => a + b, 0);
+    const errorRate = this.totalRequests > 0 ? (errorCount / this.totalRequests) * 100 : 0;
+    const avgResponseTime = this.totalRequests > 0 ? this.totalResponseTime / this.totalRequests : 0;
+    
+    // Get top endpoints by response time
+    const endpointMetrics = Array.from(this.endpointMetrics.entries())
+      .map(([endpoint, stats]) => ({
+        endpoint,
+        count: stats.count,
+        avgResponseTime: stats.totalTime / stats.count,
+        slowCount: stats.slowCount
+      }))
+      .sort((a, b) => b.avgResponseTime - a.avgResponseTime);
+
+    return {
+      totalRequests: this.totalRequests,
+      averageResponseTime: avgResponseTime,
+      slowRequests: endpointMetrics.reduce((sum, e) => sum + e.slowCount, 0),
+      errorRate,
+      endpointMetrics
+    };
+  }
+
+  // Get detailed endpoint metrics
+  public getEndpointMetrics() {
+    return Array.from(this.endpointMetrics.entries()).map(([endpoint, stats]) => ({
+      endpoint,
+      count: stats.count,
+      avgResponseTime: stats.totalTime / stats.count,
+      slowCount: stats.slowCount,
+      slowRate: (stats.slowCount / stats.count) * 100
+    }));
+  }
+
+  // Get slow queries
+  public getSlowQueries() {
+    return this.slowQueries.slice(-50); // Return last 50 slow queries
+  }
+
+  // Record a slow query
+  public recordSlowQuery(query: string, duration: number) {
+    this.slowQueries.push({
+      query,
+      duration,
+      timestamp: new Date()
+    });
+    
+    // Keep only recent queries
+    if (this.slowQueries.length > 100) {
+      this.slowQueries = this.slowQueries.slice(-100);
+    }
   }
 }

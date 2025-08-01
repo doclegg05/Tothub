@@ -10,6 +10,7 @@ import documentRoutes from "./routes/documentRoutes";
 import authRoutes from "./routes/authRoutes";
 import hardwareRoutes from "./routes/hardwareRoutes";
 import { healthRoutes } from "./routes/healthRoutes";
+import performanceRoutes from "./routes/performanceRoutes";
 import { securityHeaders, validateInput, generateCSRFToken } from "./middleware/security";
 import { authMiddleware } from "./middleware/auth";
 import { MonitoringService } from "./services/monitoringService";
@@ -127,6 +128,7 @@ app.use((req, res, next) => {
   app.use('/api/safety', safetyRoutes);
   app.use('/api/documents', documentRoutes);
   app.use('/api/hardware', hardwareRoutes);
+  app.use('/api/performance', performanceRoutes);
   
   const server = await registerRoutes(app);
 
