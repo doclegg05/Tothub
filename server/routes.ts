@@ -34,6 +34,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use("/api/billing", (await import("./routes/billing")).default);
   app.use("/api/zapier", (await import("./routes/zapier")).default);
   app.use("/api", systemRoutes);
+  app.use("/api", (await import("./routes/profileRoutes")).default);
 
 
 

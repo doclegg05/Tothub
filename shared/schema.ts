@@ -1066,3 +1066,69 @@ export type Session = typeof sessions.$inferSelect;
 export type InsertSession = z.infer<typeof insertSessionSchema>;
 export type SessionActivity = typeof sessionActivity.$inferSelect;
 export type InsertSessionActivity = z.infer<typeof insertSessionActivitySchema>;
+
+// User profiles table for authenticated users
+export const userProfiles = pgTable("user_profiles", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().unique(), // Links to auth system user ID
+  username: text("username").notNull(),
+  email: text("email"),
+  role: text("role").notNull(), // director, teacher, staff, parent
+  
+  // Personal Information
+  firstName: text("first_name").notNull(),
+  lastName: text("last_name").notNull(),
+  phoneNumber: text("phone_number"),
+  dateOfBirth: timestamp("date_of_birth"),
+  
+  // Address Information
+  street: text("street"),
+  city: text("city"),
+  state: text("state"),
+  zipCode: text("zip_code"),
+  
+  // Professional Information (for staff)
+  jobTitle: text("job_title"),
+  department: text("department"),
+  employeeId: text("employee_id"),
+  hireDate: timestamp("hire_date"),
+  
+  // Parent-specific fields
+  childrenIds: text("children_ids").array().default(sql`'{}'::text[]`), // Array of child IDs
+  emergencyContact: text("emergency_contact"), // JSON with name and phone
+  
+  // Profile customization
+  profilePictureUrl: text("profile_picture_url"),
+  bio: text("bio"),
+  preferredLanguage: text("preferred_language").default("en"),
+  notificationPreferences: text("notification_preferences"), // JSON preferences
+  
+  // Status and metadata
+  isActive: boolean("is_active").default(true),
+  lastLoginAt: timestamp("last_login_at"),
+  createdAt: timestamp("created_at").default(sql`now()`),
+  updatedAt: timestamp("updated_at").default(sql`now()`),
+});
+
+// User profile relations
+export const userProfileRelations = relations(userProfiles, ({ many }) => ({
+  children: many(children),
+}));
+
+// User profile schema
+export const insertUserProfileSchema = createInsertSchema(userProfiles).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+}).extend({
+  email: z.string().email().optional().or(z.literal('')),
+  phoneNumber: z.string().optional(),
+  dateOfBirth: z.string().transform((str) => str ? new Date(str) : undefined).optional(),
+  hireDate: z.string().transform((str) => str ? new Date(str) : undefined).optional(),
+  childrenIds: z.array(z.string()).default([]),
+  emergencyContact: z.string().optional(),
+  notificationPreferences: z.string().optional(),
+});
+
+export type UserProfile = typeof userProfiles.$inferSelect;
+export type InsertUserProfile = z.infer<typeof insertUserProfileSchema>;

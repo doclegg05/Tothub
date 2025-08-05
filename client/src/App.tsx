@@ -23,7 +23,7 @@ import Sessions from "@/pages/sessions";
 import Landing from "@/pages/landing";
 import Login from "@/pages/login";
 import NotFound from "@/pages/not-found";
-import Profile from "@/pages/profile";
+import UserProfile from "@/pages/user-profile";
 import ParentPortal from "@/pages/parent-portal";
 import ParentLogin from "@/pages/parent-login";
 import ChildDetails from "@/pages/child-details";
@@ -64,7 +64,7 @@ function AuthenticatedApp() {
           <Route path="/background-jobs" component={BackgroundJobs} />
           <Route path="/alert-rules" component={AlertRules} />
           <Route path="/sessions" component={Sessions} />
-          <Route path="/profile" component={Profile} />
+          <Route path="/profile" component={UserProfile} />
           <Route path="/payment" component={Payment} />
           <Route path="/payment-success" component={PaymentSuccess} />
           <Route path="/billing" component={Billing} />

@@ -52,6 +52,7 @@ Age-out configuration: Default age limit is 14 years old (configurable per facil
         - Background job processing for heavy operations (reports, payroll, analytics)
         - Enhanced alert system with tiered severity, multi-channel notifications, and auto-remediation
     - **Feature Expansion**: PWA implementation, WebSocket for real-time updates, batch operations, multi-center management, waitlist, advanced financial services, audit trail.
+    - **User Profiles**: Comprehensive user profile management with personal information, contact details, professional information, and preferences. Integrated with authentication system, supports role-based fields (staff vs parent), and includes profile picture, bio, language preferences, and notification settings.
 
 ### Deployment Strategy
 - **Development**: Vite for frontend, `tsx` for backend.

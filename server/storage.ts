@@ -1,4 +1,4 @@
-import { children, staff, attendance, staffSchedules, settings, alerts, stateRatios, stateCompliance, parents, type Child, type InsertChild, type Staff, type InsertStaff, type Attendance, type InsertAttendance, type StaffSchedule, type InsertStaffSchedule, type Setting, type InsertSetting, type Alert, type InsertAlert, type StateRatio, type InsertStateRatio, type StateCompliance, type InsertStateCompliance, type Parent, type InsertParent } from "@shared/schema";
+import { children, staff, attendance, staffSchedules, settings, alerts, stateRatios, stateCompliance, parents, userProfiles, type Child, type InsertChild, type Staff, type InsertStaff, type Attendance, type InsertAttendance, type StaffSchedule, type InsertStaffSchedule, type Setting, type InsertSetting, type Alert, type InsertAlert, type StateRatio, type InsertStateRatio, type StateCompliance, type InsertStateCompliance, type Parent, type InsertParent, type UserProfile, type InsertUserProfile } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, gte, lte, desc, asc, isNull, sql } from "drizzle-orm";
 import { memoryCache } from "./services/simpleMemoryCache";
@@ -94,6 +94,12 @@ export interface IStorage {
   // Teacher Notes
   addTeacherNote(note: any): Promise<any>;
   getTeacherNotes(childId: string, date: Date): Promise<any[]>;
+  
+  // User Profiles
+  getUserProfile(userId: string): Promise<UserProfile | undefined>;
+  getUserProfileByUsername(username: string): Promise<UserProfile | undefined>;
+  createUserProfile(profile: InsertUserProfile): Promise<UserProfile>;
+  updateUserProfile(userId: string, profile: Partial<InsertUserProfile>): Promise<UserProfile>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -862,6 +868,33 @@ export class DatabaseStorage implements IStorage {
         eq(sql`DATE(${teacherNotes.date})`, sql`DATE(${dateString})`)
       ))
       .orderBy(desc(teacherNotes.createdAt));
+  }
+
+  // User Profiles
+  async getUserProfile(userId: string): Promise<UserProfile | undefined> {
+    const [profile] = await db.select().from(userProfiles).where(eq(userProfiles.userId, userId));
+    return profile || undefined;
+  }
+
+  async getUserProfileByUsername(username: string): Promise<UserProfile | undefined> {
+    const [profile] = await db.select().from(userProfiles).where(eq(userProfiles.username, username));
+    return profile || undefined;
+  }
+
+  async createUserProfile(profile: InsertUserProfile): Promise<UserProfile> {
+    const [newProfile] = await db.insert(userProfiles).values(profile).returning();
+    return newProfile;
+  }
+
+  async updateUserProfile(userId: string, profile: Partial<InsertUserProfile>): Promise<UserProfile> {
+    const [updatedProfile] = await db.update(userProfiles)
+      .set({
+        ...profile,
+        updatedAt: new Date()
+      })
+      .where(eq(userProfiles.userId, userId))
+      .returning();
+    return updatedProfile;
   }
 
   // Test data management methods
