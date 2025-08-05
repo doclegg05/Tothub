@@ -36,6 +36,7 @@ import Billing from "@/pages/billing";
 import PerformanceMonitor from "@/pages/performance-monitor";
 import BackgroundJobs from "@/pages/background-jobs";
 import AlertRules from "@/pages/alert-rules";
+import WorkflowVisualization from "@/pages/workflow-visualization";
 
 function AuthenticatedApp() {
   return (
@@ -63,6 +64,7 @@ function AuthenticatedApp() {
           <Route path="/performance-monitor" component={PerformanceMonitor} />
           <Route path="/background-jobs" component={BackgroundJobs} />
           <Route path="/alert-rules" component={AlertRules} />
+          <Route path="/workflow-visualization" component={WorkflowVisualization} />
           <Route path="/sessions" component={Sessions} />
           <Route path="/profile" component={UserProfile} />
           <Route path="/payment" component={Payment} />

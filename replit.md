@@ -53,6 +53,7 @@ Age-out configuration: Default age limit is 14 years old (configurable per facil
         - Enhanced alert system with tiered severity, multi-channel notifications, and auto-remediation
     - **Feature Expansion**: PWA implementation, WebSocket for real-time updates, batch operations, multi-center management, waitlist, advanced financial services, audit trail.
     - **User Profiles**: Comprehensive user profile management with personal information, contact details, professional information, and preferences. Integrated with authentication system, supports role-based fields (staff vs parent), and includes profile picture, bio, language preferences, and notification settings.
+    - **Workflow Visualization**: Interactive workflow diagrams with color-coded process status (active, processing, error, idle, completed) and micro-animations for data flow connections. Features multiple workflow views (attendance, staff management, automation), real-time status updates, node details on click, and animated data flow particles.
 
 ### Deployment Strategy
 - **Development**: Vite for frontend, `tsx` for backend.

@@ -66,6 +66,7 @@ const navigationSections: NavSection[] = [
       { name: "Performance Monitor", href: "/performance-monitor", icon: Activity },
       { name: "Background Jobs", href: "/background-jobs", icon: Briefcase },
       { name: "Alert Rules", href: "/alert-rules", icon: Bell },
+      { name: "Workflow Visualization", href: "/workflow-visualization", icon: Activity },
       { name: "Settings", href: "/settings", icon: Settings },
     ]
   }

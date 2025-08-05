@@ -73,7 +73,7 @@
     "express-rate-limit": "^8.0.1",
     "express-session": "^1.18.2",
     "face-api.js": "^0.22.2",
-    "framer-motion": "^11.13.1",
+    "framer-motion": "^11.18.2",
     "helmet": "^8.1.0",
     "input-otp": "^1.4.2",
     "ioredis": "^5.6.1",
