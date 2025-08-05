@@ -1,0 +1,190 @@
+Use the Base PRP Template v3 from prp_base.md to implement database improvements addressing the following findings in our TotHub project's SQL Database (powered by Neon/PostgreSQL). Provide full context, progressive tasks, and validation loops to ensure safe, iterative changes without data loss.
+Goal
+
+Fix identified issues in the database schema and data: improve normalization and relationships, add performance indexes, seed sample data, enhance security, prune unused tables, set up backups/migrations, and add documentation. The end state is a more efficient, secure, and maintainable DB that supports website features like user profiles and workflows, with no downtime or data corruption.
+Why
+
+Business value: Enhances app reliability for childcare/education management, reducing query times (e.g., for session logs) and preventing errors, benefiting admins, parents, and staff users.
+Integration: Ties into existing backend code (e.g., in server/ for API queries) and future AI-suggested features like profile visualizations.
+Problems solved: Addresses potential data inconsistencies (e.g., orphans without FKs), slow queries on high-row tables, empty tables wasting resources, security risks with PII, and lack of test data for validation—solves for developers and end-users by making the DB production-ready.
+
+What
+
+Normalize schema: Add FKs, constraints, and resolve overlaps (e.g., consolidate session-related tables if redundant).
+Optimize performance: Index key fields in active tables like session_activity and security_logs.
+Seed data: Add realistic sample rows to empty/underused tables for testing.
+Secure: Hash sensitive fields (e.g., in security_credentials) and add audit logs.
+Prune: Safely drop truly unused empty tables after review.
+Backup: Implement export scripts for schema/data.
+Document: Create db_schema.md describing all tables, columns, and relations.
+
+All Needed Context
+
+Documentation & References
+text# MUST INCLUDE IN CONTEXT  
+- url: https://www.postgresql.org/docs/current/  
+  why: Sections on ALTER TABLE for FKs/indexes, CREATE INDEX, and security best practices.  
+- url: https://replit.com/docs/database/sql-databases  
+  why: Replit/Neon specifics for connections, migrations, and limits (e.g., 1GB storage cap).  
+- file: /server/db/models.py (or equivalent if exists)  
+  why: Follow existing ORM patterns for schema updates.  
+- doc: https://neon.tech/docs  
+  section: Managing Databases  
+  critical: Use $REPLIT_DB_URL for connections; avoid direct drops without backups.  
+- docfile: /infrastructure/db_setup.md (if exists, or create one)  
+  why: Custom project DB guidelines.
+Current Codebase Tree (from previous tree run)
+text.  
+├── client/  
+├── server/  
+├── shared/  
+├── infrastructure/  
+├── PRPs/  
+├── templates/  
+├── prp_base.md  
+└── ... (other files like TotHub.py, README.md)
+Desired Codebase Tree
+text.  
+├── infrastructure/  
+│   ├── db/  
+│   │   ├── migrations/  
+│   │   │   └── improve_schema.sql (new: SQL for FKs, indexes)  
+│   │   ├── seed_data.py (new: Script to insert samples)  
+│   │   ├── backup_db.py (new: Export script)  
+│   │   └── db_schema.md (new: Documentation)  
+└── server/  
+    └── db/  
+        └── models.py (updated: Reflect schema changes)
+Known Gotchas
+text# CRITICAL: Replit/Neon is serverless—use transactions for changes to avoid partial failures.  
+# Example: Don't drop tables without SELECT COUNT(*) first.  
+# Example: Hashing requires libraries like bcrypt (install if needed via Replit packages).  
+# Example: Avoid large inserts; paginate if >100 rows.
+Implementation Blueprint
+
+Data Models and Structures
+
+Update existing models with relationships (e.g., ForeignKey in ORM if using SQLAlchemy).
+Examples:
+
+Add to children: parent_id ForeignKey to parents.id.
+Pydantic schemas for API: Include validators for hashed fields.
+
+
+
+Task List (Ordered, with dependencies)
+
+Task 1: Backup Current DB (Depends on: None)
+
+CREATE /infrastructure/db/backup_db.py
+ADD: Script to export schema and data using pg_dump.
+
+Task 2: Document Schema (Depends on: Task 1)
+
+CREATE /infrastructure/db/db_schema.md
+ADD: List all tables, columns, types, relations, and notes from findings.
+
+Task 3: Prune Unused Tables (Depends on: Task 1)
+
+RUN: Queries to confirm emptiness (e.g., SELECT COUNT(*) FROM billing;)
+MODIFY: Drop if confirmed unused (e.g., DROP TABLE billing; via SQL script).
+
+Task 4: Add Relationships and Normalization (Depends on: Task 2)
+
+CREATE /infrastructure/db/migrations/improve_schema.sql
+ADD: ALTER TABLE statements for FKs (e.g., on child_schedules to children), unique constraints.
+RESOLVE: Check/merge overlaps like sessions/user_sessions.
+
+Task 5: Add Indexes for Performance (Depends on: Task 4)
+
+INJECT into improve_schema.sql: CREATE INDEX on high-use fields (e.g., idx_session_activity_timestamp ON session_activity(timestamp);).
+
+Task 6: Enhance Security (Depends on: Task 4)
+
+UPDATE models/security_credentials: Add hashing (e.g., via bcrypt in code).
+ADD: Triggers for audit logs on sensitive tables.
+
+Task 7: Seed Sample Data (Depends on: Task 5)
+
+CREATE /infrastructure/db/seed_data.py
+ADD: Inserts for empty tables (e.g., 5-10 rows in user_profiles with fake data).
+
+Per-Task Pseudocode
+text# Task 1: Backup  
+import os  
+import subprocess  
+db_url = os.getenv('REPLIT_DB_URL')  
+subprocess.run(['pg_dump', db_url, '>', 'backup.sql'])  
+# GOTCHA: Handle output redirection in Replit shell if needed.
+text# Task 4: Relationships  
+-- In improve_schema.sql  
+BEGIN;  
+ALTER TABLE child_schedules ADD COLUMN child_id INTEGER;  
+ALTER TABLE child_schedules ADD CONSTRAINT fk_child FOREIGN KEY (child_id) REFERENCES children(id);  
+COMMIT;  
+-- PATTERN: Use transactions.
+text# Task 6: Security  
+from bcrypt import hashpw, gensalt  
+# In update script  
+hashed = hashpw(password.encode(), gensalt())  
+# UPDATE security_credentials SET credential = hashed WHERE ...;
+text# Task 7: Seeding  
+import psycopg2  
+conn = psycopg2.connect(os.getenv('REPLIT_DB_URL'))  
+cur = conn.cursor()  
+cur.execute("INSERT INTO user_profiles (user_id, name) VALUES (1, 'Test User');")  
+conn.commit()
+Integration Points
+
+DATABASE:
+
+Migration: Run improve_schema.sql via psql $REPLIT_DB_URL < improve_schema.sql
+Index: As added in Task 5.
+
+CONFIG:
+Add to config.py: DB_BACKUP_PATH = 'backups/'
+
+ROUTES:
+If needed, add API endpoint for schema export.
+
+FRONTEND:
+Update profile page to query seeded data.
+
+Validation Loop
+
+Level 1: Syntax & Style
+text# Run on new scripts  
+ruff check infrastructure/db/*.py --fix  
+mypy infrastructure/db/*.py
+Level 2: Unit Tests
+text# CREATE tests/test_db_improvements.py  
+def test_fk_exists():  
+    # Query to check constraint  
+    assert check_constraint('fk_child') == True  
+def test_index_performance():  
+    # Time a query before/after  
+    assert query_time < 0.1  
+# Run: pytest tests/test_db_improvements.py -v
+Level 3: Integration Test
+text# Run migration script  
+python infrastructure/db/backup_db.py  
+psql $REPLIT_DB_URL < infrastructure/db/migrations/improve_schema.sql  
+# Test query: SELECT * FROM children JOIN parents ON ...;  
+# Expected: No errors, joined data returns.
+Final Validation Checklist
+
+All migrations applied: psql -c "\dt" shows updated schema.
+No lints/types: ruff check && mypy.
+Manual test: Query seeded data in Replit Database tool.
+Performance: EXPLAIN ANALYZE on key queries shows index use.
+Security: Verify hashes in security_credentials.
+Backup successful: File exists and imports without errors.
+Docs updated: db_schema.md comprehensive.
+
+Anti-Patterns to Avoid
+
+❌ Drop tables without backup or count check.
+❌ Skip transactions in migrations.
+❌ Hardcode sensitive data in seeds.
+❌ Ignore query performance tests.
+❌ Broad changes—iterate per task.
