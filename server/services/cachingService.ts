@@ -31,6 +31,10 @@ export class CachingService {
   };
   private responseTimes: number[] = [];
 
+  // In-memory cache for development
+  private memoryCache: Map<string, { value: any; expires: number }> = new Map();
+  private maxMemoryCacheSize = 1000; // Limit cache size
+  
   constructor(config: CacheConfig) {
     // Only use Redis in production or when explicitly enabled
     if (process.env.NODE_ENV === 'production' || process.env.REDIS_URL) {
@@ -44,9 +48,12 @@ export class CachingService {
       });
       this.setupEventHandlers();
     } else {
-      // Use null Redis client for development
-      console.log('📝 CachingService: Using in-memory fallback (Redis disabled in development)');
+      // Use bounded in-memory cache for development
+      console.log('📝 CachingService: Using bounded in-memory cache (Redis disabled in development)');
       this.redis = null as any;
+      
+      // Cleanup expired entries every 5 minutes
+      setInterval(() => this.cleanupExpiredCache(), 5 * 60 * 1000);
     }
   }
 
@@ -93,7 +100,20 @@ export class CachingService {
     const startTime = performance.now();
     
     try {
-      const value = await this.redis.get(key);
+      let value: string | null = null;
+      
+      if (this.redis) {
+        value = await this.redis.get(key);
+      } else {
+        // Use memory cache in development
+        const cached = this.memoryCache.get(key);
+        if (cached && cached.expires > Date.now()) {
+          value = JSON.stringify(cached.value);
+        } else if (cached) {
+          this.memoryCache.delete(key); // Remove expired
+        }
+      }
+      
       const responseTime = performance.now() - startTime;
       this.updateResponseTime(responseTime);
       
@@ -115,16 +135,31 @@ export class CachingService {
     const startTime = performance.now();
     
     try {
-      const serialized = JSON.stringify(value);
-      const result = ttl 
-        ? await this.redis.setex(key, ttl, serialized)
-        : await this.redis.set(key, serialized);
+      let result: string | boolean = false;
+      
+      if (this.redis) {
+        const serialized = JSON.stringify(value);
+        result = ttl 
+          ? await this.redis.setex(key, ttl, serialized)
+          : await this.redis.set(key, serialized);
+      } else {
+        // Use memory cache in development with size limit
+        if (this.memoryCache.size >= this.maxMemoryCacheSize) {
+          // Remove oldest entries (simple LRU)
+          const oldestKey = this.memoryCache.keys().next().value;
+          if (oldestKey) this.memoryCache.delete(oldestKey);
+        }
+        
+        const expires = ttl ? Date.now() + (ttl * 1000) : Date.now() + (3600 * 1000);
+        this.memoryCache.set(key, { value, expires });
+        result = true;
+      }
       
       const responseTime = performance.now() - startTime;
       this.updateResponseTime(responseTime);
       this.metrics.sets++;
       
-      return result === 'OK';
+      return typeof result === 'string' ? result === 'OK' : result;
     } catch (error) {
       this.metrics.errors++;
       console.error(`Cache set error for key ${key}:`, error);
@@ -479,6 +514,24 @@ export class CachingService {
       averageResponseTime: 0,
     };
     this.responseTimes = [];
+  }
+  
+  // Clean up expired cache entries to prevent memory leaks
+  private cleanupExpiredCache(): void {
+    if (!this.redis) {
+      const now = Date.now();
+      const keysToDelete: string[] = [];
+      
+      this.memoryCache.forEach((cached, key) => {
+        if (cached.expires <= now) {
+          keysToDelete.push(key);
+        }
+      });
+      
+      keysToDelete.forEach(key => this.memoryCache.delete(key));
+      
+      console.log(`🧹 Cache cleanup: ${this.memoryCache.size} entries remaining`);
+    }
   }
 
   // Warm up cache with frequently accessed data

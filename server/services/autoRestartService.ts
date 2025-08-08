@@ -13,10 +13,10 @@ interface RestartConfig {
 
 class AutoRestartService {
   private config: RestartConfig = {
-    memoryThreshold: 0.75, // Restart at 75% memory usage (lowered from 85%)
-    checkInterval: 3, // Check every 3 minutes (more frequent)
-    cooldownPeriod: 15, // Wait 15 minutes between restarts (reduced)
-    enabled: true
+    memoryThreshold: 0.90, // Restart at 90% memory usage (less aggressive for dev)
+    checkInterval: 5, // Check every 5 minutes (less frequent)
+    cooldownPeriod: 30, // Wait 30 minutes between restarts (increased)
+    enabled: process.env.NODE_ENV === 'production' // Only enable in production
   };
 
   private lastRestartTime: Date | null = null;
@@ -89,8 +89,8 @@ class AutoRestartService {
   private async checkMemory(): Promise<void> {
     const memoryUsage = this.getMemoryUsage();
     
-    // Log memory status every check
-    if (memoryUsage > 0.7) { // Log if above 70%
+    // Log memory status every check (less verbose)
+    if (memoryUsage > 0.8) { // Log only if above 80%
       console.log(`📊 Memory check: ${(memoryUsage * 100).toFixed(1)}% used`);
     }
 

@@ -41,14 +41,15 @@ app.get('/api/memory-status', (req: Request, res: Response) => {
   res.json(memoryReport);
 });
 
-// Periodic memory cleanup
+// Periodic memory cleanup (less frequent in development)
+const memoryCheckInterval = process.env.NODE_ENV === 'production' ? 60 * 1000 : 300 * 1000; // 5 minutes in dev
 setInterval(() => {
   runGarbageCollection();
   const memoryReport = getMemoryUsageReport();
-  if (parseFloat(memoryReport.percentUsed) > 70) {
+  if (parseFloat(memoryReport.percentUsed) > 80) { // Less aggressive logging
     console.log('⚠️ High memory usage detected:', memoryReport);
   }
-}, 60 * 1000); // Every minute
+}, memoryCheckInterval);
 
 // Configure session middleware
 const PgStore = pgSession(session);

@@ -2,8 +2,8 @@
 import { totalmem } from 'os';
 
 declare global {
-  var gc: undefined | (() => void);
-  var __cleanup: undefined | (() => void);
+  var gc: (() => void) | undefined;
+  var __cleanup: (() => void) | undefined;
 }
 
 export function runGarbageCollection(): void {

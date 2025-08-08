@@ -45,6 +45,11 @@ export class MonitoringService {
   private totalRequests: number = 0;
   private totalResponseTime: number = 0;
   private slowQueries: Array<{ query: string; duration: number; timestamp: Date }> = [];
+  
+  // Memory limits to prevent unbounded growth
+  private readonly MAX_METRICS = 1000;
+  private readonly MAX_SYSTEM_METRICS = 100;
+  private readonly MAX_SLOW_QUERIES = 50;
 
   constructor() {
     this.initializeSentry();
@@ -125,13 +130,14 @@ export class MonitoringService {
     ];
   }
 
-  // Start continuous system monitoring
+  // Start continuous system monitoring (less frequent in dev)
   private startSystemMonitoring(): void {
+    const interval = process.env.NODE_ENV === 'production' ? 60000 : 300000; // 5 minutes in dev
     setInterval(() => {
       this.collectSystemMetrics();
       this.checkAlerts();
       this.cleanupOldMetrics();
-    }, 60000); // Every minute
+    }, interval);
   }
 
   // Express middleware for performance monitoring
@@ -163,9 +169,14 @@ export class MonitoringService {
     };
   }
 
-  // Record performance metric
+  // Record performance metric with bounds
   public recordMetric(metric: PerformanceMetrics): void {
     this.metrics.push(metric);
+    
+    // Prevent unbounded memory growth
+    if (this.metrics.length > this.MAX_METRICS) {
+      this.metrics = this.metrics.slice(-this.MAX_METRICS);
+    }
 
     // Track error rates
     if (metric.statusCode >= 400) {
@@ -173,8 +184,8 @@ export class MonitoringService {
       this.errorCounts.set(errorKey, (this.errorCounts.get(errorKey) || 0) + 1);
     }
 
-    // Log slow requests
-    if (metric.duration > 1000) {
+    // Log slow requests (less verbose)
+    if (metric.duration > 2000) { // Only log requests > 2s
       console.warn(`Slow request detected: ${metric.method} ${metric.endpoint} - ${metric.duration}ms`);
     }
 
@@ -214,6 +225,11 @@ export class MonitoringService {
       };
 
       this.systemMetrics.push(metric);
+      
+      // Prevent unbounded memory growth
+      if (this.systemMetrics.length > this.MAX_SYSTEM_METRICS) {
+        this.systemMetrics = this.systemMetrics.slice(-this.MAX_SYSTEM_METRICS);
+      }
     } catch (error) {
       console.error('Error collecting system metrics:', error);
       Sentry.captureException(error);
