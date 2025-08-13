@@ -3,12 +3,12 @@ import { storage } from "../storage";
 import { db } from "../db";
 import { messages, mediaShares } from "@shared/schema";
 import { eq, desc, sql } from "drizzle-orm";
-import { authMiddleware } from "../middleware/auth";
+import { authMiddleware, AuthRequest } from "../middleware/auth";
 
 const router = Router();
 
 // Get parent's children
-router.get("/children", authMiddleware, async (req, res) => {
+router.get("/children", authMiddleware, async (req: AuthRequest, res) => {
   try {
     const user = req.user;
     if (!user || user.role !== 'parent') {
@@ -24,7 +24,7 @@ router.get("/children", authMiddleware, async (req, res) => {
 });
 
 // Get today's attendance for parent's children
-router.get("/attendance/today", authMiddleware, async (req, res) => {
+router.get("/attendance/today", authMiddleware, async (req: AuthRequest, res) => {
   try {
     const user = req.user;
     if (!user || user.role !== 'parent') {
@@ -58,7 +58,7 @@ router.get("/attendance/today", authMiddleware, async (req, res) => {
 });
 
 // Get parent messages
-router.get("/messages", authMiddleware, async (req, res) => {
+router.get("/messages", authMiddleware, async (req: AuthRequest, res) => {
   try {
     const user = req.user;
     if (!user || user.role !== 'parent') {
@@ -81,7 +81,7 @@ router.get("/messages", authMiddleware, async (req, res) => {
 });
 
 // Get media shares for parent's children
-router.get("/media", authMiddleware, async (req, res) => {
+router.get("/media", authMiddleware, async (req: AuthRequest, res) => {
   try {
     const user = req.user;
     if (!user || user.role !== 'parent') {

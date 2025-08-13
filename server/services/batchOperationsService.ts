@@ -130,14 +130,14 @@ export class BatchOperationsService {
       const activeChildren = await db
         .select({ parentEmail: children.parentEmail })
         .from(children)
-        .where(eq(children.isActive, true));
+        .where(eq(children.isActive, 1));
       
-      recipientEmails = [...new Set(activeChildren.map(c => c.parentEmail).filter(Boolean))];
+      recipientEmails = [...new Set(activeChildren.map(c => c.parentEmail).filter(Boolean))] as string[];
     } else if (data.recipientType === 'staff') {
       const activeStaff = await db
         .select({ email: staff.email })
         .from(staff)
-        .where(eq(staff.isActive, true));
+        .where(eq(staff.isActive, 1));
       
       recipientEmails = activeStaff.map(s => s.email).filter(Boolean);
     } else if (data.recipientType === 'specific' && data.recipientIds) {
@@ -235,7 +235,7 @@ export class BatchOperationsService {
           parentEmail: childData.parentEmail,
           parentPhone: childData.parentPhone,
           room: childData.room || 'Unassigned',
-          isActive: true,
+          isActive: 1,
           enrollmentStatus: 'enrolled',
           enrollmentDate: new Date(),
         });
@@ -294,12 +294,12 @@ export class BatchOperationsService {
         attendance,
         and(
           eq(attendance.childId, children.id),
-          gte(attendance.date, cutoffDate)
+          gte(attendance.date, cutoffDate.toISOString().split('T')[0])
         )
       )
       .where(
         and(
-          eq(children.isActive, true),
+          eq(children.isActive, 1),
           sql`${attendance.id} IS NULL`
         )
       );
@@ -310,7 +310,7 @@ export class BatchOperationsService {
         await db
           .update(children)
           .set({ 
-            isActive: false,
+            isActive: 0,
             enrollmentStatus: 'unenrolled',
             unenrollmentDate: new Date(),
             unenrollmentReason: `Inactive for ${inactiveDays} days`

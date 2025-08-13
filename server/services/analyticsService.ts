@@ -43,14 +43,14 @@ export class AnalyticsService {
         totalHours: sql<number>`SUM(EXTRACT(EPOCH FROM (${attendance.checkOutTime} - ${attendance.checkInTime})) / 3600)`,
       })
       .from(attendance)
-      .where(gte(attendance.date, startDate))
+      .where(gte(attendance.date, startDate.toISOString().split('T')[0]))
       .groupBy(attendance.date)
       .orderBy(attendance.date);
 
     const activeChildren = await db
       .select({ count: count(children.id) })
       .from(children)
-      .where(eq(children.isActive, true));
+      .where(eq(children.isActive, 1));
 
     const totalCapacity = activeChildren[0]?.count || 1;
 
@@ -70,7 +70,7 @@ export class AnalyticsService {
     const activeStaff = await db
       .select({ count: count(staff.id) })
       .from(staff)
-      .where(eq(staff.isActive, true));
+      .where(eq(staff.isActive, 1));
 
     // Get scheduled vs actual hours
     const scheduleData = await db
@@ -79,7 +79,7 @@ export class AnalyticsService {
         actualHours: sql`SUM(EXTRACT(EPOCH FROM (${staffSchedules.actualEnd} - ${staffSchedules.actualStart})) / 3600)`,
       })
       .from(staffSchedules)
-      .where(gte(staffSchedules.date, thirtyDaysAgo));
+      .where(gte(staffSchedules.date, thirtyDaysAgo.toISOString().split('T')[0]));
 
     const totalStaff = activeStaff[0]?.count || 0;
     const scheduledHours = Number(scheduleData[0]?.scheduledHours || 0);
@@ -107,7 +107,7 @@ export class AnalyticsService {
       const activeChildren = await db
         .select({ count: count(children.id) })
         .from(children)
-        .where(eq(children.isActive, true));
+        .where(eq(children.isActive, 1));
 
       const childCount = activeChildren[0]?.count || 0;
       const avgTuition = 1200; // Average monthly tuition
@@ -132,7 +132,7 @@ export class AnalyticsService {
         families: sql`COUNT(DISTINCT ${children.parentEmail})`,
       })
       .from(children)
-      .where(eq(children.isActive, true));
+      .where(eq(children.isActive, 1));
 
     // Mock data for now - will be replaced with actual parent portal usage
     const totalFamilies = Number(activeChildren[0]?.families || 0);
@@ -155,7 +155,7 @@ export class AnalyticsService {
         count: count(children.id),
       })
       .from(children)
-      .where(eq(children.isActive, true))
+      .where(eq(children.isActive, 1))
       .groupBy(children.ageGroup);
 
     return distribution;
@@ -168,7 +168,7 @@ export class AnalyticsService {
         count: count(children.id),
       })
       .from(children)
-      .where(eq(children.isActive, true))
+      .where(eq(children.isActive, 1))
       .groupBy(children.room);
 
     return roomData;

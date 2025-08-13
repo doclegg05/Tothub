@@ -6,7 +6,7 @@ const router = express.Router();
 
 // Schema for alert rule
 const alertRuleSchema = z.object({
-  id: z.string(),
+  id: z.string().optional(),
   name: z.string(),
   condition: z.string(),
   severity: z.enum(['info', 'warning', 'critical']),
@@ -31,7 +31,19 @@ router.get('/rules', async (req, res) => {
 // Create or update alert rule
 router.post('/rules', async (req, res) => {
   try {
-    const rule = alertRuleSchema.parse(req.body);
+    const ruleData = alertRuleSchema.parse(req.body);
+    // Ensure id is present for the service
+    const rule = {
+      id: ruleData.id || `rule_${Date.now()}`,
+      name: ruleData.name || 'Default Rule',
+      condition: ruleData.condition || 'true',
+      severity: ruleData.severity || 'info',
+      channels: ruleData.channels || ['in-app'],
+      autoRemediate: ruleData.autoRemediate || false,
+      remediationAction: ruleData.remediationAction || '',
+      cooldownMinutes: ruleData.cooldownMinutes || 0,
+      enabled: ruleData.enabled !== undefined ? ruleData.enabled : true
+    };
     enhancedAlertService.addRule(rule);
     
     res.json({

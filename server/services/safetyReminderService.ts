@@ -5,13 +5,13 @@ import { eq, and, lte, gte, desc, asc } from 'drizzle-orm';
 export class SafetyReminderService {
   // Get all active safety reminders
   static async getAllReminders(): Promise<SafetyReminder[]> {
-    return await db.select().from(safetyReminders).where(eq(safetyReminders.isActive, true)).orderBy(asc(safetyReminders.nextDueDate));
+    return await db.select().from(safetyReminders).where(eq(safetyReminders.isActive, 1)).orderBy(asc(safetyReminders.nextDueDate));
   }
 
   // Get reminders by category
   static async getRemindersByCategory(category: string): Promise<SafetyReminder[]> {
     return await db.select().from(safetyReminders)
-      .where(and(eq(safetyReminders.category, category), eq(safetyReminders.isActive, true)))
+      .where(and(eq(safetyReminders.category, category), eq(safetyReminders.isActive, 1)))
       .orderBy(asc(safetyReminders.nextDueDate));
   }
 
@@ -21,9 +21,9 @@ export class SafetyReminderService {
     
     return await db.select().from(safetyReminders)
       .where(and(
-        eq(safetyReminders.isActive, true),
-        eq(safetyReminders.isPaused, false),
-        lte(safetyReminders.nextDueDate, new Date(now.getTime() + (7 * 24 * 60 * 60 * 1000))) // Within 7 days
+        eq(safetyReminders.isActive, 1),
+        eq(safetyReminders.isPaused, 0),
+        lte(safetyReminders.nextDueDate, new Date(now.getTime() + (7 * 24 * 60 * 60 * 1000)).toISOString().split('T')[0]) // Within 7 days
       ))
       .orderBy(asc(safetyReminders.nextDueDate));
   }
@@ -34,9 +34,9 @@ export class SafetyReminderService {
     
     return await db.select().from(safetyReminders)
       .where(and(
-        eq(safetyReminders.isActive, true),
-        eq(safetyReminders.isPaused, false),
-        lte(safetyReminders.nextDueDate, now)
+        eq(safetyReminders.isActive, 1),
+        eq(safetyReminders.isPaused, 0),
+        lte(safetyReminders.nextDueDate, now.toISOString().split('T')[0])
       ))
       .orderBy(asc(safetyReminders.nextDueDate));
   }
@@ -154,15 +154,15 @@ export class SafetyReminderService {
 
   // Get safety reminder statistics
   static async getStatistics() {
-    const totalReminders = await db.select().from(safetyReminders).where(eq(safetyReminders.isActive, true));
+    const totalReminders = await db.select().from(safetyReminders).where(eq(safetyReminders.isActive, 1));
     const overdue = await this.getOverdueReminders();
     const upcoming = await this.getUpcomingAlerts();
     const paused = await db.select().from(safetyReminders)
-      .where(and(eq(safetyReminders.isActive, true), eq(safetyReminders.isPaused, true)));
+      .where(and(eq(safetyReminders.isActive, 1), eq(safetyReminders.isPaused, 1)));
 
     // Get category breakdown
     const categoryStats = await db.select().from(safetyReminders)
-      .where(eq(safetyReminders.isActive, true));
+      .where(eq(safetyReminders.isActive, 1));
 
     const categories = categoryStats.reduce((acc, reminder) => {
       acc[reminder.category] = (acc[reminder.category] || 0) + 1;

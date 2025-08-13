@@ -1,6 +1,6 @@
 import { db } from '../db';
 import { children, billing, staff, attendance } from '@shared/schema';
-import { sql, eq, and, gte, lte, ne, sum, count } from 'drizzle-orm';
+import { sql, eq, and, gte, lte, ne, sum, count, inArray } from 'drizzle-orm';
 import { format, addDays, startOfMonth, endOfMonth, differenceInDays } from 'date-fns';
 
 export interface PaymentPlan {
@@ -99,7 +99,7 @@ export class AdvancedFinancialService {
       .where(
         and(
           eq(billing.status, 'pending'),
-          lte(billing.dueDate, cutoffDate)
+          lte(billing.dueDate, cutoffDate.toISOString().split('T')[0])
         )
       );
 
@@ -184,7 +184,7 @@ export class AdvancedFinancialService {
         .where(
           and(
             eq(billing.childId, subsidy.childId),
-            gte(billing.dueDate, subsidy.startDate),
+            gte(billing.dueDate, subsidy.startDate.toISOString().split('T')[0]),
             eq(billing.status, 'pending')
           )
         );
@@ -234,8 +234,8 @@ export class AdvancedFinancialService {
       .from(billing)
       .where(
         and(
-          gte(billing.dueDate, startDate),
-          lte(billing.dueDate, endDate)
+          gte(billing.dueDate, startDate.toISOString().split('T')[0]),
+          lte(billing.dueDate, endDate.toISOString().split('T')[0])
         )
       );
 
@@ -250,10 +250,10 @@ export class AdvancedFinancialService {
       .from(billing)
       .where(
         and(
-          eq(billing.isLateFee, true),
+          eq(billing.isLateFee, 1),
           eq(billing.status, 'paid'),
-          gte(billing.paidDate, startDate),
-          lte(billing.paidDate, endDate)
+          gte(billing.paidDate, startDate.toISOString().split('T')[0]),
+          lte(billing.paidDate, endDate.toISOString().split('T')[0])
         )
       );
 
@@ -266,8 +266,8 @@ export class AdvancedFinancialService {
       .where(
         and(
           eq(billing.status, 'paid'),
-          gte(billing.paidDate, startDate),
-          lte(billing.paidDate, endDate)
+          gte(billing.paidDate, startDate.toISOString().split('T')[0]),
+          lte(billing.paidDate, endDate.toISOString().split('T')[0])
         )
       );
 
@@ -291,7 +291,7 @@ export class AdvancedFinancialService {
       .where(
         and(
           eq(billing.status, 'pending'),
-          eq(billing.autopayEnabled, true),
+          eq(billing.autopayEnabled, 1),
           sql`DATE(${billing.dueDate}) = CURRENT_DATE`
         )
       );

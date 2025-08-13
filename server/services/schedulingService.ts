@@ -39,7 +39,7 @@ export class SchedulingService {
     const attendancePatterns = await this.getAttendancePatterns();
     
     // Get staff availability and preferences
-    const staffList = await db.select().from(staff).where(eq(staff.isActive, true));
+    const staffList = await db.select().from(staff).where(eq(staff.isActive, 1));
     
     // Get current schedules for the week
     const existingSchedules = await db
@@ -47,8 +47,8 @@ export class SchedulingService {
       .from(staffSchedules)
       .where(
         and(
-          gte(staffSchedules.date, weekStart),
-          lte(staffSchedules.date, weekEnd)
+          gte(staffSchedules.date, weekStart.toISOString().split('T')[0]),
+          lte(staffSchedules.date, weekEnd.toISOString().split('T')[0])
         )
       );
 
@@ -113,8 +113,8 @@ export class SchedulingService {
       .from(staffSchedules)
       .where(
         and(
-          gte(staffSchedules.date, weekStart),
-          lte(staffSchedules.date, weekEnd)
+          gte(staffSchedules.date, weekStart.toISOString().split('T')[0]),
+          lte(staffSchedules.date, weekEnd.toISOString().split('T')[0])
         )
       );
     
@@ -202,7 +202,7 @@ export class SchedulingService {
             count: sql<number>`COUNT(*)::int`
           })
           .from(attendance)
-          .where(gte(attendance.date, thirtyDaysAgo))
+          .where(gte(attendance.date, thirtyDaysAgo.toISOString().split('T')[0]))
           .groupBy(attendance.date)
           .as('daily_counts')
       )
@@ -250,8 +250,8 @@ export class SchedulingService {
       .where(
         and(
           eq(staffSchedules.staffId, staffMember.id),
-          gte(staffSchedules.date, weekStart),
-          lte(staffSchedules.date, date)
+          gte(staffSchedules.date, weekStart.toISOString().split('T')[0]),
+          lte(staffSchedules.date, date.toISOString().split('T')[0])
         )
       );
     
@@ -306,7 +306,7 @@ export class SchedulingService {
     });
     
     // Create schedules from top recommendations
-    for (const [dateKey, recs] of recommendationsByDate) {
+    for (const [dateKey, recs] of Array.from(recommendationsByDate.entries())) {
       const topRecs = recs.slice(0, 3); // Take top 3 recommendations per day
       
       for (const rec of topRecs) {

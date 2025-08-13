@@ -1,6 +1,6 @@
 import { db } from '../db';
 import { auditLogs, securityLogs, users } from '@shared/schema';
-import { sql, eq, and, gte, lte, desc, or, like } from 'drizzle-orm';
+import { sql, eq, and, gte, lte, desc, or, like, ne } from 'drizzle-orm';
 import { format } from 'date-fns';
 
 export interface AuditEvent {
@@ -86,8 +86,8 @@ export class AuditTrailService {
       .from(auditLogs)
       .where(
         and(
-          gte(auditLogs.timestamp, startDate),
-          lte(auditLogs.timestamp, endDate)
+          gte(auditLogs.timestamp, startDate.toISOString()),
+          lte(auditLogs.timestamp, endDate.toISOString())
         )
       );
 
@@ -258,7 +258,7 @@ export class AuditTrailService {
       .delete(auditLogs)
       .where(
         and(
-          lte(auditLogs.timestamp, cutoffDate),
+          lte(auditLogs.timestamp, cutoffDate.toISOString()),
           sql`${auditLogs.action} NOT LIKE '%delete%'`,
           sql`${auditLogs.action} NOT LIKE '%financial%'`
         )
@@ -269,7 +269,7 @@ export class AuditTrailService {
       .delete(securityLogs)
       .where(
         and(
-          lte(securityLogs.timestamp, cutoffDate),
+          lte(securityLogs.timestamp, cutoffDate.toISOString()),
           ne(securityLogs.result, 'failure')
         )
       );
@@ -316,11 +316,11 @@ export class AuditTrailService {
     }
 
     if (filters?.startDate) {
-      conditions.push(gte(auditLogs.timestamp, filters.startDate));
+      conditions.push(gte(auditLogs.timestamp, filters.startDate.toISOString()));
     }
 
     if (filters?.endDate) {
-      conditions.push(lte(auditLogs.timestamp, filters.endDate));
+      conditions.push(lte(auditLogs.timestamp, filters.endDate.toISOString()));
     }
 
     return await db

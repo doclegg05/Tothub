@@ -73,8 +73,8 @@ export class AuditService {
 
   // Log biometric events
   static logBiometric(userId: string, action: 'enroll' | 'authenticate' | 'verify', 
-                      success: boolean, confidence?: number, ipAddress: string, 
-                      userAgent: string): void {
+                      ipAddress: string, userAgent: string, success: boolean, 
+                      confidence?: number): void {
     this.log({
       userId,
       action: `biometric_${action}`,

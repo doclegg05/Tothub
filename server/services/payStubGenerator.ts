@@ -5,8 +5,15 @@ import { PayStub, Staff, PayPeriod } from '@shared/schema';
 import { PayrollCalculator } from './payrollCalculator';
 
 interface PayStubData extends PayStub {
-  staff: Staff;
-  payPeriod: PayPeriod;
+  staff: Staff & {
+    hourlyRate?: number;
+    employeeNumber?: string;
+    directDepositAccount?: string;
+    directDepositRouting?: string;
+  };
+  payPeriod: PayPeriod & {
+    payDate: string;
+  };
   yearToDate?: {
     grossPay: number;
     federalTax: number;

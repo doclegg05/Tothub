@@ -1,0 +1,37 @@
+{
+  "json.schemas": [
+    {
+      "fileMatch": ["server/compliance/ruleset.*.json"],
+      "url": "./server/compliance/ruleset.schema.json"
+    }
+  ],
+  "json.schemaDownload.enable": true,
+  "json.validate.enable": true,
+  "json.format.enable": true,
+  "json.schemaDownload.enable": true,
+  "files.associations": {
+    "*.ruleset.json": "json"
+  },
+  "emmet.includeLanguages": {
+    "typescript": "html"
+  },
+  "typescript.preferences.importModuleSpecifier": "relative",
+  "typescript.suggest.autoImports": true,
+  "editor.codeActionsOnSave": {
+    "source.fixAll.eslint": "explicit",
+    "source.organizeImports": "explicit"
+  },
+  "editor.formatOnSave": true,
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "files.exclude": {
+    "**/node_modules": true,
+    "**/dist": true,
+    "**/.git": true,
+    "**/.DS_Store": true
+  },
+  "search.exclude": {
+    "**/node_modules": true,
+    "**/dist": true,
+    "**/coverage": true
+  }
+}

@@ -547,20 +547,20 @@ export function calculateRequiredTeachers(
   if (!stateData || !stateData[ageGroup]) {
     // Fallback to West Virginia ratios if state not found
     const fallbackData = getStateRatios("West Virginia")!;
-    const ratio = parseRatio(fallbackData[ageGroup]);
+    const ratio = parseRatio(String(fallbackData[ageGroup])); 
     return {
       required: Math.ceil(childrenCount / ratio),
-      ratio: fallbackData[ageGroup],
+      ratio: String(fallbackData[ageGroup]),
       maxAllowed: ratio * 1 // One teacher
     };
   }
 
-  const ratio = parseRatio(stateData[ageGroup]);
+  const ratio = parseRatio(String(stateData[ageGroup]));
   const required = Math.ceil(childrenCount / ratio);
   
   return {
     required,
-    ratio: stateData[ageGroup],
+    ratio: String(stateData[ageGroup]),
     maxAllowed: ratio * required
   };
 }

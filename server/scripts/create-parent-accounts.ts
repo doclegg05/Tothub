@@ -8,7 +8,7 @@ async function createParentAccounts() {
     // Get some children to assign to parents
     const children = await storage.getAllChildren({ page: 1, limit: 10 });
     
-    if (children.data.length === 0) {
+    if (children.length === 0) {
       console.log('❌ No children found. Please create children first.');
       return;
     }
@@ -22,7 +22,7 @@ async function createParentAccounts() {
         lastName: 'Doe',
         phone: '(555) 123-4567',
         password: 'parent123',
-        childrenIds: [children.data[0]?.id, children.data[1]?.id].filter(Boolean), // Assign first 2 children
+        childrenIds: [children[0]?.id, children[1]?.id].filter(Boolean), // Assign first 2 children
       },
       {
         username: 'parent2', 
@@ -31,7 +31,7 @@ async function createParentAccounts() {
         lastName: 'Smith',
         phone: '(555) 234-5678',
         password: 'parent123',
-        childrenIds: [children.data[2]?.id].filter(Boolean), // Assign third child
+        childrenIds: [children[2]?.id].filter(Boolean), // Assign third child
       },
       {
         username: 'parent3',
@@ -40,7 +40,7 @@ async function createParentAccounts() {
         lastName: 'Johnson',
         phone: '(555) 345-6789',
         password: 'parent123',
-        childrenIds: [children.data[3]?.id, children.data[4]?.id].filter(Boolean), // Assign 4th and 5th children
+        childrenIds: [children[3]?.id, children[4]?.id].filter(Boolean), // Assign 4th and 5th children
       },
     ];
     

@@ -2,12 +2,12 @@
 import { totalmem } from 'os';
 
 declare global {
-  var gc: (() => void) | undefined;
+  // eslint-disable-next-line no-var
   var __cleanup: (() => void) | undefined;
 }
 
 export function runGarbageCollection(): void {
-  if (global.gc) {
+  if (typeof global.gc === 'function') {
     global.gc();
     console.log('✅ Manual garbage collection completed');
   }

@@ -59,7 +59,7 @@ export class SessionService {
       .from(sessions)
       .where(and(
         eq(sessions.id, sessionId),
-        eq(sessions.isActive, true)
+        eq(sessions.isActive, 1)
       ));
     
     if (!session) return null;
@@ -132,7 +132,7 @@ export class SessionService {
       .from(sessions)
       .where(and(
         eq(sessions.userId, userId),
-        eq(sessions.isActive, true)
+        eq(sessions.isActive, 1)
       ))
       .orderBy(desc(sessions.loginTime));
   }
@@ -155,8 +155,8 @@ export class SessionService {
       .select()
       .from(sessions)
       .where(and(
-        eq(sessions.isActive, true),
-        gte(sessions.lastActivity, cutoffTime)
+        eq(sessions.isActive, 1),
+        gte(sessions.lastActivity, cutoffTime.toISOString())
       ))
       .orderBy(desc(sessions.lastActivity));
   }
@@ -169,8 +169,8 @@ export class SessionService {
       .select()
       .from(sessions)
       .where(and(
-        eq(sessions.isActive, true),
-        gte(sessions.loginTime, expirationTime)
+        eq(sessions.isActive, 1),
+        gte(sessions.loginTime, expirationTime.toISOString())
       ));
     
     let cleaned = 0;

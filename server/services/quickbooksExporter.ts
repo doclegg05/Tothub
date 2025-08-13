@@ -314,4 +314,46 @@ export class QuickBooksExporter {
       throw error;
     }
   }
+
+/**
+ * Generate IIF format for QuickBooks import
+ */
+static async exportPayPeriodIIF(payPeriodId: string): Promise<string> {
+  try {
+    const payrollData = await this.generatePayrollCSV(payPeriodId);
+    // Convert CSV to IIF format
+    const iifContent = `!TRNS	TRNSID	TRNSTYPE	DATE	ACCNT	NAME	CLASS	AMOUNT	MEMO	SPL	SPLID	SPLTRNSTYPE	SPLACCNT	SPLNAME	SPLCLASS	SPLAMOUNT	SPLMEMO
+!SPL	SPLID	SPLTRNSTYPE	SPLACCNT	SPLNAME	SPLCLASS	SPLAMOUNT	SPLMEMO
+!ENDTRNS
+${payrollData}`;
+    return iifContent;
+  } catch (error) {
+    console.error('IIF export error:', error);
+    throw error;
+  }
+}
+
+/**
+ * Generate CSV format for QuickBooks import
+ */
+static async exportPayPeriodCSV(payPeriodId: string): Promise<string> {
+  try {
+    return await this.generatePayrollCSV(payPeriodId);
+  } catch (error) {
+    console.error('CSV export error:', error);
+    throw error;
+  }
+}
+
+/**
+ * Generate General Ledger summary
+ */
+static async generateGLSummary(payPeriodId: string): Promise<any> {
+  try {
+    return await this.generateGeneralLedgerSummary(payPeriodId);
+  } catch (error) {
+    console.error('GL summary error:', error);
+    throw error;
+  }
+}
 }

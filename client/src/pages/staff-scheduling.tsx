@@ -101,9 +101,10 @@ export default function StaffScheduling() {
       resetForm();
     },
     onError: (error: any) => {
+      const errorMessage = error?.response?.data?.message || error?.message || "Failed to create schedule.";
       toast({
         title: "Error",
-        description: error?.message || "Failed to create schedule.",
+        description: errorMessage,
         variant: "destructive",
       });
     },
@@ -204,7 +205,29 @@ export default function StaffScheduling() {
         }
       });
     } else if (selectedSlot) {
-      // Create new event
+      // Create new event with validation
+      const now = new Date();
+      
+      // Validate that scheduled start time is not in the past
+      if (selectedSlot.start < now) {
+        toast({
+          title: "Error",
+          description: "Cannot schedule staff for a time in the past. Please select a start time after the current time.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Validate that end time is after start time
+      if (selectedSlot.end <= selectedSlot.start) {
+        toast({
+          title: "Error",
+          description: "End time must be after start time.",
+          variant: "destructive",
+        });
+        return;
+      }
+
       createScheduleMutation.mutate({
         ...formData,
         scheduledStart: selectedSlot.start,

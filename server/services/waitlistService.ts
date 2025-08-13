@@ -155,7 +155,7 @@ export class WaitlistService {
       .where(
         and(
           eq(waitlist.status, 'waiting'),
-          lte(waitlist.desiredStartDate, addDays(new Date(), 30))
+          lte(waitlist.desiredStartDate, addDays(new Date(), 30).toISOString().split('T')[0])
         )
       )
       .orderBy(desc(waitlist.priority), waitlist.createdAt)

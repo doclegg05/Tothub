@@ -1,16 +1,17 @@
 import { useState, useRef } from 'react';
+import type React from 'react';
 import FullCalendar from '@fullcalendar/react';
 import resourceTimelinePlugin from '@fullcalendar/resource-timeline';
 import interactionPlugin from '@fullcalendar/interaction';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
-import { Label } from '@/components/ui/label';
-import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
+import { Button } from '../components/ui/button';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '../components/ui/dialog';
+import { Label } from '../components/ui/label';
+import { Input } from '../components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useToast } from '@/hooks/use-toast';
-import { apiRequest } from '@/lib/queryClient';
+import { useToast } from '../hooks/use-toast';
+import { apiRequest } from '../lib/queryClient';
 import moment from 'moment';
 
 interface Schedule {
@@ -87,9 +88,10 @@ export function StaffSchedulingDayPilot() {
       resetForm();
     },
     onError: (error: any) => {
+      const errorMessage = error?.response?.data?.message || error?.message || 'Failed to schedule shift';
       toast({
         title: 'Error',
-        description: error.message || 'Failed to schedule shift',
+        description: errorMessage,
         variant: 'destructive'
       });
     }
@@ -247,12 +249,37 @@ export function StaffSchedulingDayPilot() {
       return;
     }
 
+    // Get the start and end times
+    const startTime = selectedSlot ? selectedSlot.start : new Date(selectedEvent.extendedProps.scheduledStart);
+    const endTime = selectedSlot ? selectedSlot.end : new Date(selectedEvent.extendedProps.scheduledEnd);
+    
+    // Validate that scheduled start time is not in the past
+    const now = new Date();
+    if (startTime < now) {
+      toast({
+        title: 'Error',
+        description: 'Cannot schedule staff for a time in the past. Please select a start time after the current time.',
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    // Validate that end time is after start time
+    if (endTime <= startTime) {
+      toast({
+        title: 'Error',
+        description: 'End time must be after start time.',
+        variant: 'destructive'
+      });
+      return;
+    }
+
     const data = {
       staffId: formData.staffId,
       room: formData.room,
-      scheduledStart: selectedSlot ? selectedSlot.start.toISOString() : selectedEvent.extendedProps.scheduledStart,
-      scheduledEnd: selectedSlot ? selectedSlot.end.toISOString() : selectedEvent.extendedProps.scheduledEnd,
-      date: moment(selectedSlot ? selectedSlot.start : selectedEvent.extendedProps.date).format('YYYY-MM-DD'),
+      scheduledStart: startTime.toISOString(),
+      scheduledEnd: endTime.toISOString(),
+      date: moment(startTime).format('YYYY-MM-DD'),
       scheduleType: formData.type,
       notes: formData.notes
     };
@@ -302,7 +329,7 @@ export function StaffSchedulingDayPilot() {
             <CardTitle>Staff Schedule Calendar</CardTitle>
           </CardHeader>
           <CardContent>
-            <div style={{ height: '600px' }}>
+            <div className="h-[600px]">
               <FullCalendar
                 ref={calendarRef}
                 plugins={[resourceTimelinePlugin, interactionPlugin]}

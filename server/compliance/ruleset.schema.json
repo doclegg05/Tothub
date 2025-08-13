@@ -1,0 +1,310 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "TotHub State Compliance Ruleset Schema",
+  "description": "Schema for defining state-specific childcare compliance rules and regulations",
+  "type": "object",
+  "required": ["id", "state", "version", "effectiveDate", "rules"],
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^[A-Z]{2}-\\d{4}\\.\\d{2}$",
+      "description": "Unique identifier for the ruleset in format STATE-YYYY.MM",
+      "examples": ["WV-2025.08", "CA-2025.01", "NY-2024.12"]
+    },
+    "state": {
+      "type": "string",
+      "pattern": "^[A-Z]{2}$",
+      "description": "Two-letter state abbreviation (e.g., WV, CA, NY)",
+      "examples": ["WV", "CA", "NY", "TX"]
+    },
+    "version": {
+      "type": "string",
+      "pattern": "^\\d{4}\\.\\d{2}$",
+      "description": "Version in YYYY.MM format",
+      "examples": ["2025.08", "2024.12", "2025.01"]
+    },
+    "effectiveDate": {
+      "type": "string",
+      "format": "date",
+      "description": "Date when these rules become effective (YYYY-MM-DD)",
+      "examples": ["2025-08-01", "2024-12-01"]
+    },
+    "lastUpdated": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Timestamp of last ruleset update"
+    },
+    "source": {
+      "type": "string",
+      "description": "Source of compliance rules (e.g., state licensing website, regulation document)",
+      "examples": [
+        "WV Department of Health and Human Resources",
+        "California Department of Social Services",
+        "Official state regulation document"
+      ]
+    },
+    "rules": {
+      "type": "object",
+      "required": ["ageGroups", "ratios", "staffQualifications"],
+      "properties": {
+        "ageGroups": {
+          "type": "array",
+          "description": "Age group definitions used for ratio calculations",
+          "items": {
+            "type": "object",
+            "required": ["name", "minAge", "maxAge", "unit"],
+            "properties": {
+              "name": {
+                "type": "string",
+                "description": "Human-readable name for the age group",
+                "examples": ["Infant", "Toddler", "Preschool", "School Age"]
+              },
+              "minAge": {
+                "type": "integer",
+                "minimum": 0,
+                "description": "Minimum age for this group"
+              },
+              "maxAge": {
+                "type": "integer",
+                "description": "Maximum age for this group (exclusive)"
+              },
+              "unit": {
+                "type": "string",
+                "enum": ["months", "years"],
+                "description": "Unit of measurement for age values"
+              },
+              "description": {
+                "type": "string",
+                "description": "Additional description or notes about this age group"
+              }
+            }
+          }
+        },
+        "ratios": {
+          "type": "array",
+          "description": "Staff-to-child ratio requirements for different age groups",
+          "items": {
+            "type": "object",
+            "required": ["ageGroup", "maxRatio", "maxGroupSize"],
+            "properties": {
+              "ageGroup": {
+                "type": "string",
+                "description": "Name of the age group this ratio applies to"
+              },
+              "maxRatio": {
+                "type": "string",
+                "pattern": "^\\d+:\\d+$",
+                "description": "Maximum staff-to-child ratio (e.g., '1:4', '1:10')",
+                "examples": ["1:4", "1:6", "1:10", "1:15"]
+              },
+              "maxGroupSize": {
+                "type": "integer",
+                "minimum": 1,
+                "description": "Maximum number of children allowed in a group"
+              },
+              "notes": {
+                "type": "string",
+                "description": "Additional requirements or exceptions"
+              },
+              "exceptions": {
+                "type": "array",
+                "description": "List of exceptions to this ratio rule",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "condition": {
+                      "type": "string",
+                      "description": "Description of when this exception applies"
+                    },
+                    "modifiedRatio": {
+                      "type": "string",
+                      "description": "Modified ratio under exception conditions"
+                    },
+                    "modifiedGroupSize": {
+                      "type": "integer",
+                      "description": "Modified group size under exception conditions"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "staffQualifications": {
+          "type": "array",
+          "description": "Required qualifications for different staff positions",
+          "items": {
+            "type": "object",
+            "required": ["position", "requiredEducation"],
+            "properties": {
+              "position": {
+                "type": "string",
+                "description": "Staff position title",
+                "examples": ["Lead Teacher", "Assistant Teacher", "Director", "Aide"]
+              },
+              "requiredEducation": {
+                "type": "string",
+                "description": "Minimum education requirement",
+                "examples": [
+                  "High School Diploma",
+                  "Associate's Degree in Early Childhood Education",
+                  "Bachelor's Degree in Early Childhood Education",
+                  "Master's Degree in Early Childhood Education"
+                ]
+              },
+              "requiredExperience": {
+                "type": "string",
+                "description": "Minimum experience requirement",
+                "examples": [
+                  "1 year in licensed childcare",
+                  "2 years in licensed childcare",
+                  "3 years in licensed childcare"
+                ]
+              },
+              "requiredCertifications": {
+                "type": "array",
+                "description": "Required certifications or training",
+                "items": {
+                  "type": "string"
+                },
+                "examples": [
+                  ["CPR", "First Aid"],
+                  ["CPR", "First Aid", "Child Development Associate"],
+                  ["CPR", "First Aid", "Food Handler"]
+                ]
+              },
+              "notes": {
+                "type": "string",
+                "description": "Additional qualification notes or exceptions"
+              }
+            }
+          }
+        },
+        "facilityRequirements": {
+          "type": "object",
+          "description": "Facility-specific requirements and standards",
+          "properties": {
+            "minimumSquareFootage": {
+              "type": "object",
+              "description": "Minimum square footage requirements per child",
+              "properties": {
+                "indoor": {
+                  "type": "number",
+                  "description": "Minimum indoor square footage per child"
+                },
+                "outdoor": {
+                  "type": "number",
+                  "description": "Minimum outdoor square footage per child"
+                }
+              }
+            },
+            "safetyRequirements": {
+              "type": "array",
+              "description": "Safety and security requirements",
+              "items": {
+                "type": "string"
+              },
+              "examples": [
+                "Fenced outdoor play area",
+                "Emergency exit plans posted",
+                "First aid kit in each room",
+                "Fire extinguishers accessible"
+              ]
+            },
+            "healthRequirements": {
+              "type": "array",
+              "description": "Health and hygiene requirements",
+              "items": {
+                "type": "string"
+              },
+              "examples": [
+                "Handwashing stations in each room",
+                "Daily cleaning and sanitizing",
+                "Illness exclusion policies",
+                "Medication administration training"
+              ]
+            }
+          }
+        },
+        "operatingHours": {
+          "type": "object",
+          "description": "Operating hours and time restrictions",
+          "properties": {
+            "maxHoursPerDay": {
+              "type": "integer",
+              "description": "Maximum hours a child can be in care per day"
+            },
+            "maxDaysPerWeek": {
+              "type": "integer",
+              "description": "Maximum days per week a child can be in care"
+            },
+            "overnightCare": {
+              "type": "boolean",
+              "description": "Whether overnight care is permitted"
+            },
+            "weekendCare": {
+              "type": "boolean",
+              "description": "Whether weekend care is permitted"
+            }
+          }
+        },
+        "specialNeeds": {
+          "type": "object",
+          "description": "Requirements for children with special needs",
+          "properties": {
+            "inclusionRatio": {
+              "type": "string",
+              "description": "Modified ratio when including children with special needs",
+              "examples": ["1:3", "1:2", "1:1"]
+            },
+            "requiredTraining": {
+              "type": "array",
+              "description": "Required training for staff working with special needs children",
+              "items": {
+                "type": "string"
+              }
+            },
+            "documentation": {
+              "type": "array",
+              "description": "Required documentation for special needs accommodations",
+              "items": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      }
+    },
+    "metadata": {
+      "type": "object",
+      "description": "Additional metadata about the ruleset",
+      "properties": {
+        "createdBy": {
+          "type": "string",
+          "description": "User or system that created this ruleset"
+        },
+        "reviewedBy": {
+          "type": "string",
+          "description": "User or system that reviewed this ruleset"
+        },
+        "approvalStatus": {
+          "type": "string",
+          "enum": ["draft", "review", "approved", "deprecated"],
+          "description": "Current approval status of the ruleset"
+        },
+        "tags": {
+          "type": "array",
+          "description": "Tags for categorizing and searching rulesets",
+          "items": {
+            "type": "string"
+          }
+        },
+        "notes": {
+          "type": "string",
+          "description": "General notes about the ruleset"
+        }
+      }
+    }
+  },
+  "additionalProperties": false
+}

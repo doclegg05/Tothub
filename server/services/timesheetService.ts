@@ -18,7 +18,7 @@ export class TimesheetService {
         .where(
           and(
             eq(timesheetEntries.staffId, staffId),
-            eq(timesheetEntries.date, today),
+            eq(timesheetEntries.date, today.toISOString().split('T')[0]),
             isNull(timesheetEntries.clockOutTime)
           )
         )
@@ -77,7 +77,7 @@ export class TimesheetService {
         .where(
           and(
             eq(timesheetEntries.staffId, staffId),
-            eq(timesheetEntries.date, today),
+            eq(timesheetEntries.date, today.toISOString().split('T')[0]),
             isNull(timesheetEntries.clockOutTime)
           )
         )
@@ -132,7 +132,7 @@ export class TimesheetService {
         .where(
           and(
             eq(timesheetEntries.staffId, staffId),
-            eq(timesheetEntries.date, today)
+            eq(timesheetEntries.date, today.toISOString().split('T')[0])
           )
         )
         .limit(1);
@@ -176,8 +176,8 @@ export class TimesheetService {
         .where(
           and(
             eq(timesheetEntries.staffId, staffId),
-            gte(timesheetEntries.date, startDate),
-            lte(timesheetEntries.date, endDate)
+            gte(timesheetEntries.date, startDate.toISOString().split('T')[0]),
+            lte(timesheetEntries.date, endDate.toISOString().split('T')[0])
           )
         );
 

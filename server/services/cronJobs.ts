@@ -13,7 +13,6 @@ export function initializeDailyReportsCron() {
       console.error('Error in daily reports cron job:', error);
     }
   }, {
-    scheduled: true,
     timezone: process.env.TZ || 'America/New_York'
   });
   

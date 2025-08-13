@@ -40,7 +40,14 @@ router.get('/webhooks/:id', authenticateToken, (req, res) => {
 router.post('/webhooks', authenticateToken, (req, res) => {
   try {
     const webhookData = webhookSchema.parse(req.body);
-    const webhookId = zapierService.registerWebhook(webhookData);
+    // Ensure all required fields are present
+    const webhookToRegister = {
+      name: webhookData.name,
+      url: webhookData.url,
+      events: webhookData.events,
+      active: webhookData.active
+    };
+    const webhookId = zapierService.registerWebhook(webhookToRegister);
     const webhook = zapierService.getWebhook(webhookId);
     
     res.status(201).json({ 

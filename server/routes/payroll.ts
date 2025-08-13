@@ -25,7 +25,7 @@ router.get("/staff", async (req, res) => {
     const staffWithPayroll = await db
       .select()
       .from(staff)
-      .where(eq(staff.isActive, true))
+      .where(eq(staff.isActive, 1))
       .orderBy(staff.lastName);
 
     res.json(staffWithPayroll);
@@ -50,8 +50,6 @@ router.post("/timesheet", async (req, res) => {
       const regularMinutes = Math.min(adjustedMinutes, 40 * 60); // 40 hours max
       const overtimeMinutes = Math.max(0, adjustedMinutes - (40 * 60));
       
-      data.regularHours = regularMinutes;
-      data.overtimeHours = overtimeMinutes;
       data.totalHours = adjustedMinutes;
     }
     
@@ -81,8 +79,8 @@ router.get("/timesheet/:staffId", async (req, res) => {
     if (startDate && endDate) {
       query = query.where(
         and(
-          gte(timesheetEntries.date, new Date(startDate as string)),
-          lte(timesheetEntries.date, new Date(endDate as string))
+          gte(timesheetEntries.date, (startDate as string)),
+          lte(timesheetEntries.date, (endDate as string))
         )
       );
     }
@@ -147,7 +145,7 @@ router.post("/pay-periods/:payPeriodId/process", async (req, res) => {
     const allStaff = await db
       .select()
       .from(staff)
-      .where(eq(staff.isActive, true));
+      .where(eq(staff.isActive, 1));
 
     const processedPayStubs = [];
     let totalGrossPay = 0;
@@ -164,7 +162,7 @@ router.post("/pay-periods/:payPeriodId/process", async (req, res) => {
             eq(timesheetEntries.staffId, employee.id),
             gte(timesheetEntries.date, payPeriod.startDate),
             lte(timesheetEntries.date, payPeriod.endDate),
-            eq(timesheetEntries.isApproved, true)
+            eq(timesheetEntries.isApproved, 1)
           )
         );
 
@@ -342,7 +340,7 @@ router.get("/dashboard", async (req, res) => {
     const totalEmployees = await db
       .select({ count: staff.id })
       .from(staff)
-      .where(eq(staff.isActive, true));
+      .where(eq(staff.isActive, 1));
 
     // Get year-to-date payroll totals
     const ytdPayStubs = await db
@@ -365,7 +363,7 @@ router.get("/dashboard", async (req, res) => {
     const pendingTimesheets = await db
       .select({ count: timesheetEntries.id })
       .from(timesheetEntries)
-      .where(eq(timesheetEntries.isApproved, false));
+      .where(eq(timesheetEntries.isApproved, 0));
 
     res.json({
       currentPayPeriod,

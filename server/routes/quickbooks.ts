@@ -18,8 +18,7 @@ router.get("/export/pay-period", auth, async (req, res) => {
     
     if (exportFormat === 'iif') {
       const iifData = await QuickBooksExporter.exportPayPeriodIIF(
-        new Date(startDate as string),
-        new Date(endDate as string)
+        `${startDate}_${endDate}`
       );
       
       res.setHeader('Content-Type', 'text/plain');
@@ -27,8 +26,7 @@ router.get("/export/pay-period", auth, async (req, res) => {
       res.send(iifData);
     } else {
       const csvData = await QuickBooksExporter.exportPayPeriodCSV(
-        new Date(startDate as string),
-        new Date(endDate as string)
+        `${startDate}_${endDate}`
       );
       
       res.setHeader('Content-Type', 'text/csv');
@@ -53,8 +51,7 @@ router.get("/export/gl-summary", auth, async (req, res) => {
     }
     
     const summary = await QuickBooksExporter.generateGLSummary(
-      parseInt(month as string),
-      parseInt(year as string)
+      `${month}_${year}`
     );
     
     res.json(summary);

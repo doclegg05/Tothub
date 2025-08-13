@@ -1,6 +1,6 @@
 import { EventEmitter } from 'events';
 import { storage } from '../storage';
-import { Alert } from '@shared/schema';
+import { alerts } from '@shared/schema';
 
 export type AlertSeverity = 'info' | 'warning' | 'critical';
 export type AlertChannel = 'email' | 'sms' | 'in-app' | 'webhook';
@@ -108,15 +108,15 @@ export class EnhancedAlertService extends EventEmitter {
 
   // Start monitoring for alert conditions
   private startMonitoring(): void {
-    // Check conditions every minute
-    setInterval(() => {
-      this.checkAllRules();
-    }, 60 * 1000);
-
-    // Check critical conditions more frequently
-    setInterval(() => {
-      this.checkCriticalRules();
-    }, 10 * 1000);
+    // Disable background monitoring in development to avoid noisy restarts
+    if (process.env.NODE_ENV === 'production') {
+      setInterval(() => {
+        this.checkAllRules();
+      }, 60 * 1000);
+      setInterval(() => {
+        this.checkCriticalRules();
+      }, 10 * 1000);
+    }
   }
 
   // Check all alert rules
@@ -221,7 +221,7 @@ export class EnhancedAlertService extends EventEmitter {
   }
 
   // Send notifications through configured channels
-  private async sendNotifications(alert: Alert, rule: AlertRule): Promise<void> {
+  private async sendNotifications(alert: any, rule: AlertRule): Promise<void> {
     for (const channel of rule.channels) {
       try {
         await this.sendNotification(alert, channel);
@@ -247,7 +247,7 @@ export class EnhancedAlertService extends EventEmitter {
   }
 
   // Send notification through specific channel
-  private async sendNotification(alert: Alert, channel: AlertChannel): Promise<void> {
+  private async sendNotification(alert: any, channel: AlertChannel): Promise<void> {
     switch (channel) {
       case 'in-app':
         // Alert is already created in database, will show in UI
@@ -276,11 +276,15 @@ export class EnhancedAlertService extends EventEmitter {
 
     switch (action) {
       case 'restart-service':
-        // Trigger service restart
-        console.log('Scheduling service restart...');
-        setTimeout(() => {
-          process.exit(0); // Process manager will restart it
-        }, 5000);
+        if (process.env.NODE_ENV === 'production') {
+          // Trigger service restart
+          console.log('Scheduling service restart...');
+          setTimeout(() => {
+            process.exit(0); // Process manager will restart it
+          }, 5000);
+        } else {
+          console.log('Restart suppressed in development');
+        }
         break;
 
       case 'clear-cache':

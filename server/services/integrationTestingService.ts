@@ -200,6 +200,7 @@ export class IntegrationTestingService {
           name: 'QB Employee Creation',
           category: 'api',
           test: async () => {
+            const startTime = performance.now();
             try {
               const testEmployee = {
                 Name: 'Test Employee',
@@ -208,12 +209,15 @@ export class IntegrationTestingService {
               };
               
               const result = await this.testQuickBooksAPI('/v1/employee', 'POST', testEmployee);
+              const duration = performance.now() - startTime;
               return {
                 passed: result?.Employee?.Id !== undefined,
+                duration,
                 details: result,
               };
             } catch (error) {
-              return { passed: false, error: error instanceof Error ? error.message : String(error) };
+              const duration = performance.now() - startTime;
+              return { passed: false, duration, error: error instanceof Error ? error.message : String(error) };
             }
           },
         },
@@ -221,6 +225,7 @@ export class IntegrationTestingService {
           name: 'QB Payroll Export',
           category: 'api',
           test: async () => {
+            const startTime = performance.now();
             try {
               const payrollData = {
                 PayrollDate: new Date().toISOString(),
@@ -230,12 +235,15 @@ export class IntegrationTestingService {
               };
               
               const result = await this.testQuickBooksExport(payrollData);
+              const duration = performance.now() - startTime;
               return {
                 passed: result.success,
+                duration,
                 details: result,
               };
             } catch (error) {
-              return { passed: false, error: error instanceof Error ? error.message : String(error) };
+              const duration = performance.now() - startTime;
+              return { passed: false, duration, error: error instanceof Error ? error.message : String(error) };
             }
           },
         },
@@ -252,15 +260,18 @@ export class IntegrationTestingService {
           name: 'Fingerprint Scanner Connection',
           category: 'hardware',
           test: async () => {
+            const startTime = performance.now();
             try {
               const result = await this.testHardwareConnection({
                 deviceType: 'biometric',
                 connectionType: 'usb',
                 address: '/dev/ttyUSB0',
               });
-              return result;
+              const duration = performance.now() - startTime;
+              return { ...result, duration };
             } catch (error) {
-              return { passed: false, error: error instanceof Error ? error.message : String(error) };
+              const duration = performance.now() - startTime;
+              return { passed: false, duration, error: error instanceof Error ? error.message : String(error) };
             }
           },
         },
@@ -268,12 +279,15 @@ export class IntegrationTestingService {
           name: 'Face Recognition Camera',
           category: 'hardware',
           test: async () => {
+            const startTime = performance.now();
             try {
               // Test camera access and face detection
               const cameraTest = await this.testCameraAccess();
-              return cameraTest;
+              const duration = performance.now() - startTime;
+              return { ...cameraTest, duration };
             } catch (error) {
-              return { passed: false, error: error instanceof Error ? error.message : String(error) };
+              const duration = performance.now() - startTime;
+              return { passed: false, duration, error: error instanceof Error ? error.message : String(error) };
             }
           },
         },
@@ -281,18 +295,22 @@ export class IntegrationTestingService {
           name: 'Biometric Template Storage',
           category: 'hardware',
           test: async () => {
+            const startTime = performance.now();
             try {
               // Test template encryption and storage
               const testTemplate = 'mock_biometric_template_data';
               const encrypted = await this.testBiometricEncryption(testTemplate);
               const decrypted = await this.testBiometricDecryption(encrypted);
               
+              const duration = performance.now() - startTime;
               return {
                 passed: decrypted === testTemplate,
+                duration,
                 details: { originalLength: testTemplate.length, encryptedLength: encrypted.length },
               };
             } catch (error) {
-              return { passed: false, error: error instanceof Error ? error.message : String(error) };
+              const duration = performance.now() - startTime;
+              return { passed: false, duration, error: error instanceof Error ? error.message : String(error) };
             }
           },
         },
@@ -309,15 +327,18 @@ export class IntegrationTestingService {
           name: 'Door Controller Connection',
           category: 'hardware',
           test: async () => {
+            const startTime = performance.now();
             try {
               const result = await this.testHardwareConnection({
                 deviceType: 'door_controller',
                 connectionType: 'network',
                 address: '192.168.1.100:8080',
               });
-              return result;
+              const duration = performance.now() - startTime;
+              return { ...result, duration };
             } catch (error) {
-              return { passed: false, error: error instanceof Error ? error.message : String(error) };
+              const duration = performance.now() - startTime;
+              return { passed: false, duration, error: error instanceof Error ? error.message : String(error) };
             }
           },
         },
@@ -325,17 +346,21 @@ export class IntegrationTestingService {
           name: 'Door Lock/Unlock Commands',
           category: 'hardware',
           test: async () => {
+            const startTime = performance.now();
             try {
               // Test door control commands
               const lockResult = await this.testDoorCommand('lock');
               const unlockResult = await this.testDoorCommand('unlock');
               
+              const duration = performance.now() - startTime;
               return {
                 passed: lockResult.success && unlockResult.success,
+                duration,
                 details: { lockResult, unlockResult },
               };
             } catch (error) {
-              return { passed: false, error: error instanceof Error ? error.message : String(error) };
+              const duration = performance.now() - startTime;
+              return { passed: false, duration, error: error instanceof Error ? error.message : String(error) };
             }
           },
         },
@@ -343,14 +368,18 @@ export class IntegrationTestingService {
           name: 'Emergency Unlock Procedure',
           category: 'hardware',
           test: async () => {
+            const startTime = performance.now();
             try {
               const emergencyResult = await this.testEmergencyUnlock();
+              const duration = performance.now() - startTime;
               return {
                 passed: emergencyResult.success && emergencyResult.responseTime < 5000,
+                duration,
                 details: emergencyResult,
               };
             } catch (error) {
-              return { passed: false, error: error instanceof Error ? error.message : String(error) };
+              const duration = performance.now() - startTime;
+              return { passed: false, duration, error: error instanceof Error ? error.message : String(error) };
             }
           },
         },
@@ -367,6 +396,7 @@ export class IntegrationTestingService {
           name: 'Database Connection Pool',
           category: 'database',
           test: async () => {
+            const startTime = performance.now();
             try {
               // Test multiple concurrent connections
               const connections = await Promise.all([
@@ -375,12 +405,15 @@ export class IntegrationTestingService {
                 this.testDatabaseQuery('SELECT 3 as test'),
               ]);
               
+              const duration = performance.now() - startTime;
               return {
                 passed: connections.every(conn => conn.success),
+                duration,
                 details: { connectionCount: connections.length },
               };
             } catch (error) {
-              return { passed: false, error: error instanceof Error ? error.message : String(error) };
+              const duration = performance.now() - startTime;
+              return { passed: false, duration, error: error instanceof Error ? error.message : String(error) };
             }
           },
         },
@@ -388,11 +421,14 @@ export class IntegrationTestingService {
           name: 'Transaction Rollback',
           category: 'database',
           test: async () => {
+            const startTime = performance.now();
             try {
               const result = await this.testDatabaseTransaction();
-              return result;
+              const duration = performance.now() - startTime;
+              return { ...result, duration };
             } catch (error) {
-              return { passed: false, error: error instanceof Error ? error.message : String(error) };
+              const duration = performance.now() - startTime;
+              return { passed: false, duration, error: error instanceof Error ? error.message : String(error) };
             }
           },
         },
@@ -400,12 +436,15 @@ export class IntegrationTestingService {
           name: 'Backup Restoration',
           category: 'database',
           test: async () => {
+            const startTime = performance.now();
             try {
               // Test backup and restore process
               const backupResult = await this.testDatabaseBackup();
-              return backupResult;
+              const duration = performance.now() - startTime;
+              return { ...backupResult, duration };
             } catch (error) {
-              return { passed: false, error: error instanceof Error ? error.message : String(error) };
+              const duration = performance.now() - startTime;
+              return { passed: false, duration, error: error instanceof Error ? error.message : String(error) };
             }
           },
         },
@@ -422,11 +461,14 @@ export class IntegrationTestingService {
           name: 'Email Service',
           category: 'external',
           test: async () => {
+            const startTime = performance.now();
             try {
               const result = await this.testEmailService();
-              return result;
+              const duration = performance.now() - startTime;
+              return { ...result, duration };
             } catch (error) {
-              return { passed: false, error: error instanceof Error ? error.message : String(error) };
+              const duration = performance.now() - startTime;
+              return { passed: false, duration, error: error instanceof Error ? error.message : String(error) };
             }
           },
         },
@@ -434,11 +476,14 @@ export class IntegrationTestingService {
           name: 'SMS Service',
           category: 'external',
           test: async () => {
+            const startTime = performance.now();
             try {
               const result = await this.testSMSService();
-              return result;
+              const duration = performance.now() - startTime;
+              return { ...result, duration };
             } catch (error) {
-              return { passed: false, error: error instanceof Error ? error.message : String(error) };
+              const duration = performance.now() - startTime;
+              return { passed: false, duration, error: error instanceof Error ? error.message : String(error) };
             }
           },
         },
@@ -455,11 +500,14 @@ export class IntegrationTestingService {
           name: 'SSL Certificate Validation',
           category: 'external',
           test: async () => {
+            const startTime = performance.now();
             try {
               const result = await this.testSSLCertificate();
-              return result;
+              const duration = performance.now() - startTime;
+              return { ...result, duration };
             } catch (error) {
-              return { passed: false, error: error instanceof Error ? error.message : String(error) };
+              const duration = performance.now() - startTime;
+              return { passed: false, duration, error: error instanceof Error ? error.message : String(error) };
             }
           },
         },
@@ -467,11 +515,14 @@ export class IntegrationTestingService {
           name: 'API Rate Limiting',
           category: 'api',
           test: async () => {
+            const startTime = performance.now();
             try {
               const result = await this.testRateLimiting();
-              return result;
+              const duration = performance.now() - startTime;
+              return { ...result, duration };
             } catch (error) {
-              return { passed: false, error: error instanceof Error ? error.message : String(error) };
+              const duration = performance.now() - startTime;
+              return { passed: false, duration, error: error instanceof Error ? error.message : String(error) };
             }
           },
         },
@@ -536,6 +587,7 @@ export class IntegrationTestingService {
     
     return {
       passed: simulatedSuccess,
+      duration: 0, // Will be set by the calling test
       details: {
         deviceType: config.deviceType,
         connectionType: config.connectionType,
@@ -551,6 +603,7 @@ export class IntegrationTestingService {
     // Simulate camera test
     return {
       passed: true,
+      duration: 0, // Will be set by the calling test
       details: {
         cameraFound: true,
         resolution: '1920x1080',
@@ -610,6 +663,7 @@ export class IntegrationTestingService {
       // Simulate transaction test
       return {
         passed: true,
+        duration: 0, // Will be set by the calling test
         details: {
           transactionStarted: true,
           operationsExecuted: 3,
@@ -619,6 +673,7 @@ export class IntegrationTestingService {
     } catch (error) {
       return {
         passed: false,
+        duration: 0, // Will be set by the calling test
         error: error instanceof Error ? error.message : String(error),
       };
     }
@@ -629,6 +684,7 @@ export class IntegrationTestingService {
     
     return {
       passed: true,
+      duration: 0, // Will be set by the calling test
       details: {
         backupCreated: true,
         backupSize: '1.2MB',
@@ -642,6 +698,7 @@ export class IntegrationTestingService {
     
     return {
       passed: !!process.env.EMAIL_HOST,
+      duration: 0, // Will be set by the calling test
       details: {
         serviceConfigured: !!process.env.EMAIL_HOST,
         smtpReachable: true,
@@ -654,6 +711,7 @@ export class IntegrationTestingService {
     
     return {
       passed: !!process.env.TWILIO_ACCOUNT_SID,
+      duration: 0, // Will be set by the calling test
       details: {
         serviceConfigured: !!process.env.TWILIO_ACCOUNT_SID,
         apiReachable: true,
@@ -666,6 +724,7 @@ export class IntegrationTestingService {
     
     return {
       passed: true,
+      duration: 0, // Will be set by the calling test
       details: {
         certificateValid: true,
         expiryDate: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000), // 90 days from now
@@ -679,6 +738,7 @@ export class IntegrationTestingService {
     
     return {
       passed: true,
+      duration: 0, // Will be set by the calling test
       details: {
         rateLimitActive: true,
         maxRequests: 100,

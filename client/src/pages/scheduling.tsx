@@ -155,8 +155,9 @@ export default function Scheduling() {
       setStaffModalOpen(false);
       resetStaffForm();
     },
-    onError: () => {
-      toast({ title: "Error", description: "Failed to create staff schedule.", variant: "destructive" });
+    onError: (error: any) => {
+      const errorMessage = error?.response?.data?.message || error?.message || "Failed to create staff schedule.";
+      toast({ title: "Error", description: errorMessage, variant: "destructive" });
     },
   });
 
@@ -217,6 +218,39 @@ export default function Scheduling() {
 
   const handleStaffSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Client-side validation for staff schedules
+    const scheduleDate = new Date(staffScheduleForm.date);
+    const startTime = staffScheduleForm.scheduledStart.split(':');
+    const endTime = staffScheduleForm.scheduledEnd.split(':');
+    
+    const scheduledStart = new Date(scheduleDate);
+    scheduledStart.setHours(parseInt(startTime[0]), parseInt(startTime[1]));
+    
+    const scheduledEnd = new Date(scheduleDate);
+    scheduledEnd.setHours(parseInt(endTime[0]), parseInt(endTime[1]));
+
+    // Validate that scheduled start time is not in the past
+    const now = new Date();
+    if (scheduledStart < now) {
+      toast({
+        title: "Error",
+        description: "Cannot schedule staff for a time in the past. Please select a start time after the current time.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Validate that end time is after start time
+    if (scheduledEnd <= scheduledStart) {
+      toast({
+        title: "Error",
+        description: "End time must be after start time.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     createStaffScheduleMutation.mutate(staffScheduleForm);
   };
 

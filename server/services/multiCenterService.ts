@@ -133,11 +133,11 @@ export class MultiCenterService {
   }
 
   // Generate cross-center report
-  static async generateCrossCenter Report(
+  static async generateCrossCenterReport(
     centerIds: string[],
     reportType: 'attendance' | 'revenue' | 'compliance' | 'staff'
   ): Promise<any> {
-    const centers = await db
+    const centerData = await db
       .select()
       .from(centers)
       .where(inArray(centers.id, centerIds));
@@ -145,7 +145,7 @@ export class MultiCenterService {
     const report = {
       reportType,
       generatedAt: new Date(),
-      centers: centers.map(c => c.name),
+      centers: centerData.map(c => c.name),
       data: {} as any
     };
 

@@ -1,0 +1,1007 @@
+openapi: 3.0.3
+info:
+  title: TotHub Daycare Management API
+  description: |
+    Enterprise-grade childcare management platform API for attendance tracking, 
+    staff scheduling, compliance monitoring, and parent communication.
+    
+    ## Key Features
+    - Multi-tenant architecture with role-based access control
+    - Real-time attendance and ratio monitoring
+    - Multi-state compliance rules engine
+    - Staff scheduling and payroll management
+    - Parent portal and communication tools
+    - Biometric authentication support
+    - QuickBooks integration
+    
+    ## Authentication
+    All API calls require a valid JWT token in the Authorization header:
+    `Authorization: Bearer <token>`
+    
+    ## Rate Limiting
+    - Standard endpoints: 1000 requests/hour
+    - Authentication endpoints: 100 requests/hour
+    - File uploads: 100 requests/hour
+  
+  version: 1.0.0
+  contact:
+    name: TotHub Development Team
+    email: dev@tothub.com
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+
+servers:
+  - url: https://api.tothub.com/v1
+    description: Production server
+  - url: https://staging-api.tothub.com/v1
+    description: Staging server
+  - url: http://localhost:5000/v1
+    description: Local development
+
+security:
+  - bearerAuth: []
+
+paths:
+  /auth/login:
+    post:
+      summary: Authenticate user
+      description: Login with email/password to receive JWT token
+      tags: [Authentication]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email:
+                  type: string
+                  format: email
+                  example: "teacher@tothub.com"
+                password:
+                  type: string
+                  minLength: 8
+                  example: "securePassword123"
+      responses:
+        '200':
+          description: Authentication successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  token:
+                    type: string
+                    description: JWT access token
+                  refreshToken:
+                    type: string
+                    description: JWT refresh token
+                  user:
+                    $ref: '#/components/schemas/User'
+        '401':
+          description: Invalid credentials
+        '429':
+          description: Too many login attempts
+
+  /auth/refresh:
+    post:
+      summary: Refresh access token
+      tags: [Authentication]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [refreshToken]
+              properties:
+                refreshToken:
+                  type: string
+      responses:
+        '200':
+          description: Token refreshed successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  token:
+                    type: string
+                    description: New JWT access token
+        '401':
+          description: Invalid refresh token
+
+  /children:
+    get:
+      summary: List children
+      description: Retrieve paginated list of children with optional filtering
+      tags: [Children]
+      parameters:
+        - name: page
+          in: query
+          description: Page number (1-based)
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - name: limit
+          in: query
+          description: Number of items per page
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+        - name: room
+          in: query
+          description: Filter by room ID
+          schema:
+            type: string
+        - name: status
+          in: query
+          description: Filter by enrollment status
+          schema:
+            type: string
+            enum: [enrolled, unenrolled, aged_out]
+      responses:
+        '200':
+          description: List of children
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Child'
+                  pagination:
+                    $ref: '#/components/schemas/Pagination'
+        '403':
+          description: Insufficient permissions
+
+    post:
+      summary: Create new child
+      description: Add a new child to the system
+      tags: [Children]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChildCreate'
+      responses:
+        '201':
+          description: Child created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Child'
+        '400':
+          description: Validation error
+        '403':
+          description: Insufficient permissions
+
+  /children/{id}:
+    get:
+      summary: Get child details
+      tags: [Children]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Child details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Child'
+        '404':
+          description: Child not found
+
+    put:
+      summary: Update child
+      tags: [Children]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChildUpdate'
+      responses:
+        '200':
+          description: Child updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Child'
+        '404':
+          description: Child not found
+
+  /attendance/checkin:
+    post:
+      summary: Check in child
+      description: Record child check-in with optional photo and notes
+      tags: [Attendance]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [childId, roomId, checkedInBy]
+              properties:
+                childId:
+                  type: string
+                  description: Child's unique identifier
+                roomId:
+                  type: string
+                  description: Room where child is being checked in
+                checkedInBy:
+                  type: string
+                  description: Staff member performing check-in
+                photo:
+                  type: string
+                  format: uri
+                  description: Optional photo URL
+                moodRating:
+                  type: integer
+                  minimum: 1
+                  maximum: 5
+                  description: Child's mood rating (1-5)
+                notes:
+                  type: string
+                  description: Additional notes or special instructions
+      responses:
+        '201':
+          description: Check-in successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AttendanceRecord'
+        '400':
+          description: Validation error or ratio violation
+        '403':
+          description: Insufficient permissions
+
+  /attendance/checkout:
+    post:
+      summary: Check out child
+      description: Record child check-out
+      tags: [Attendance]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [childId, checkedOutBy]
+              properties:
+                childId:
+                  type: string
+                  description: Child's unique identifier
+                checkedOutBy:
+                  type: string
+                  description: Person picking up child
+                notes:
+                  type: string
+                  description: Any notes about the day
+      responses:
+        '200':
+          description: Check-out successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AttendanceRecord'
+        '404':
+          description: Child not found or not checked in
+
+  /compliance/ratios:
+    get:
+      summary: Get current room ratios
+      description: Retrieve real-time staff-to-child ratios for all rooms
+      tags: [Compliance]
+      responses:
+        '200':
+          description: Current room ratios
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/RoomRatio'
+        '403':
+          description: Insufficient permissions
+
+  /compliance/rulesets/{state}:
+    get:
+      summary: Get state compliance rules
+      description: Retrieve compliance rules for a specific state
+      tags: [Compliance]
+      parameters:
+        - name: state
+          in: path
+          required: true
+          schema:
+            type: string
+            pattern: '^[A-Z]{2}$'
+            example: "WV"
+      responses:
+        '200':
+          description: State compliance rules
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ComplianceRuleset'
+        '404':
+          description: State rules not found
+
+  /compliance/check:
+    post:
+      summary: Check room compliance
+      description: Comprehensive room compliance check including ratios, qualifications, and facility requirements
+      tags: [Compliance]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - state
+                - room
+                - children
+                - staff
+              properties:
+                state:
+                  type: string
+                  pattern: '^[A-Z]{2}$'
+                  example: "WV"
+                room:
+                  $ref: '#/components/schemas/Room'
+                children:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/Child'
+                staff:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/Staff'
+      responses:
+        '200':
+          description: Room compliance check result
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  roomId:
+                    type: string
+                    format: uuid
+                  state:
+                    type: string
+                  compliant:
+                    type: boolean
+                  violations:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ComplianceViolation'
+                  warnings:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ComplianceWarning'
+                  complianceScore:
+                    type: number
+                    minimum: 0
+                    maximum: 100
+                  recommendations:
+                    type: array
+                    items:
+                      type: string
+                  timestamp:
+                    type: string
+                    format: date-time
+        '400':
+          description: Invalid request data
+        '500':
+          description: Internal server error
+
+  /staff/schedules:
+    get:
+      summary: Get staff schedules
+      description: Retrieve staff schedules with optional date filtering
+      tags: [Staff]
+      parameters:
+        - name: startDate
+          in: query
+          description: Start date for schedule range (YYYY-MM-DD)
+          schema:
+            type: string
+            format: date
+        - name: endDate
+          in: query
+          description: End date for schedule range (YYYY-MM-DD)
+          schema:
+            type: string
+            format: date
+        - name: staffId
+          in: query
+          description: Filter by specific staff member
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Staff schedules
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/StaffSchedule'
+        '403':
+          description: Insufficient permissions
+
+  /payroll/export:
+    post:
+      summary: Export payroll data
+      description: Generate payroll export for QuickBooks or other systems
+      tags: [Payroll]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [payPeriodStart, payPeriodEnd, format]
+              properties:
+                payPeriodStart:
+                  type: string
+                  format: date
+                  description: Start of pay period
+                payPeriodEnd:
+                  type: string
+                  format: date
+                  description: End of pay period
+                format:
+                  type: string
+                  enum: [csv, iif, json]
+                  description: Export format
+                includeTaxes:
+                  type: boolean
+                  default: true
+                  description: Include tax calculations
+      responses:
+        '200':
+          description: Payroll export generated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  downloadUrl:
+                    type: string
+                    format: uri
+                    description: URL to download the export file
+                  expiresAt:
+                    type: string
+                    format: date-time
+                    description: When the download URL expires
+        '400':
+          description: Invalid date range or format
+        '403':
+          description: Insufficient permissions
+
+  /analytics/dashboard:
+    get:
+      summary: Get dashboard analytics
+      description: Retrieve key metrics and analytics for the dashboard
+      tags: [Analytics]
+      parameters:
+        - name: dateRange
+          in: query
+          description: Date range for analytics
+          schema:
+            type: string
+            enum: [today, week, month, quarter, year]
+            default: "week"
+      responses:
+        '200':
+          description: Dashboard analytics
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DashboardAnalytics'
+        '403':
+          description: Insufficient permissions
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        email:
+          type: string
+          format: email
+        firstName:
+          type: string
+        lastName:
+          type: string
+        role:
+          type: string
+          enum: [admin, manager, staff, parent]
+        tenantId:
+          type: string
+          format: uuid
+        isActive:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+        lastLoginAt:
+          type: string
+          format: date-time
+
+    Child:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        firstName:
+          type: string
+        lastName:
+          type: string
+        dateOfBirth:
+          type: string
+          format: date
+        parentEmail:
+          type: string
+          format: email
+        parentPhone:
+          type: string
+        emergencyContact:
+          type: string
+        medicalNotes:
+          type: string
+        enrollmentDate:
+          type: string
+          format: date
+        isActive:
+          type: boolean
+        roomId:
+          type: string
+          format: uuid
+        tenantId:
+          type: string
+          format: uuid
+        createdAt:
+          type: string
+          format: date-time
+
+    ChildCreate:
+      type: object
+      required: [firstName, lastName, dateOfBirth, parentEmail]
+      properties:
+        firstName:
+          type: string
+          minLength: 1
+        lastName:
+          type: string
+          minLength: 1
+        dateOfBirth:
+          type: string
+          format: date
+        parentEmail:
+          type: string
+          format: email
+        parentPhone:
+          type: string
+        emergencyContact:
+          type: string
+        medicalNotes:
+          type: string
+        roomId:
+          type: string
+          format: uuid
+
+    ChildUpdate:
+      type: object
+      properties:
+        firstName:
+          type: string
+          minLength: 1
+        lastName:
+          type: string
+          minLength: 1
+        parentEmail:
+          type: string
+          format: email
+        parentPhone:
+          type: string
+        emergencyContact:
+          type: string
+        medicalNotes:
+          type: string
+        roomId:
+          type: string
+          format: uuid
+        isActive:
+          type: boolean
+
+    AttendanceRecord:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        childId:
+          type: string
+          format: uuid
+        roomId:
+          type: string
+          format: uuid
+        checkInTime:
+          type: string
+          format: date-time
+        checkOutTime:
+          type: string
+          format: date-time
+        checkedInBy:
+          type: string
+          format: uuid
+        checkedOutBy:
+          type: string
+          format: uuid
+        moodRating:
+          type: integer
+          minimum: 1
+          maximum: 5
+        notes:
+          type: string
+        photoUrl:
+          type: string
+          format: uri
+        tenantId:
+          type: string
+          format: uuid
+        createdAt:
+          type: string
+          format: date-time
+
+    RoomRatio:
+      type: object
+      properties:
+        roomId:
+          type: string
+          format: uuid
+        roomName:
+          type: string
+        currentStaff:
+          type: integer
+
+    ComplianceViolation:
+      type: object
+      properties:
+        type:
+          type: string
+          enum: [ratio, qualification, facility, safety]
+        severity:
+          type: string
+          enum: [low, medium, high, critical]
+        message:
+          type: string
+        roomId:
+          type: string
+          format: uuid
+        staffId:
+          type: string
+          format: uuid
+        details:
+          type: object
+
+    ComplianceWarning:
+      type: object
+      properties:
+        type:
+          type: string
+          enum: [ratio_warning, qualification_warning, facility_warning]
+        message:
+          type: string
+        roomId:
+          type: string
+          format: uuid
+        staffId:
+          type: string
+          format: uuid
+        details:
+          type: object
+
+    Room:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        tenantId:
+          type: string
+          format: uuid
+        capacity:
+          type: integer
+          minimum: 1
+        ageGroup:
+          type: string
+          enum: [Infant, Toddler, Preschool, School Age]
+        isActive:
+          type: boolean
+
+    Staff:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        firstName:
+          type: string
+        lastName:
+          type: string
+        position:
+          type: string
+        qualifications:
+          type: array
+          items:
+            type: string
+        certifications:
+          type: array
+          items:
+            type: string
+        experienceYears:
+          type: integer
+          minimum: 0
+        roomId:
+          type: string
+          format: uuid
+        tenantId:
+          type: string
+          format: uuid
+        isActive:
+          type: boolean
+          minimum: 0
+        currentChildren:
+          type: integer
+          minimum: 0
+        maxRatio:
+          type: string
+          example: "1:10"
+        isCompliant:
+          type: boolean
+        lastUpdated:
+          type: string
+          format: date-time
+
+    ComplianceRuleset:
+      type: object
+      properties:
+        state:
+          type: string
+          pattern: '^[A-Z]{2}$'
+        version:
+          type: string
+        effectiveDate:
+          type: string
+          format: date
+        rules:
+          type: object
+          properties:
+            ageGroups:
+              type: array
+              items:
+                $ref: '#/components/schemas/AgeGroupRule'
+            staffQualifications:
+              type: array
+              items:
+                $ref: '#/components/schemas/StaffQualification'
+            ratios:
+              type: array
+              items:
+                $ref: '#/components/schemas/RatioRule'
+
+    AgeGroupRule:
+      type: object
+      properties:
+        name:
+          type: string
+          example: "Infant"
+        minAge:
+          type: integer
+          minimum: 0
+          example: 0
+        maxAge:
+          type: integer
+          example: 12
+        unit:
+          type: string
+          enum: [months, years]
+          example: "months"
+
+    StaffQualification:
+      type: object
+      properties:
+        position:
+          type: string
+          example: "Lead Teacher"
+        requiredEducation:
+          type: string
+          example: "Bachelor's Degree in Early Childhood Education"
+        requiredExperience:
+          type: string
+          example: "2 years in licensed childcare"
+        requiredCertifications:
+          type: array
+          items:
+            type: string
+          example: ["CPR", "First Aid"]
+
+    RatioRule:
+      type: object
+      properties:
+        ageGroup:
+          type: string
+          example: "Infant"
+        maxRatio:
+          type: string
+          example: "1:4"
+        maxGroupSize:
+          type: integer
+          example: 8
+        notes:
+          type: string
+          example: "Maximum 2 infants per caregiver"
+
+    StaffSchedule:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        staffId:
+          type: string
+          format: uuid
+        roomId:
+          type: string
+          format: uuid
+        date:
+          type: string
+          format: date
+        scheduledStart:
+          type: string
+          format: date-time
+        scheduledEnd:
+          type: string
+          format: date-time
+        actualStart:
+          type: string
+          format: date-time
+        actualEnd:
+          type: string
+          format: date-time
+        scheduleType:
+          type: string
+          enum: [regular, overtime, training, float]
+        status:
+          type: string
+          enum: [scheduled, in_progress, completed, cancelled]
+        notes:
+          type: string
+
+    DashboardAnalytics:
+      type: object
+      properties:
+        totalChildren:
+          type: integer
+        totalStaff:
+          type: integer
+        attendanceRate:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 100
+        complianceScore:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 100
+        revenue:
+          type: number
+          format: float
+        expenses:
+          type: number
+          format: float
+        alerts:
+          type: array
+          items:
+            $ref: '#/components/schemas/Alert'
+
+    Alert:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        type:
+          type: string
+          enum: [ratio_violation, staff_shortage, compliance_warning, system_alert]
+        severity:
+          type: string
+          enum: [low, medium, high, critical]
+        message:
+          type: string
+        roomId:
+          type: string
+          format: uuid
+        createdAt:
+          type: string
+          format: date-time
+        resolvedAt:
+          type: string
+          format: date-time
+        resolvedBy:
+          type: string
+          format: uuid
+
+    Pagination:
+      type: object
+      properties:
+        page:
+          type: integer
+          minimum: 1
+        limit:
+          type: integer
+          minimum: 1
+        total:
+          type: integer
+          minimum: 0
+        totalPages:
+          type: integer
+          minimum: 1
+        hasNext:
+          type: boolean
+        hasPrev:
+          type: boolean
+
+tags:
+  - name: Authentication
+    description: User authentication and authorization
+  - name: Children
+    description: Child profile and enrollment management
+  - name: Attendance
+    description: Check-in/out and attendance tracking
+  - name: Compliance
+    description: Regulatory compliance and ratio monitoring
+  - name: Staff
+    description: Staff management and scheduling
+  - name: Payroll
+    description: Payroll processing and exports
+  - name: Analytics
+    description: Dashboard analytics and reporting

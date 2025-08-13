@@ -111,7 +111,7 @@ class SimpleMemoryCache {
     };
   }
 
-  clearAllCaches(): void {
+  clearCaches(): void {
     this.children.clear();
     this.staff.clear();
     this.attendance.clear();
@@ -145,11 +145,9 @@ class SimpleMemoryCache {
   }
 
   // Clear all caches
+  // alias to maintain backwards compatibility
   clearAllCaches(): void {
-    this.children.clear();
-    this.staff.clear();
-    this.attendance.clear();
-    this.stateRatios.clear();
+    this.clearCaches();
     console.log('🗑️ All caches cleared');
   }
 

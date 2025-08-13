@@ -102,19 +102,21 @@ router.post("/get-or-create-subscription", authMiddleware, async (req, res) => {
         if (subscription.status === 'active' || subscription.status === 'trialing') {
           // Retrieve the latest invoice's payment intent
           const latestInvoice = await stripe.invoices.retrieve(subscription.latest_invoice as string, {
-            expand: ['payment_intent'],
+            expand: ['latest_invoice.payment_intent'],
           });
-          
-          const paymentIntent = latestInvoice.payment_intent;
-          const clientSecret = typeof paymentIntent === 'string' 
-            ? null // If it's just an ID, we can't get the client secret
-            : (paymentIntent as Stripe.PaymentIntent)?.client_secret;
-          
-          return res.json({
-            subscriptionId: subscription.id,
-            clientSecret: clientSecret,
-            status: subscription.status,
-          });
+
+          if (latestInvoice && (latestInvoice as any).payment_intent) {
+            const paymentIntent = (latestInvoice as any).payment_intent;
+            const clientSecret = typeof paymentIntent === 'string' 
+              ? null // If it's just an ID, we can't get the client secret
+              : (paymentIntent as Stripe.PaymentIntent)?.client_secret;
+            
+            return res.json({
+              subscriptionId: subscription.id,
+              clientSecret: clientSecret,
+              status: subscription.status,
+            });
+          }
         }
       } catch (error) {
         console.log("Existing subscription not found or inactive, creating new one");
@@ -192,7 +194,7 @@ router.post("/get-or-create-subscription", authMiddleware, async (req, res) => {
       .where(eq(children.id, childId));
 
     const latestInvoice = subscription.latest_invoice as Stripe.Invoice;
-    const paymentIntent = latestInvoice.payment_intent;
+    const paymentIntent = (latestInvoice as any).payment_intent;
     const clientSecret = typeof paymentIntent === 'string' 
       ? null // If it's just an ID, we can't get the client secret
       : (paymentIntent as Stripe.PaymentIntent)?.client_secret;

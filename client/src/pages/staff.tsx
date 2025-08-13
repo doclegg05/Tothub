@@ -105,10 +105,11 @@ export default function Staff() {
         date: new Date().toISOString().split('T')[0],
       });
     },
-    onError: () => {
+    onError: (error: any) => {
+      const errorMessage = error?.response?.data?.message || error?.message || "Failed to create schedule. Please try again.";
       toast({
         title: "Error",
-        description: "Failed to create schedule. Please try again.",
+        description: errorMessage,
         variant: "destructive",
       });
     },
@@ -151,6 +152,26 @@ export default function Staff() {
     
     const scheduledEnd = new Date(scheduleDate);
     scheduledEnd.setHours(parseInt(endTime[0]), parseInt(endTime[1]));
+
+    // Client-side validation
+    const now = new Date();
+    if (scheduledStart < now) {
+      toast({
+        title: "Error",
+        description: "Cannot schedule staff for a time in the past. Please select a start time after the current time.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (scheduledEnd <= scheduledStart) {
+      toast({
+        title: "Error",
+        description: "End time must be after start time.",
+        variant: "destructive",
+      });
+      return;
+    }
 
     const payload = {
       ...scheduleData,

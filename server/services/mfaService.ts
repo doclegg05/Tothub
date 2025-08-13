@@ -54,7 +54,7 @@ export class MFAService {
 
   // Generate TOTP token for given time
   private static generateTOTPToken(secret: string, timeStep: number): string {
-    const key = Buffer.from(secret, 'base32');
+    const key = Buffer.from(secret, 'base32' as BufferEncoding);
     const time = Buffer.alloc(8);
     time.writeUInt32BE(timeStep, 4);
     
@@ -71,7 +71,7 @@ export class MFAService {
   // Generate TOTP secret
   private static generateTOTPSecret(): string {
     const buffer = crypto.randomBytes(20);
-    return buffer.toString('base32').replace(/=/g, '');
+    return buffer.toString('base32' as BufferEncoding).replace(/=/g, '');
   }
 
   // Generate QR code URL for TOTP

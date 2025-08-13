@@ -1,17 +1,55 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { useState } from "react";
+import { Users, Plus, Clock, CheckCircle, AlertTriangle } from "lucide-react";
 
 export function StaffingAlerts() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const [selectedRoom, setSelectedRoom] = useState<string>("");
+  const [selectedStaff, setSelectedStaff] = useState<string>("");
+  const [assignmentModalOpen, setAssignmentModalOpen] = useState(false);
   
   const { data: ratios = [], isLoading } = useQuery({
     queryKey: ["/api/ratios"],
   });
+
+  // Fetch all staff members
+  const { data: staffResponse } = useQuery({
+    queryKey: ["staff", 1],
+    queryFn: async () => {
+      const res = await fetch(`/api/staff?page=1&limit=100`, {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem('authToken') || localStorage.getItem('token')}`,
+        },
+      });
+      if (!res.ok) {
+        throw new Error(`${res.status}: ${await res.text()}`);
+      }
+      return res.json();
+    },
+  });
+
+  // Fetch today's schedules to see who's already assigned
+  const { data: todaysSchedules = [] } = useQuery({
+    queryKey: ["/api/schedules/today"],
+  });
+
+  const staff = staffResponse?.data || [];
+  
+  // Get available staff (not currently scheduled for today)
+  const scheduledStaffIds = new Set(todaysSchedules.map((s: any) => s.staffId));
+  const availableStaff = staff.filter((s: any) => !scheduledStaffIds.has(s.id) && s.isActive);
+
+  // Get staff currently scheduled but not present
+  const scheduledButNotPresent = todaysSchedules.filter((s: any) => !s.isPresent);
 
   const refreshMutation = useMutation({
     mutationFn: () => apiRequest("GET", "/api/ratios"),
@@ -47,6 +85,112 @@ export function StaffingAlerts() {
       });
     },
   });
+
+  const assignStaffMutation = useMutation({
+    mutationFn: async (data: { staffId: string; room: string; date: string }) => {
+      const now = new Date();
+      const scheduleDate = new Date(data.date);
+      
+      // Set start time to current time or next hour if it's already past 8 AM
+      let scheduledStart: Date;
+      if (now.getHours() >= 8) {
+        // If it's past 8 AM, start at the next hour
+        scheduledStart = new Date(now);
+        scheduledStart.setMinutes(0, 0, 0); // Start at the top of the next hour
+        scheduledStart.setHours(scheduledStart.getHours() + 1);
+      } else {
+        // If it's before 8 AM, start at 8 AM
+        scheduledStart = new Date(scheduleDate);
+        scheduledStart.setHours(8, 0, 0, 0);
+      }
+      
+      // Set end time to 5 PM or 8 hours from start time
+      const scheduledEnd = new Date(scheduledStart);
+      scheduledEnd.setHours(scheduledEnd.getHours() + 8); // 8-hour shift
+
+      const payload = {
+        staffId: data.staffId,
+        room: data.room,
+        date: scheduleDate.toISOString(),
+        scheduledStart: scheduledStart.toISOString(),
+        scheduledEnd: scheduledEnd.toISOString(),
+        scheduleType: 'emergency',
+        notes: 'Emergency assignment due to ratio violation'
+      };
+
+      console.log('Sending schedule payload:', payload);
+      return apiRequest("POST", "/api/schedules", payload);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/schedules/today"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/ratios"] });
+      setAssignmentModalOpen(false);
+      setSelectedStaff("");
+      toast({
+        title: "Staff Assigned",
+        description: "Staff member has been assigned to the room.",
+      });
+    },
+    onError: (error: any) => {
+      console.error('Assignment error:', error);
+      const errorMessage = error?.response?.data?.message || error?.message || "Could not assign staff member. Please try again.";
+      toast({
+        title: "Assignment Failed",
+        description: errorMessage,
+        variant: "destructive"
+      });
+    },
+  });
+
+  const markPresentMutation = useMutation({
+    mutationFn: (scheduleId: string) => apiRequest("POST", `/api/schedules/${scheduleId}/mark-present`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/schedules/today"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/ratios"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/dashboard/stats"] });
+      toast({
+        title: "Staff Marked Present",
+        description: "Staff member has been marked as present.",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to mark staff as present.",
+        variant: "destructive"
+      });
+    },
+  });
+
+  const handleAssignStaff = () => {
+    if (!selectedStaff || !selectedRoom) {
+      toast({
+        title: "Selection Required",
+        description: "Please select both a staff member and room.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    // Validate that we're not assigning for a past date
+    const today = new Date().toISOString().split('T')[0];
+    const selectedDate = new Date().toISOString().split('T')[0];
+    
+    if (selectedDate < today) {
+      toast({
+        title: "Invalid Date",
+        description: "Cannot assign staff for a date in the past.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    assignStaffMutation.mutate({
+      staffId: selectedStaff,
+      room: selectedRoom,
+      date: selectedDate
+    });
+  };
 
   if (isLoading) {
     return (
@@ -111,16 +255,110 @@ export function StaffingAlerts() {
               }`}>
                 Current: {ratio.ratio} (Required: {ratio.requiredRatio})
               </p>
+              
+              {/* Show scheduled but not present staff for this room */}
               {!ratio.isCompliant && (
-                <Button
-                  size="sm"
-                  variant="outline"
-                  className="mt-2 text-xs"
-                  onClick={() => requestStaffMutation.mutate(ratio.room)}
-                  disabled={requestStaffMutation.isPending}
-                >
-                  {requestStaffMutation.isPending ? "Sending..." : "Request Additional Staff"}
-                </Button>
+                <div className="mt-3 space-y-2">
+                  {/* Staff scheduled but not present */}
+                  {scheduledButNotPresent
+                    .filter((s: any) => s.room === ratio.room)
+                    .map((schedule: any) => (
+                      <div key={schedule.id} className="flex items-center justify-between p-2 bg-yellow-50 border border-yellow-200 rounded text-xs">
+                        <div className="flex items-center">
+                          <Clock className="w-3 h-3 mr-1 text-yellow-600" />
+                          <span className="text-yellow-800">
+                            {schedule.staff?.firstName} {schedule.staff?.lastName} - Scheduled but not present
+                          </span>
+                        </div>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="text-xs h-6"
+                          onClick={() => markPresentMutation.mutate(schedule.id)}
+                          disabled={markPresentMutation.isPending}
+                        >
+                          {markPresentMutation.isPending ? "Marking..." : "Mark Present"}
+                        </Button>
+                      </div>
+                    ))}
+                  
+                  <div className="flex flex-wrap gap-2">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="text-xs"
+                      onClick={() => requestStaffMutation.mutate(ratio.room)}
+                      disabled={requestStaffMutation.isPending}
+                    >
+                      {requestStaffMutation.isPending ? "Sending..." : "Request Additional Staff"}
+                    </Button>
+                    
+                    {availableStaff.length > 0 && (
+                      <Dialog open={assignmentModalOpen} onOpenChange={setAssignmentModalOpen}>
+                        <DialogTrigger asChild>
+                          <Button
+                            size="sm"
+                            variant="default"
+                            className="text-xs"
+                            onClick={() => setSelectedRoom(ratio.room)}
+                          >
+                            <Plus className="w-3 h-3 mr-1" />
+                            Assign Available Staff
+                          </Button>
+                        </DialogTrigger>
+                        <DialogContent className="max-w-md">
+                          <DialogHeader>
+                            <DialogTitle>Assign Staff to {ratio.room}</DialogTitle>
+                          </DialogHeader>
+                          <div className="space-y-4">
+                            <div>
+                              <Label htmlFor="staff-select">Select Staff Member</Label>
+                              <Select value={selectedStaff} onValueChange={setSelectedStaff}>
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Choose a staff member" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {availableStaff.map((member: any) => (
+                                    <SelectItem key={member.id} value={member.id}>
+                                      {member.firstName} {member.lastName} - {member.position}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </div>
+                            
+                            <div className="text-sm text-gray-600">
+                              <p><strong>Available Staff:</strong> {availableStaff.length}</p>
+                              <p><strong>Required:</strong> {ratio.requiredStaff - ratio.staff} more</p>
+                            </div>
+                            
+                            <div className="flex justify-end space-x-2">
+                              <Button
+                                variant="outline"
+                                onClick={() => setAssignmentModalOpen(false)}
+                              >
+                                Cancel
+                              </Button>
+                              <Button
+                                onClick={handleAssignStaff}
+                                disabled={!selectedStaff || assignStaffMutation.isPending}
+                              >
+                                {assignStaffMutation.isPending ? "Assigning..." : "Assign Staff"}
+                              </Button>
+                            </div>
+                          </div>
+                        </DialogContent>
+                      </Dialog>
+                    )}
+                  </div>
+                  
+                  {availableStaff.length === 0 && (
+                    <div className="text-xs text-orange-600 mt-1">
+                      <Users className="w-3 h-3 inline mr-1" />
+                      No available staff to assign
+                    </div>
+                  )}
+                </div>
               )}
             </div>
           ))}

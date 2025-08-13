@@ -165,6 +165,14 @@ class AutoRestartService {
     this.lastRestartTime = null; // Override cooldown for manual restart
     await this.performRestart();
   }
+
+  // Force restart (ignores all checks)
+  public async forceRestart(): Promise<void> {
+    console.log('🔄 Force restart requested');
+    this.isRestarting = true;
+    this.lastRestartTime = null;
+    await this.performRestart();
+  }
 }
 
 // Singleton instance

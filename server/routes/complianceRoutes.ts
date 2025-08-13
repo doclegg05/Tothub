@@ -3,6 +3,8 @@ import { RegulatoryComplianceService } from '../services/regulatoryComplianceSer
 import { AccessibilityService } from '../services/accessibilityService';
 import { AuditService } from '../services/auditService';
 import { createRateLimit, createAuditMiddleware } from '../middleware/security';
+import { ComplianceRulesEngine } from '../compliance/rules_engine';
+import type { paths } from '../../shared/openapi-types';
 
 const router = Router();
 
@@ -271,6 +273,296 @@ router.get('/regulations/:state', complianceRateLimit, async (req, res) => {
     res.json(regulations);
   } catch (error) {
     res.status(500).json({ error: 'Failed to get state regulations' });
+  }
+});
+
+// Initialize the compliance rules engine
+const rulesEngine = new ComplianceRulesEngine();
+
+// Type definitions based on your OpenAPI spec
+type ComplianceRoomRequest = paths['/compliance/check']['post']['requestBody']['content']['application/json'];
+type ComplianceRoomResponse = paths['/compliance/check']['post']['responses']['200']['content']['application/json'];
+
+/**
+ * Check room compliance with state regulations using the rules engine
+ * POST /v1/compliance/check
+ */
+router.post('/v1/compliance/check', complianceRateLimit, createAuditMiddleware('room_compliance_check'), async (req, res) => {
+  try {
+    const body = req.body as {
+      state: string;
+      room: {
+        id: string;
+        staffCount: number;
+        children: Array<{ childId: string; birthDate: string }>;
+      };
+      children: Array<{ childId: string; birthDate: string }>;
+      staff: Array<{
+        id: string;
+        position: string;
+        education: string;
+        experience: string;
+        certifications: string[];
+      }>;
+    };
+    
+    // Validate required fields
+    if (!body.state || !body.room || !body.children || !body.staff) {
+      return res.status(400).json({
+        error: "Missing required fields: state, room, children, staff"
+      });
+    }
+
+    // Check if ruleset exists for the state
+    const availableStates = rulesEngine.getAvailableStates();
+    if (!availableStates.includes(body.state)) {
+      return res.status(400).json({
+        error: `No compliance ruleset found for state: ${body.state}`,
+        availableStates
+      });
+    }
+
+    // Evaluate room compliance
+    const result = rulesEngine.checkRoomCompliance(
+      body.state,
+      {
+        ...body.room,
+        name: `Room ${body.room.id}`,
+        tenantId: 'tenant-1'
+      },
+      body.children.map(child => ({
+        id: child.childId,
+        firstName: 'Child',
+        lastName: child.childId,
+        dateOfBirth: child.birthDate,
+        roomId: 'default',
+        tenantId: 'tenant-1',
+        isActive: true,
+        enrollmentDate: new Date().toISOString().split('T')[0]
+      })),
+      body.staff.map(staffMember => ({
+        id: staffMember.id,
+        firstName: 'Staff',
+        lastName: staffMember.id,
+        position: staffMember.position,
+        qualifications: [staffMember.education],
+        experienceYears: parseInt(staffMember.experience) || 0,
+        certifications: staffMember.certifications,
+        roomId: 'default',
+        tenantId: 'tenant-1',
+        isActive: true
+      }))
+    );
+
+    const response: ComplianceRoomResponse = {
+      roomId: body.room.id,
+      state: body.state,
+      compliant: result.isCompliant,
+      violations: result.violations.map(v => ({
+        type: v.type === 'operating_hours' ? 'facility' : v.type,
+        severity: v.severity,
+        message: v.message,
+        roomId: v.roomId,
+        staffId: v.staffId,
+        details: v.details || {}
+      })),
+      warnings: result.warnings.map(w => ({
+        type: w.type === 'capacity_warning' ? 'facility_warning' : w.type,
+        message: w.message,
+        roomId: w.roomId,
+        staffId: w.staffId,
+        details: w.details || {}
+      })),
+      complianceScore: result.score,
+      recommendations: result.recommendations || [],
+      timestamp: new Date().toISOString()
+    };
+
+    // Audit the compliance check
+    AuditService.logCompliance(
+      req.session?.userId || 'system',
+      'room_compliance_check',
+      `${body.state}_${body.room.id}`,
+      result.isCompliant,
+      req.ip || '127.0.0.1',
+      req.headers['user-agent'] || '',
+      { state: body.state, roomId: body.room.id, complianceScore: result.score }
+    );
+
+    res.json(response);
+  } catch (error) {
+    console.error('Compliance check error:', error);
+    res.status(500).json({
+      error: "Internal server error during compliance check",
+      details: error instanceof Error ? error.message : "Unknown error"
+    });
+  }
+});
+
+/**
+ * Get available states with compliance rulesets
+ * GET /v1/compliance/states
+ */
+router.get('/v1/compliance/states', complianceRateLimit, async (req, res) => {
+  try {
+    const states = rulesEngine.getAvailableStates();
+    res.json({
+      states,
+      count: states.length,
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    console.error('Error getting available states:', error);
+    res.status(500).json({
+      error: "Internal server error while fetching states"
+    });
+  }
+});
+
+/**
+ * Get compliance summary for multiple rooms
+ * POST /v1/compliance/summary
+ */
+router.post('/v1/compliance/summary', complianceRateLimit, createAuditMiddleware('compliance_summary'), async (req, res) => {
+  try {
+    const body = req.body as {
+      state: string;
+      rooms: Array<{
+        id: string;
+        staffCount: number;
+        children: Array<{ childId: string; birthDate: string }>;
+      }>;
+      children: Array<{ childId: string; birthDate: string }>;
+      staff: Array<{
+        id: string;
+        position: string;
+        education: string;
+        experience: string;
+        certifications: string[];
+      }>;
+    };
+
+    if (!body.state || !body.rooms || !body.staff) {
+      return res.status(400).json({
+        error: "Missing required fields: state, rooms, staff"
+      });
+    }
+
+    // Check if ruleset exists for the state
+    const availableStates = rulesEngine.getAvailableStates();
+    if (!availableStates.includes(body.state)) {
+      return res.status(400).json({
+        error: `No compliance ruleset found for state: ${body.state}`,
+        availableStates
+      });
+    }
+
+    // Get overall compliance summary
+    const summary = rulesEngine.getComplianceSummary(
+      body.state,
+      body.rooms.map(room => ({
+        id: room.id,
+        name: `Room ${room.id}`,
+        tenantId: 'tenant-1'
+      })),
+      body.children.map(child => ({
+        id: child.childId,
+        firstName: 'Child',
+        lastName: child.childId,
+        dateOfBirth: child.birthDate,
+        roomId: 'default',
+        tenantId: 'tenant-1',
+        isActive: true,
+        enrollmentDate: new Date().toISOString().split('T')[0]
+      })),
+      body.staff.map(staffMember => ({
+        id: staffMember.id,
+        firstName: 'Staff',
+        lastName: staffMember.id,
+        position: staffMember.position,
+        qualifications: [staffMember.education],
+        experienceYears: parseInt(staffMember.experience) || 0,
+        certifications: staffMember.certifications,
+        roomId: 'default',
+        tenantId: 'tenant-1',
+        isActive: true
+      }))
+    );
+
+    // Audit the compliance summary request
+    AuditService.logCompliance(
+      req.session?.userId || 'system',
+      'compliance_summary_requested',
+      body.state,
+      summary.overallScore >= 80,
+      req.ip || '127.0.0.1',
+      req.headers['user-agent'] || '',
+      { 
+        state: body.state, 
+        roomCount: body.rooms.length,
+        overallScore: summary.overallScore 
+      }
+    );
+
+    res.json({
+      state: body.state,
+      overallScore: summary.overallScore,
+      compliantRooms: summary.compliantRooms,
+      totalRooms: summary.totalRooms,
+      criticalViolations: summary.criticalViolations,
+      roomResults: Object.fromEntries(summary.roomResults),
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    console.error('Compliance summary error:', error);
+    res.status(500).json({
+      error: "Internal server error during compliance summary generation",
+      details: error instanceof Error ? error.message : "Unknown error"
+    });
+  }
+});
+
+/**
+ * Validate a compliance ruleset
+ * POST /v1/compliance/validate-ruleset
+ */
+router.post('/v1/compliance/validate-ruleset', complianceRateLimit, createAuditMiddleware('ruleset_validation'), async (req, res) => {
+  try {
+    const ruleset = req.body;
+    
+    if (!ruleset || typeof ruleset !== 'object') {
+      return res.status(400).json({
+        error: "Invalid ruleset data"
+      });
+    }
+
+    const validation = rulesEngine.validateRuleset(ruleset);
+    
+    // Audit the ruleset validation
+    AuditService.logCompliance(
+      req.session?.userId || 'system',
+      'ruleset_validation',
+      'compliance_ruleset',
+      validation.isValid,
+      req.ip || '127.0.0.1',
+      req.headers['user-agent'] || '',
+      { 
+        isValid: validation.isValid, 
+        errorCount: validation.errors.length 
+      }
+    );
+
+    res.json({
+      isValid: validation.isValid,
+      errors: validation.errors,
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    console.error('Ruleset validation error:', error);
+    res.status(500).json({
+      error: "Internal server error during ruleset validation",
+      details: error instanceof Error ? error.message : "Unknown error"
+    });
   }
 });
 
