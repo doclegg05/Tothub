@@ -1,0 +1,197 @@
+{
+  "employees": [
+    {
+      "id": "emp1",
+      "name": "Sarah Johnson",
+      "skills": ["lead-teacher", "cpr-certified", "first-aid"],
+      "availability": [
+        {
+          "dayOfWeek": "MONDAY",
+          "startTime": "08:00",
+          "endTime": "17:00",
+          "isPreferred": true
+        },
+        {
+          "dayOfWeek": "TUESDAY",
+          "startTime": "08:00",
+          "endTime": "17:00",
+          "isPreferred": true
+        },
+        {
+          "dayOfWeek": "WEDNESDAY",
+          "startTime": "08:00",
+          "endTime": "17:00",
+          "isPreferred": true
+        },
+        {
+          "dayOfWeek": "THURSDAY",
+          "startTime": "08:00",
+          "endTime": "17:00",
+          "isPreferred": true
+        },
+        {
+          "dayOfWeek": "FRIDAY",
+          "startTime": "08:00",
+          "endTime": "17:00",
+          "isPreferred": true
+        }
+      ],
+      "maxHoursPerWeek": 40,
+      "position": "Lead Teacher",
+      "isActive": true
+    },
+    {
+      "id": "emp2",
+      "name": "Michael Chen",
+      "skills": ["assistant-teacher", "cpr-certified"],
+      "availability": [
+        {
+          "dayOfWeek": "MONDAY",
+          "startTime": "09:00",
+          "endTime": "18:00",
+          "isPreferred": false
+        },
+        {
+          "dayOfWeek": "TUESDAY",
+          "startTime": "09:00",
+          "endTime": "18:00",
+          "isPreferred": false
+        },
+        {
+          "dayOfWeek": "WEDNESDAY",
+          "startTime": "09:00",
+          "endTime": "18:00",
+          "isPreferred": false
+        },
+        {
+          "dayOfWeek": "THURSDAY",
+          "startTime": "09:00",
+          "endTime": "18:00",
+          "isPreferred": false
+        },
+        {
+          "dayOfWeek": "FRIDAY",
+          "startTime": "09:00",
+          "endTime": "18:00",
+          "isPreferred": false
+        }
+      ],
+      "maxHoursPerWeek": 35,
+      "position": "Assistant Teacher",
+      "isActive": true
+    },
+    {
+      "id": "emp3",
+      "name": "Emily Rodriguez",
+      "skills": ["lead-teacher", "cpr-certified", "special-needs"],
+      "availability": [
+        {
+          "dayOfWeek": "MONDAY",
+          "startTime": "07:00",
+          "endTime": "16:00",
+          "isPreferred": true
+        },
+        {
+          "dayOfWeek": "TUESDAY",
+          "startTime": "07:00",
+          "endTime": "16:00",
+          "isPreferred": true
+        },
+        {
+          "dayOfWeek": "WEDNESDAY",
+          "startTime": "07:00",
+          "endTime": "16:00",
+          "isPreferred": true
+        },
+        {
+          "dayOfWeek": "THURSDAY",
+          "startTime": "07:00",
+          "endTime": "16:00",
+          "isPreferred": true
+        },
+        {
+          "dayOfWeek": "FRIDAY",
+          "startTime": "07:00",
+          "endTime": "16:00",
+          "isPreferred": true
+        }
+      ],
+      "maxHoursPerWeek": 40,
+      "position": "Lead Teacher",
+      "isActive": true
+    }
+  ],
+  "shifts": [
+    {
+      "id": "shift1",
+      "date": "2025-01-20",
+      "startTime": "08:00",
+      "endTime": "17:00",
+      "requiredSkills": ["lead-teacher"],
+      "room": "Infant Room",
+      "requiredStaff": 2,
+      "minStaff": 2,
+      "maxStaff": 3,
+      "shiftType": "full-day"
+    },
+    {
+      "id": "shift2",
+      "date": "2025-01-20",
+      "startTime": "08:00",
+      "endTime": "17:00",
+      "requiredSkills": ["lead-teacher"],
+      "room": "Toddler Room",
+      "requiredStaff": 2,
+      "minStaff": 2,
+      "maxStaff": 3,
+      "shiftType": "full-day"
+    },
+    {
+      "id": "shift3",
+      "date": "2025-01-20",
+      "startTime": "08:00",
+      "endTime": "17:00",
+      "requiredSkills": ["assistant-teacher"],
+      "room": "Preschool Room",
+      "requiredStaff": 1,
+      "minStaff": 1,
+      "maxStaff": 2,
+      "shiftType": "full-day"
+    },
+    {
+      "id": "shift4",
+      "date": "2025-01-21",
+      "startTime": "08:00",
+      "endTime": "17:00",
+      "requiredSkills": ["lead-teacher"],
+      "room": "Infant Room",
+      "requiredStaff": 2,
+      "minStaff": 2,
+      "maxStaff": 3,
+      "shiftType": "full-day"
+    },
+    {
+      "id": "shift5",
+      "date": "2025-01-21",
+      "startTime": "08:00",
+      "endTime": "17:00",
+      "requiredSkills": ["lead-teacher"],
+      "room": "Toddler Room",
+      "requiredStaff": 2,
+      "minStaff": 2,
+      "maxStaff": 3,
+      "shiftType": "full-day"
+    }
+  ],
+  "constraints": {
+    "maxHoursPerWeek": 40,
+    "minHoursPerWeek": 20,
+    "maxConsecutiveDays": 5,
+    "minRestHoursBetweenShifts": 8,
+    "allowOvertime": false,
+    "maxOvertimeHoursPerWeek": 0,
+    "childToStaffRatio": 4.0,
+    "requireLeadTeacherPerRoom": true,
+    "allowSplitShifts": false
+  }
+}

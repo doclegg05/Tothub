@@ -1,469 +1,258 @@
-import type { Express } from "express";
+import type { Express, Request, Response } from "express";
 import { createServer, type Server } from "http";
-import { storage } from "./storage";
-import { TimesheetService } from "./services/timesheetService";
-import { QuickBooksExporter } from "./services/quickbooksExporter";
-import { SchedulingService } from "./services/schedulingService";
-import { sendEmail } from "./services/emailService";
-import { insertStaffScheduleSchema, insertMessageSchema, insertMediaShareSchema, insertBillingSchema, insertDailyReportSchema, insertAttendanceSchema } from "@shared/schema";
+import { DatabaseStorage } from "./storage";
+import { insertScheduleSchema } from "@shared/schema";
 import { z } from "zod";
 import { db } from "./db";
 import { eq, desc, sql } from "drizzle-orm";
 import { authMiddleware } from "./middleware/auth";
-
-// Import route modules
-import childrenRoutes from "./routes/children";
-import staffRoutes from "./routes/staff";
-import attendanceRoutes from "./routes/attendance";
-import settingsRoutes from "./routes/settings";
-import alertsRoutes from "./routes/alerts";
-import systemRoutes from "./routes/system";
+import authRoutes from "./routes/authRoutes";
+import scheduleRoutes from "./routes/scheduleRoutes";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   const auth = authMiddleware;
+  const storage = new DatabaseStorage();
   
-  // Register route modules
-  app.use("/api/children", childrenRoutes);
-  app.use("/api/staff", staffRoutes);
-  app.use("/api/attendance", attendanceRoutes);
-  app.use("/api/settings", settingsRoutes);
-  app.use("/api/alerts", alertsRoutes);
-  app.use("/api/schedules", (await import("./routes/schedules")).default);
-  app.use("/api/dashboard", (await import("./routes/dashboard")).default);
-  app.use("/api/stripe", (await import("./routes/stripe")).stripeRouter);
-  app.use("/api/billing", (await import("./routes/billing")).default);
-  app.use("/api/zapier", (await import("./routes/zapier")).default);
-  app.use("/api", systemRoutes);
-  app.use("/api", (await import("./routes/profileRoutes")).default);
-
-
-
-
-
-
-
-  // Room ratios route with state-based calculations
-  app.get("/api/ratios", async (req, res) => {
+  // Auth routes
+  app.use("/api/auth", authRoutes);
+  
+  // Schedule routes
+  app.use("/api/schedule", scheduleRoutes);
+  
+  // Simple health check route that works with both SQLite and PostgreSQL
+  app.get("/api/health", (_req: Request, res: Response) => {
+    const isSQLite = process.env.DATABASE_URL?.startsWith('sqlite:') || !process.env.DATABASE_URL;
+    
+    res.json({ 
+      status: "healthy", 
+      timestamp: new Date().toISOString(),
+      uptime: process.uptime(),
+      database: isSQLite ? "sqlite" : "postgresql",
+      environment: process.env.NODE_ENV || "development",
+      message: "Server is running"
+    });
+  });
+  
+  // Staff routes
+  app.get("/api/staff", auth, async (req: Request, res: Response) => {
     try {
-      const presentChildren = await storage.getCurrentlyPresentChildren();
-      const todaysSchedules = await storage.getTodaysStaffSchedules();
-      
-      // Get current state setting
-      const stateSetting = await storage.getSetting('selected_state');
-      const selectedState = stateSetting?.value || 'West Virginia';
-      
-      const roomStats = new Map();
-      
-      // Group children by room with full child objects
-      presentChildren.forEach(({ child }) => {
-        const room = child.room;
-        if (!roomStats.has(room)) {
-          roomStats.set(room, { children: [], staff: 0 });
-        }
-        roomStats.get(room).children.push(child);
+      const { page = 1, limit = 10 } = req.query;
+      const result = await storage.getAllStaff({ 
+        page: Number(page), 
+        limit: Number(limit) 
       });
-      
-      // Group staff by room
-      todaysSchedules.filter(s => s.isPresent).forEach(schedule => {
-        const room = schedule.room;
-        if (!roomStats.has(room)) {
-          roomStats.set(room, { children: [], staff: 0 });
-        }
-        roomStats.get(room).staff += 1;
-      });
+      res.json(result);
+    } catch (error) {
+      console.error('Error fetching staff:', error);
+      res.status(500).json({ message: "Failed to fetch staff" });
+    }
+  });
 
-      // Get current state compliance data
-      const currentCompliance = await storage.getStateCompliance();
-      let ratiosData: Record<string, string> = {};
-      
-      if (currentCompliance && currentCompliance.ratiosData) {
-        try {
-          ratiosData = JSON.parse(currentCompliance.ratiosData);
-        } catch (e) {
-          console.error('Failed to parse ratios data:', e);
-          // Fallback to West Virginia ratios
-          ratiosData = {
-            "Infants (0-12 months)": "4:1",
-            "Toddlers (13-24 months)": "6:1", 
-            "2-3 years": "10:1",
-            "3-4 years": "12:1",
-            "4-5 years": "14:1",
-            "School-age (6+)": "16:1"
-          };
-        }
+  app.get("/api/staff/:id", auth, async (req: Request, res: Response) => {
+    try {
+      const staff = await storage.getStaff(req.params.id);
+      if (!staff) {
+        return res.status(404).json({ message: "Staff not found" });
       }
-
-      // Helper function to calculate required staff for age group
-      const calculateRequiredStaffForRoom = (children: any[], staff: number) => {
-        if (children.length === 0) return { required: 0, isCompliant: true, ratio: "N/A" };
-        
-        // Group children by age and find most restrictive ratio needed  
-        const ageGroupCounts: Record<string, number> = {};
-        children.forEach((child: any) => {
-          const ageGroup = child.ageGroup;
-          const mappedGroup = mapAgeGroupToRatio(ageGroup);
-          ageGroupCounts[mappedGroup] = (ageGroupCounts[mappedGroup] || 0) + 1;
-        });
-
-        let maxRequired = 0;
-        let mostRestrictiveRatio = "";
-        
-        for (const [ageGroup, count] of Object.entries(ageGroupCounts) as [string, number][]) {
-          const ratioString = ratiosData[ageGroup] || "10:1";
-          const ratioValue = parseInt(ratioString.split(':')[0]);
-          const required = Math.ceil(count / ratioValue);
-          
-          if (required > maxRequired) {
-            maxRequired = required;
-            mostRestrictiveRatio = ratioString;
-          }
-        }
-
-        return {
-          required: maxRequired,
-          isCompliant: staff >= maxRequired,
-          ratio: staff > 0 ? `${children.length}:${staff}` : "N/A",
-          requiredRatio: mostRestrictiveRatio
-        };
-      };
-
-      // Helper to map our age groups to ratio categories
-      const mapAgeGroupToRatio = (ageGroup: string) => {
-        switch (ageGroup) {
-          case 'infant': return "Infants (0-12 months)";
-          case 'young_toddler': return "Toddlers (13-24 months)";
-          case 'toddler': return "2-3 years";
-          case 'preschool': return "3-4 years";
-          case 'school_age': return "School-age (6+)";
-          case 'older_school_age': return "School-age (6+)";
-          default: return "2-3 years";
-        }
-      };
-
-      const ratios = Array.from(roomStats).map(([room, stats]) => {
-        const calculation = calculateRequiredStaffForRoom(stats.children, stats.staff);
-        
-        return {
-          room,
-          children: stats.children.length,
-          staff: stats.staff,
-          requiredStaff: calculation.required,
-          ratio: calculation.ratio,
-          requiredRatio: calculation.requiredRatio,
-          isCompliant: calculation.isCompliant,
-          state: currentCompliance?.state || selectedState,
-          ageGroups: Array.from(new Set(stats.children.map((c: any) => c.ageGroup)))
-        };
-      });
-
-      res.json(ratios);
+      res.json(staff);
     } catch (error) {
-      console.error('Ratio calculation error:', error);
-      res.status(500).json({ message: "Failed to calculate ratios" });
+      console.error('Error fetching staff:', error);
+      res.status(500).json({ message: "Failed to fetch staff" });
     }
   });
 
-  // State ratios routes
-  app.get("/api/states", async (req, res) => {
-    try {
-      const { US_STATES } = await import("@shared/stateRatios");
-      res.json(US_STATES);
-    } catch (error) {
-      res.status(500).json({ message: "Failed to fetch states" });
-    }
+  // Basic validation for staff creation
+  const insertStaffBodySchema = z.object({
+    firstName: z.string().min(1, 'firstName is required'),
+    lastName: z.string().min(1, 'lastName is required'),
+    position: z.string().min(1, 'position is required'),
+    email: z.string().email().optional().or(z.literal("")),
+    phone: z.string().optional(),
+    hourlyRate: z.number().nonnegative().optional(),
+    w4Allowances: z.number().int().min(0).optional(),
+    additionalTaxWithholding: z.number().int().min(0).optional(),
+    faceDescriptor: z.string().optional(),
+    fingerprintHash: z.string().optional(),
+    biometricEnrolledAt: z.union([z.string(), z.date()]).optional(),
+    biometricEnabled: z.boolean().optional(),
+    isActive: z.union([z.boolean(), z.number()]).optional(),
   });
 
-  app.get("/api/state-ratios/:state", async (req, res) => {
+  app.post("/api/staff", auth, async (req: Request, res: Response) => {
     try {
-      const stateRatio = await storage.getStateRatio(req.params.state);
-      if (!stateRatio) {
-        return res.status(404).json({ message: "State ratios not found" });
+      console.log('POST /api/staff content-type:', req.headers['content-type']);
+      console.log('POST /api/staff raw body:', req.body);
+      const body = insertStaffBodySchema.parse(req.body);
+      const insert = {
+        firstName: body.firstName,
+        lastName: body.lastName,
+        email: body.email && body.email.length > 0 ? body.email : undefined,
+        phone: body.phone,
+        position: body.position,
+        hourlyRate: body.hourlyRate ?? 0,
+        w4Allowances: body.w4Allowances ?? 0,
+        additionalTaxWithholding: body.additionalTaxWithholding ?? 0,
+        faceDescriptor: body.faceDescriptor,
+        fingerprintHash: body.fingerprintHash,
+        // booleans stored as integers in SQLite
+        isActive: typeof body.isActive === 'boolean' ? (body.isActive ? 1 : 0) : (body.isActive ?? 1),
+      } as any;
+
+      // Create staff
+      let created;
+      try {
+        created = await storage.createStaff(insert);
+      } catch (e: any) {
+        // Handle unique email constraint for SQLite
+        if (typeof e?.message === 'string' && e.message.includes('UNIQUE constraint failed: staff.email')) {
+          return res.status(400).json({ message: "A staff member with this email already exists" });
+        }
+        throw e;
       }
-      res.json(stateRatio);
+      console.log('POST /api/staff created:', created?.id);
+      res.status(201).json(created);
     } catch (error) {
-      res.status(500).json({ message: "Failed to fetch state ratios" });
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid data", errors: error.errors });
+      }
+      console.error('Error creating staff:', error);
+      res.status(500).json({ message: "Failed to create staff" });
     }
   });
 
-  app.post("/api/seed-state-ratios", async (req, res) => {
+  // Staff schedules routes
+  app.get("/api/schedules", auth, async (req: Request, res: Response) => {
     try {
-      await storage.seedStateRatios();
-      res.json({ message: "State ratios seeded successfully" });
-    } catch (error) {
-      res.status(500).json({ message: "Failed to seed state ratios" });
-    }
-  });
-
-  // Email test route
-  app.post("/api/send-test-email", async (req, res) => {
-    try {
-      const { to, subject, message } = req.body;
-      const success = await sendEmail({
-        to,
-        subject,
-        text: message,
-        html: `<p>${message}</p>`
-      });
+      const { date } = req.query;
+      let schedules;
       
-      if (success) {
-        res.json({ message: "Email sent successfully" });
+      if (date) {
+        schedules = await storage.getStaffSchedulesByDate(new Date(date as string));
       } else {
-        res.status(500).json({ message: "Failed to send email" });
+        schedules = await storage.getTodaysStaffSchedules();
       }
+      
+      res.json(schedules);
     } catch (error) {
-      res.status(500).json({ message: "Failed to send email" });
+      console.error('Error fetching schedules:', error);
+      res.status(500).json({ message: "Failed to fetch schedules" });
     }
   });
 
-  // Enhanced Check-In/Out Routes
-  app.post("/api/attendance/checkin", async (req, res) => {
+  // Convenience endpoint used by client to fetch today's schedules
+  app.get("/api/schedules/today", auth, async (_req: Request, res: Response) => {
     try {
-      const validatedData = insertAttendanceSchema.extend({
-        moodRating: z.number().optional(),
-        checkInPhotoUrl: z.string().optional(),
+      const schedules = await storage.getTodaysStaffSchedules();
+      res.json(schedules);
+    } catch (error) {
+      console.error('Error fetching today\'s schedules:', error);
+      res.status(500).json({ message: "Failed to fetch schedules" });
+    }
+  });
+
+  app.post("/api/schedules", auth, async (req: Request, res: Response) => {
+    try {
+      // Inline validator (the shared insertStaffScheduleSchema is a stub)
+      const scheduleBodySchema = z.object({
+        staffId: z.string().min(1, 'staffId is required'),
+        room: z.string().min(1, 'room is required'),
+        date: z.union([z.string(), z.date()]),
+        scheduledStart: z.union([z.string(), z.date()]),
+        scheduledEnd: z.union([z.string(), z.date()]),
         notes: z.string().optional(),
-      }).parse(req.body);
-      
-      const attendance = await storage.createAttendance(validatedData);
-      res.status(201).json(attendance);
-    } catch (error) {
-      if (error instanceof z.ZodError) {
-        return res.status(400).json({ message: "Invalid data", errors: error.errors });
-      }
-      res.status(500).json({ message: "Failed to check in child" });
-    }
-  });
-
-  app.post("/api/attendance/checkout", async (req, res) => {
-    try {
-      const { attendanceId, checkOutBy, notes, checkOutPhotoUrl, activitiesCompleted } = req.body;
-      const attendance = await storage.updateAttendance(attendanceId, {
-        checkOutTime: new Date(),
-        checkOutBy,
-        notes,
-        checkOutPhotoUrl,
-        activitiesCompleted,
+        scheduleType: z.string().optional(),
       });
-      res.json(attendance);
-    } catch (error) {
-      res.status(500).json({ message: "Failed to check out child" });
-    }
-  });
 
-  // Parent Communication Routes
-  app.get("/api/messages", async (req, res) => {
-    try {
-      // Mock response for now - will implement storage methods
-      res.json([]);
-    } catch (error) {
-      res.status(500).json({ message: "Failed to fetch messages" });
-    }
-  });
+      const parsed = scheduleBodySchema.parse(req.body);
 
-  app.post("/api/messages", async (req, res) => {
-    try {
-      const validatedData = insertMessageSchema.parse(req.body);
-      // Mock response for now - will implement storage methods
-      res.status(201).json({ id: "mock-id", ...validatedData });
+      const toDate = (v: string | Date): Date => (v instanceof Date ? v : new Date(v));
+      const startDate = toDate(parsed.scheduledStart);
+      const endDate = toDate(parsed.scheduledEnd);
+
+      // Normalize date-only field to YYYY-MM-DD (local or UTC-invariant)
+      const dateOnly = ((): string => {
+        const d = toDate(parsed.date);
+        return new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()))
+          .toISOString()
+          .split('T')[0];
+      })();
+
+      // Construct payload in the format expected by storage
+      const payload = {
+        staffId: parsed.staffId,
+        room: parsed.room,
+        date: dateOnly,
+        scheduledStart: startDate.toISOString(),
+        scheduledEnd: endDate.toISOString(),
+        notes: parsed.notes,
+        scheduleType: parsed.scheduleType,
+      } as any;
+
+      // Create schedule (storage re-validates times and throws consistent messages)
+      const newSchedule = await storage.createStaffSchedule(payload);
+      res.status(201).json(newSchedule);
     } catch (error) {
+      console.error('Schedule creation error:', error);
       if (error instanceof z.ZodError) {
         return res.status(400).json({ message: "Invalid data", errors: error.errors });
       }
-      res.status(500).json({ message: "Failed to send message" });
-    }
-  });
-
-  // Media Sharing Routes
-  app.get("/api/media-shares", async (req, res) => {
-    try {
-      // Mock response for now - will implement storage methods
-      res.json([]);
-    } catch (error) {
-      res.status(500).json({ message: "Failed to fetch media shares" });
-    }
-  });
-
-  app.post("/api/media-shares", async (req, res) => {
-    try {
-      const validatedData = insertMediaShareSchema.parse(req.body);
-      // Mock response for now - will implement storage methods  
-      res.status(201).json({ id: "mock-id", ...validatedData });
-    } catch (error) {
-      if (error instanceof z.ZodError) {
-        return res.status(400).json({ message: "Invalid data", errors: error.errors });
+      if (error instanceof Error) {
+        const errorMessage = error.message;
+        if (
+          errorMessage.includes("Cannot schedule staff for a time in the past") ||
+          errorMessage.includes("End time must be after start time")
+        ) {
+          return res.status(400).json({ message: errorMessage });
+        }
       }
-      res.status(500).json({ message: "Failed to share media" });
+      res.status(500).json({ message: "Failed to create staff schedule" });
     }
   });
 
-  // Security System Routes
-  app.get("/api/security/devices", async (req, res) => {
+  app.put("/api/schedules/:id", auth, async (req: Request, res: Response) => {
     try {
-      const devices = await storage.getAllSecurityDevices();
-      res.json(devices);
+      const updatedSchedule = await storage.updateStaffSchedule(req.params.id, req.body);
+      res.json(updatedSchedule);
     } catch (error) {
-      res.status(500).json({ message: "Failed to fetch security devices" });
+      console.error('Error updating schedule:', error);
+      res.status(500).json({ message: "Failed to update schedule" });
     }
   });
 
-  app.post("/api/security/devices", async (req, res) => {
+  app.post("/api/schedules/:id/present", auth, async (req: Request, res: Response) => {
     try {
-      const { insertSecurityDeviceSchema } = await import("@shared/schema");
-      const validatedData = insertSecurityDeviceSchema.parse(req.body);
-      
-      // Encrypt connection config
-      const device = await storage.createSecurityDevice({
-        ...validatedData,
-        connectionConfig: JSON.stringify(validatedData.connectionConfig),
-      });
-      
-      // Initialize device in security service
-      const { securityService } = await import("./services/securityService");
-      await securityService.initializeDevice(device);
-      
-      res.status(201).json(device);
+      const { actualStart } = req.body;
+      const updatedSchedule = await storage.markStaffPresent(req.params.id, new Date(actualStart));
+      res.json(updatedSchedule);
     } catch (error) {
-      if (error instanceof z.ZodError) {
-        return res.status(400).json({ message: "Invalid data", errors: error.errors });
-      }
-      res.status(500).json({ message: "Failed to create security device" });
+      console.error('Error marking staff present:', error);
+      res.status(500).json({ message: "Failed to mark staff present" });
     }
   });
 
-  app.post("/api/security/devices/:id/test", async (req, res) => {
+  // Alias endpoint used by client: mark-present
+  app.post("/api/schedules/:id/mark-present", auth, async (req: Request, res: Response) => {
     try {
-      const { securityService } = await import("./services/securityService");
-      const success = await securityService.testDevice(req.params.id);
-      res.json({ success });
+      const now = new Date();
+      const updatedSchedule = await storage.markStaffPresent(req.params.id, now);
+      res.json(updatedSchedule);
     } catch (error) {
-      res.status(500).json({ message: "Device test failed", success: false });
+      console.error('Error marking staff present:', error);
+      res.status(500).json({ message: "Failed to mark staff present" });
     }
   });
 
-  app.post("/api/security/devices/:id/unlock", async (req, res) => {
+  app.post("/api/schedules/:id/end", auth, async (req: Request, res: Response) => {
     try {
-      const { securityService } = await import("./services/securityService");
-      const success = await securityService.unlockDevice(req.params.id, 'admin');
-      res.json({ success });
+      const { actualEnd } = req.body;
+      const updatedSchedule = await storage.markStaffEnd(req.params.id, new Date(actualEnd));
+      res.json(updatedSchedule);
     } catch (error) {
-      res.status(500).json({ message: "Unlock failed", success: false });
+      console.error('Error marking staff end:', error);
+      res.status(500).json({ message: "Failed to mark staff end" });
     }
   });
 
-  app.post("/api/security/devices/:id/lock", async (req, res) => {
-    try {
-      const { securityService } = await import("./services/securityService");
-      const success = await securityService.lockDevice(req.params.id);
-      res.json({ success });
-    } catch (error) {
-      res.status(500).json({ message: "Lock failed", success: false });
-    }
-  });
-
-  app.post("/api/security/emergency-unlock", async (req, res) => {
-    try {
-      const { securityService } = await import("./services/securityService");
-      await securityService.emergencyUnlockAll();
-      res.json({ message: "Emergency unlock activated" });
-    } catch (error) {
-      res.status(500).json({ message: "Emergency unlock failed" });
-    }
-  });
-
-  app.get("/api/security/logs", async (req, res) => {
-    try {
-      const logs = await storage.getSecurityLogs(100);
-      res.json(logs);
-    } catch (error) {
-      res.status(500).json({ message: "Failed to fetch security logs" });
-    }
-  });
-
-  app.get("/api/security/zones", async (req, res) => {
-    try {
-      const zones = await storage.getAllSecurityZones();
-      res.json(zones);
-    } catch (error) {
-      res.status(500).json({ message: "Failed to fetch security zones" });
-    }
-  });
-
-  // Security System Test Routes
-  app.post("/api/security/test/full-simulation", async (req, res) => {
-    try {
-      const { SecurityTestScript } = await import("./services/securityTestScript");
-      const result = await SecurityTestScript.runFullSimulation();
-      res.json(result);
-    } catch (error) {
-      console.error("Security simulation error:", error);
-      res.status(500).json({ message: "Failed to run security simulation" });
-    }
-  });
-
-  app.post("/api/security/test/keypad-only", async (req, res) => {
-    try {
-      const { SecurityTestScript } = await import("./services/securityTestScript");
-      await SecurityTestScript.testKeypadOnly();
-      res.json({ message: "Keypad test completed" });
-    } catch (error) {
-      console.error("Keypad test error:", error);
-      res.status(500).json({ message: "Failed to test keypad device" });
-    }
-  });
-
-  // Test Data Routes for Performance Testing
-  app.post("/api/test/seed-data", async (req, res) => {
-    try {
-      const { TestDataService } = await import("./services/testDataService");
-      const result = await TestDataService.seedTestData();
-      res.json(result);
-    } catch (error) {
-      console.error("Test data seeding error:", error);
-      res.status(500).json({ message: "Failed to seed test data" });
-    }
-  });
-
-  app.delete("/api/test/clear-data", async (req, res) => {
-    try {
-      const { TestDataService } = await import("./services/testDataService");
-      const result = await TestDataService.clearTestData();
-      res.json(result);
-    } catch (error) {
-      console.error("Test data clearing error:", error);
-      res.status(500).json({ message: "Failed to clear test data" });
-    }
-  });
-
-  app.get("/api/test/scenario-summary", async (req, res) => {
-    try {
-      const { TestDataService } = await import("./services/testDataService");
-      const summary = TestDataService.getTestScenarioSummary();
-      res.json(summary);
-    } catch (error) {
-      res.status(500).json({ message: "Failed to get scenario summary" });
-    }
-  });
-
-  // State Compliance Routes
-  app.use("/api/compliance", (await import("./routes/compliance")).default);
-
-  // Biometric authentication routes
-  app.use("/api/biometric", (await import("./routes/biometric")).default);
-
-  // Payroll and QuickBooks routes
-  app.use("/api/payroll", (await import("./routes/payroll")).default);
-
-
-
-  // Parent Portal API Routes
-  app.use("/api/parent", (await import("./routes/parent")).default);
-
-  // Analytics API Routes
-  app.use("/api/analytics", (await import("./routes/analytics")).default);
-  
-  // Teacher Notes and Daily Reports Routes
-  app.use("/api", (await import("./routes/teacherNotes")).teacherNotesRouter);
-
-  const httpServer = createServer(app);
-  return httpServer;
+  const server = createServer(app);
+  return server;
 }
