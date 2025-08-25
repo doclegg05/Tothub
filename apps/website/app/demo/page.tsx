@@ -1,8 +1,11 @@
 import { Metadata } from 'next'
+// Temporary hardcoded URLs for testing
+const loginUrl = 'http://localhost:5173/login';
+const registerUrl = 'http://localhost:5173/register';
 
 export const metadata: Metadata = {
   title: 'Demo - TotHub',
-  description: 'Experience TotHub in action with our interactive demo. See how our daycare management platform can transform your operations.',
+  description: 'Experience TotHub and see how our daycare management platform can transform your operations.',
 }
 
 export default function DemoPage() {
@@ -14,7 +17,7 @@ export default function DemoPage() {
             Experience TotHub
           </h1>
           <p className="mt-3 max-w-md mx-auto text-base text-gray-500 sm:text-lg md:mt-5 md:text-xl md:max-w-3xl">
-            See how TotHub can transform your daycare operations. Try our interactive demo and discover the power of modern daycare management.
+            See how TotHub can transform your daycare operations. Discover the power of modern daycare management.
           </p>
         </div>
 
@@ -24,9 +27,9 @@ export default function DemoPage() {
               <h2 className="text-3xl font-bold text-gray-900">
                 Interactive Demo
               </h2>
-              <p className="mt-4 text-lg text-gray-600">
-                Explore TotHub's features with our hands-on demo. Experience the intuitive interface, powerful tools, and seamless workflow that makes daycare management effortless.
-              </p>
+                              <p className="mt-4 text-lg text-gray-600">
+                  Explore TotHub&apos;s features with our hands-on demo. Experience the intuitive interface, powerful tools, and seamless workflow that makes daycare management effortless.
+                </p>
               
               <div className="mt-8 space-y-6">
                 <div className="flex items-start">
@@ -72,57 +75,20 @@ export default function DemoPage() {
                 </div>
               </div>
 
-              <div className="mt-10">
-                <a
-                  href="#demo-iframe"
-                  className="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700"
-                >
-                  Start Demo
-                </a>
-                <p className="mt-3 text-sm text-gray-500">
-                  Demo takes approximately 5-10 minutes to complete
-                </p>
-              </div>
+
             </div>
 
-            <div className="mt-10 lg:mt-0">
-              <div className="bg-gray-100 rounded-lg p-8">
-                <div className="text-center text-gray-500">
-                  <svg className="mx-auto h-24 w-24 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                  </svg>
-                  <p className="mt-4">Interactive Demo Preview</p>
-                </div>
-              </div>
-            </div>
+
           </div>
         </div>
 
-        {/* Demo Iframe Section */}
-        <div id="demo-iframe" className="mt-20">
-          <div className="bg-gray-50 rounded-lg p-8">
-            <h2 className="text-2xl font-bold text-gray-900 text-center mb-6">
-              Try TotHub Now
-            </h2>
-            <div className="bg-white rounded-lg shadow-lg p-4">
-              <div className="aspect-w-16 aspect-h-9 bg-gray-200 rounded-lg flex items-center justify-center">
-                <div className="text-center text-gray-500">
-                  <svg className="mx-auto h-16 w-16 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.828 14.828a4 4 0 01-5.656 0M9 10h1m4 0h1m-6 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                  <p className="mt-2 text-sm">Demo Interface</p>
-                  <p className="text-xs">Interactive demo would be embedded here</p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
+
 
         {/* What You'll Learn Section */}
         <div className="mt-20">
-          <h2 className="text-3xl font-bold text-gray-900 text-center">
-            What You'll Learn
-          </h2>
+                      <h2 className="text-3xl font-bold text-gray-900 text-center">
+              What You&apos;ll Learn
+            </h2>
           <div className="mt-12 grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3">
             <div className="text-center">
               <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-md bg-primary-500 text-white">
@@ -162,27 +128,66 @@ export default function DemoPage() {
           </div>
         </div>
 
+        {/* Access Management System Section */}
+        <div className="mt-20 bg-gray-50 rounded-lg p-8">
+          <div className="text-center">
+            <h2 className="text-3xl font-bold text-gray-900">
+              Access Your TotHub Account
+            </h2>
+            <p className="mt-4 text-lg text-gray-600 max-w-2xl mx-auto">
+              Ready to manage your daycare operations? Access the full TotHub management system with all features and tools.
+            </p>
+            <div className="mt-8 flex flex-col sm:flex-row justify-center space-y-4 sm:space-y-0 sm:space-x-4">
+              <a
+                href={loginUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 transition-colors"
+              >
+                <svg className="mr-2 h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
+                </svg>
+                Login to Your Account
+              </a>
+              <a
+                href={registerUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center px-6 py-3 border border-gray-300 text-base font-medium rounded-md text-white hover:bg-gray-50 transition-colors"
+              >
+                <svg className="mr-2 h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
+                </svg>
+                Start Free Trial
+              </a>
+            </div>
+            <p className="mt-4 text-sm text-gray-500">
+              Opens in a new tab • Full access to all TotHub features
+            </p>
+          </div>
+        </div>
+
         {/* CTA Section */}
         <div className="mt-20 bg-primary-700 rounded-lg">
           <div className="px-6 py-12 text-center">
             <h2 className="text-3xl font-bold text-white">
-              Ready to Get Started?
+              Need Help Getting Started?
             </h2>
             <p className="mt-4 text-lg text-primary-200">
-              After trying the demo, start your free trial and transform your daycare operations today.
+              Our team is here to help you set up and optimize your TotHub experience.
             </p>
             <div className="mt-8 flex justify-center space-x-4">
               <a
-                href="#"
+                href="/contact"
                 className="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-primary-700 bg-white hover:bg-primary-50"
               >
-                Start Free Trial
+                Contact Support
               </a>
               <a
-                href="#"
+                href="/resources"
                 className="inline-flex items-center px-6 py-3 border border-white text-base font-medium rounded-md text-white hover:bg-primary-600"
               >
-                Contact Sales
+                View Resources
               </a>
             </div>
           </div>

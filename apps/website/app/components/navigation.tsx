@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { useState } from 'react';
+import { loginUrl } from '../../config/management-system';
 
 export default function Navigation() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -35,6 +36,14 @@ export default function Navigation() {
                 {item.name}
               </Link>
             ))}
+            <a
+              href={loginUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-gray-700 hover:text-primary-600 px-3 py-2 text-sm font-medium transition-colors"
+            >
+              Login
+            </a>
             <Link
               href="/demo"
               className="bg-primary-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-primary-700 transition-colors"
@@ -78,6 +87,15 @@ export default function Navigation() {
                 {item.name}
               </Link>
             ))}
+            <a
+              href={loginUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-gray-700 hover:text-primary-600 block px-3 py-2 text-base font-medium"
+              onClick={() => setIsMenuOpen(false)}
+            >
+              Login
+            </a>
             <Link
               href="/demo"
               className="bg-primary-600 text-white block px-3 py-2 rounded-md text-base font-medium hover:bg-primary-700"

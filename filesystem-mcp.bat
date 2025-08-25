@@ -4,3 +4,10 @@ node ./node_modules/@modelcontextprotocol/server-filesystem/dist/index.js "C:\Us
 
 
 
+
+
+
+
+
+
+

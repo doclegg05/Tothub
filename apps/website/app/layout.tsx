@@ -11,6 +11,7 @@ export const metadata: Metadata = {
   description: 'Comprehensive daycare management solution with biometric authentication, compliance tracking, and real-time monitoring.',
   keywords: 'daycare management, child care, biometric authentication, compliance tracking',
   authors: [{ name: 'TotHub Team' }],
+  metadataBase: new URL('http://localhost:3000'),
   openGraph: {
     title: 'TotHub - Daycare Management Platform',
     description: 'Comprehensive daycare management solution with biometric authentication, compliance tracking, and real-time monitoring.',
@@ -18,7 +19,7 @@ export const metadata: Metadata = {
     siteName: 'TotHub',
     images: [
       {
-        url: '/og-image.jpg',
+        url: '/opengraph-image',
         width: 1200,
         height: 630,
         alt: 'TotHub - Daycare Management Platform',
@@ -31,7 +32,7 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: 'TotHub - Daycare Management Platform',
     description: 'Comprehensive daycare management solution with biometric authentication, compliance tracking, and real-time monitoring.',
-    images: ['/og-image.jpg'],
+    images: ['/twitter-image'],
   },
   robots: {
     index: true,
