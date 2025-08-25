@@ -1,0 +1,12 @@
+Update the KidSign app based on competitor research and best practices for daycare management. We're competing with tools like Brightwheel (user-friendly attendance and parent comms), Procare (robust reporting and compliance), Lillio (parent engagement), Playground (affordable scalability), and Kangarootime (staff scheduling to prevent burnout). Address common pain points: Reduce admin burdens with automation (no manual entry), fix staff challenges with non-intrusive alerts, avoid tech issues like slow loads or glitches, improve parent comms without distracting staff, ensure low-cost scalability, and prioritize security/compliance.
+
+Key integrations and features to add/enhance:
+
+Attendance Tracking: Build on digital sign-in/out with timestamps/photos. Add auto-enrollment forms and daily reports (like Brightwheel) to cut paperwork by 20 hrs/week.
+Staff Management & Ratios: Embed WV ratios (e.g., 1:4 for infants) for real-time calculations. Add customizable alerts (30min/hourly/email, non-annoying) and teacher roster with scheduling/payroll tools (inspired by Procare/Kangarootime) to prevent burnout and ensure compliance.
+Billing & Integrations: Automate tuition based on attendance with QuickBooks API sync (addressing late payments in reviews). Add hooks for inventory/food systems.
+Parent Communication: Secure messaging, photo/video sharing, and newsletters (like Lillio) for better trust, but limit to optional to avoid teacher distractions.
+Child Profiles & Reporting: Store allergies/contacts/immunizations; generate exportable analytics (CSV) for trends/compliance (best practice from Procare).
+UI & Usability: Keep modern/clean (big buttons, tooltips) for non-tech users; optimize for mobile to avoid lags. Add role-based access for security.
+Scalability: Modular design—start basic, add features; include a free tier setup.
+Use Flask/Python with SQLite (upgrade to Postgres later). Ensure HIPAA-like security. Generate updated code, focusing on new modules first, and explain how it addresses the research.

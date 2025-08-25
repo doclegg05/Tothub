@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Staff Scheduling Validation Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .success { background-color: #d4edda; border-color: #c3e6cb; }
+        .error { background-color: #f8d7da; border-color: #f5c6cb; }
+        .info { background-color: #d1ecf1; border-color: #bee5eb; }
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        pre {
+            background-color: #f8f9fa;
+            padding: 10px;
+            border-radius: 5px;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+    <h1>🧪 Staff Scheduling Validation Test</h1>
+    
+    <div class="test-section info">
+        <h3>Test Overview</h3>
+        <p>This page tests the staff scheduling validation functionality to ensure:</p>
+        <ul>
+            <li>✅ Past time scheduling is rejected with clear error message</li>
+            <li>✅ Invalid time ranges (end before start) are rejected</li>
+            <li>✅ Valid scheduling works correctly</li>
+        </ul>
+    </div>
+
+    <div class="test-section">
+        <h3>Step 1: Create Staff Member</h3>
+        <button onclick="createStaff()">Create Test Staff</button>
+        <div id="staff-result"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>Step 2: Test Past Time Scheduling (Should Fail)</h3>
+        <button onclick="testPastTime()">Test Past Time</button>
+        <div id="past-time-result"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>Step 3: Test Invalid Time Range (Should Fail)</h3>
+        <button onclick="testInvalidRange()">Test Invalid Range</button>
+        <div id="invalid-range-result"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>Step 4: Test Valid Scheduling (Should Succeed)</h3>
+        <button onclick="testValidSchedule()">Test Valid Schedule</button>
+        <div id="valid-schedule-result"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>Step 5: View All Schedules</h3>
+        <button onclick="getSchedules()">Get Schedules</button>
+        <div id="schedules-result"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>Run All Tests</h3>
+        <button onclick="runAllTests()">Run Complete Test Suite</button>
+        <div id="all-tests-result"></div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:5000/api';
+        let staffId = null;
+
+        async function makeRequest(method, path, data = null) {
+            try {
+                const options = {
+                    method: method,
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                };
+
+                if (data) {
+                    options.body = JSON.stringify(data);
+                }
+
+                const response = await fetch(`${API_BASE}${path}`, options);
+                const responseData = await response.json();
+                
+                return {
+                    status: response.status,
+                    data: responseData
+                };
+            } catch (error) {
+                return {
+                    status: 0,
+                    data: { error: error.message }
+                };
+            }
+        }
+
+        function displayResult(elementId, result, isSuccess = true) {
+            const element = document.getElementById(elementId);
+            element.className = isSuccess ? 'success' : 'error';
+            element.innerHTML = `<pre>${JSON.stringify(result, null, 2)}</pre>`;
+        }
+
+        async function createStaff() {
+            const result = await makeRequest('POST', '/staff', {
+                firstName: 'John',
+                lastName: 'Doe',
+                email: 'john@test.com',
+                position: 'Teacher',
+                isActive: 1
+            });
+
+            if (result.status === 201) {
+                staffId = result.data.id;
+                displayResult('staff-result', result, true);
+            } else {
+                displayResult('staff-result', result, false);
+            }
+        }
+
+        async function testPastTime() {
+            if (!staffId) {
+                displayResult('past-time-result', { error: 'Please create staff first' }, false);
+                return;
+            }
+
+            const pastTime = new Date(Date.now() - 24 * 60 * 60 * 1000); // 24 hours ago
+            const result = await makeRequest('POST', '/schedules', {
+                staffId: staffId,
+                room: 'Infant Room',
+                scheduledStart: pastTime.toISOString(),
+                scheduledEnd: new Date(pastTime.getTime() + 8 * 60 * 60 * 1000).toISOString(),
+                date: pastTime.toISOString().split('T')[0],
+                scheduleType: 'regular'
+            });
+
+            const isSuccess = result.status === 400 && result.data.message.includes('past');
+            displayResult('past-time-result', result, isSuccess);
+        }
+
+        async function testInvalidRange() {
+            if (!staffId) {
+                displayResult('invalid-range-result', { error: 'Please create staff first' }, false);
+                return;
+            }
+
+            const futureTime = new Date(Date.now() + 2 * 60 * 60 * 1000); // 2 hours from now
+            const result = await makeRequest('POST', '/schedules', {
+                staffId: staffId,
+                room: 'Infant Room',
+                scheduledStart: futureTime.toISOString(),
+                scheduledEnd: new Date(futureTime.getTime() - 1 * 60 * 60 * 1000).toISOString(), // 1 hour before start
+                date: futureTime.toISOString().split('T')[0],
+                scheduleType: 'regular'
+            });
+
+            const isSuccess = result.status === 400 && result.data.message.includes('End time must be after start time');
+            displayResult('invalid-range-result', result, isSuccess);
+        }
+
+        async function testValidSchedule() {
+            if (!staffId) {
+                displayResult('valid-schedule-result', { error: 'Please create staff first' }, false);
+                return;
+            }
+
+            const validStart = new Date(Date.now() + 1 * 60 * 60 * 1000); // 1 hour from now
+            const validEnd = new Date(validStart.getTime() + 8 * 60 * 60 * 1000); // 8 hours later
+            const result = await makeRequest('POST', '/schedules', {
+                staffId: staffId,
+                room: 'Infant Room',
+                scheduledStart: validStart.toISOString(),
+                scheduledEnd: validEnd.toISOString(),
+                date: validStart.toISOString().split('T')[0],
+                scheduleType: 'regular'
+            });
+
+            const isSuccess = result.status === 201;
+            displayResult('valid-schedule-result', result, isSuccess);
+        }
+
+        async function getSchedules() {
+            const result = await makeRequest('GET', '/schedules');
+            const isSuccess = result.status === 200;
+            displayResult('schedules-result', result, isSuccess);
+        }
+
+        async function runAllTests() {
+            const results = [];
+            
+            // Create staff
+            results.push('Creating staff...');
+            const staffResult = await makeRequest('POST', '/staff', {
+                firstName: 'Test',
+                lastName: 'Teacher',
+                email: 'test@example.com',
+                position: 'Teacher',
+                isActive: 1
+            });
+            
+            if (staffResult.status === 201) {
+                staffId = staffResult.data.id;
+                results.push('✅ Staff created successfully');
+                
+                // Test past time
+                const pastTime = new Date(Date.now() - 24 * 60 * 60 * 1000);
+                const pastResult = await makeRequest('POST', '/schedules', {
+                    staffId: staffId,
+                    room: 'Test Room',
+                    scheduledStart: pastTime.toISOString(),
+                    scheduledEnd: new Date(pastTime.getTime() + 8 * 60 * 60 * 1000).toISOString(),
+                    date: pastTime.toISOString().split('T')[0],
+                    scheduleType: 'regular'
+                });
+                
+                if (pastResult.status === 400 && pastResult.data.message.includes('past')) {
+                    results.push('✅ Past time validation working correctly');
+                } else {
+                    results.push('❌ Past time validation failed');
+                }
+                
+                // Test valid schedule
+                const validStart = new Date(Date.now() + 1 * 60 * 60 * 1000);
+                const validEnd = new Date(validStart.getTime() + 8 * 60 * 60 * 1000);
+                const validResult = await makeRequest('POST', '/schedules', {
+                    staffId: staffId,
+                    room: 'Test Room',
+                    scheduledStart: validStart.toISOString(),
+                    scheduledEnd: validEnd.toISOString(),
+                    date: validStart.toISOString().split('T')[0],
+                    scheduleType: 'regular'
+                });
+                
+                if (validResult.status === 201) {
+                    results.push('✅ Valid scheduling working correctly');
+                } else {
+                    results.push('❌ Valid scheduling failed');
+                }
+                
+            } else {
+                results.push('❌ Failed to create staff');
+            }
+            
+            displayResult('all-tests-result', { summary: results.join('\n') }, true);
+        }
+    </script>
+</body>
+</html>
+
+
+

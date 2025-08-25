@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<solver xmlns="https://timefold.ai/xsd/solver" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="https://timefold.ai/xsd/solver https://timefold.ai/xsd/solver/solver.xsd">
+    
+    <solutionClass>com.tothub.timefold.domain.Schedule</solutionClass>
+    
+    <entityClass>com.tothub.timefold.domain.Employee</entityClass>
+    
+    <scoreDirectorFactory>
+        <constraintProviderClass>com.tothub.timefold.constraints.SchedulingConstraintProvider</constraintProviderClass>
+    </scoreDirectorFactory>
+    
+    <termination>
+        <spentLimit>PT30S</spentLimit>
+        <unimprovedSpentLimit>PT10S</unimprovedSpentLimit>
+    </termination>
+    
+    <constructionHeuristic>
+        <constructionHeuristicType>FIRST_FIT</constructionHeuristicType>
+    </constructionHeuristic>
+    
+    <localSearch>
+        <acceptor>
+            <simulatedAnnealingStartingTemperature>0hard/100soft</simulatedAnnealingStartingTemperature>
+        </acceptor>
+    </localSearch>
+    
+</solver>
