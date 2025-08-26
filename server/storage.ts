@@ -90,17 +90,19 @@ export class DatabaseStorage implements IStorage {
 
   async getAllStaff(options: PaginationOptions = {}): Promise<PaginatedResult<Staff>> {
     const { page = 1, limit = 10 } = options;
-    const offset = (page - 1) * limit;
-    
+    const safeLimit = Math.min(Math.max(limit, 1), 100);
+    const safePage = Math.max(page, 1);
+    const offset = (safePage - 1) * safeLimit;
+
     const [data, totalResult] = await Promise.all([
-      db.select().from(staff).limit(limit).offset(offset),
+      db.select().from(staff).orderBy(desc(staff.createdAt)).limit(safeLimit).offset(offset),
       db.select({ count: sql<number>`count(*)` }).from(staff)
     ]);
-    
+
     const total = totalResult[0]?.count || 0;
-    const totalPages = Math.ceil(total / limit);
-    
-    return { data, total, page, limit, totalPages };
+    const totalPages = Math.ceil(total / safeLimit);
+
+    return { data, total, page: safePage, limit: safeLimit, totalPages };
   }
 
   async getActiveStaff(options: PaginationOptions = {}): Promise<PaginatedResult<Staff>> {
@@ -155,7 +157,8 @@ export class DatabaseStorage implements IStorage {
       })
       .from(staffSchedules)
       .innerJoin(staff, eq(staffSchedules.staffId, staff.id))
-      .where(eq(staffSchedules.date, dateStr));
+      .where(eq(staffSchedules.date, dateStr))
+      .orderBy(asc(staffSchedules.room), asc(staffSchedules.scheduledStart));
   }
 
   async createStaffSchedule(scheduleData: InsertStaffSchedule): Promise<StaffSchedule> {
