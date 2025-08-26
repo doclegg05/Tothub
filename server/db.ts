@@ -17,6 +17,16 @@ if (databaseUrl.startsWith('sqlite:')) {
   // Use SQLite
   const dbPath = databaseUrl.replace('sqlite:', '');
   const sqlite = new Database(dbPath);
+  // SQLite performance pragmas (safe defaults)
+  try {
+    sqlite.pragma('journal_mode = WAL');
+    sqlite.pragma('synchronous = NORMAL');
+    sqlite.pragma('cache_size = -16000'); // ~16MB cache
+    sqlite.pragma('temp_store = MEMORY');
+    sqlite.pragma('mmap_size = 268435456'); // 256MB if supported
+  } catch (e) {
+    console.warn('SQLite PRAGMA configuration failed:', e);
+  }
   db = drizzleSQLite(sqlite, { schema });
 } else {
   // Use PostgreSQL
