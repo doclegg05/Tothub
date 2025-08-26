@@ -2,7 +2,7 @@
 CREATE INDEX IF NOT EXISTS idx_children_age_group ON children(age_group);
 CREATE INDEX IF NOT EXISTS idx_children_room ON children(room);
 CREATE INDEX IF NOT EXISTS idx_children_is_active ON children(is_active);
-CREATE INDEX IF NOT EXISTS idx_children_enrollment_status ON children(enrollment_status);
+-- Removed: children.enrollment_status does not exist in current schema
 
 CREATE INDEX IF NOT EXISTS idx_staff_position ON staff(position);
 CREATE INDEX IF NOT EXISTS idx_staff_is_active ON staff(is_active);
