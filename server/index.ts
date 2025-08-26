@@ -13,6 +13,7 @@ import {
 } from "./middleware/security";
 import { registerRoutes } from "./routes";
 import { log, serveStatic, setupVite } from "./vite";
+import { MonitoringService } from "./services/monitoringService";
 
 const app = express();
 
@@ -80,6 +81,9 @@ app.use("/api", csrfProtection);
 // Global API rate limit
 app.use("/api", createRateLimit(15 * 60 * 1000, 300, "Too many requests"));
 
+// Performance monitoring middleware
+app.use(MonitoringService.getInstance().performanceMiddleware());
+
 // Simple logging middleware
 app.use((req, res, next) => {
   const start = Date.now();
@@ -126,8 +130,12 @@ if (process.env.MEMORY_LOG_INTERVAL_MS) {
     setInterval(() => {
       const used = process.memoryUsage();
       log(
-        `heapUsed=${Math.round(used.heapUsed / 1024 / 1024)}MB heapTotal=${Math.round(used.heapTotal / 1024 / 1024)}MB rss=${Math.round(used.rss / 1024 / 1024)}MB`,
-        "memory",
+        `heapUsed=${Math.round(
+          used.heapUsed / 1024 / 1024
+        )}MB heapTotal=${Math.round(
+          used.heapTotal / 1024 / 1024
+        )}MB rss=${Math.round(used.rss / 1024 / 1024)}MB`,
+        "memory"
       );
     }, every).unref();
   }
