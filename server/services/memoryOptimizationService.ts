@@ -13,6 +13,14 @@ class MemoryOptimizationService {
   constructor() {
     // Start garbage collection optimization
     this.startGarbageCollectionOptimization();
+
+    // Apply env-driven sizing, if provided
+    const maxCaches = parseInt(process.env.MEMORY_CACHE_MAX_ITEMS || '', 10);
+    const ttlMs = parseInt(process.env.MEMORY_CACHE_TTL_MS || '', 10);
+    if (!Number.isNaN(maxCaches) || !Number.isNaN(ttlMs)) {
+      // Recreate default caches with env overrides
+      this.reconfigureDefaultCaches(maxCaches, ttlMs);
+    }
   }
 
   createCache(name: string, config: MemoryCacheConfig): LRUCache<string, any> {
@@ -86,6 +94,44 @@ class MemoryOptimizationService {
     if (freed > 0) {
       console.log(`🧹 Memory optimization freed ${freed.toFixed(2)}MB`);
     }
+  }
+
+  private reconfigureDefaultCaches(maxOverride?: number, ttlOverrideMs?: number): void {
+    const getMax = (fallback: number) => (Number.isFinite(maxOverride) && maxOverride! > 0 ? maxOverride! : fallback);
+    const getTtl = (fallbackMs: number) => (Number.isFinite(ttlOverrideMs) && ttlOverrideMs! > 0 ? ttlOverrideMs! : fallbackMs);
+
+    // Replace default caches if they already exist
+    this.caches.set('children', new LRUCache<string, any>({
+      max: getMax(500),
+      ttl: getTtl(10 * 60 * 1000),
+      updateAgeOnGet: true,
+      updateAgeOnHas: true,
+      ttlAutopurge: true,
+    }));
+
+    this.caches.set('staff', new LRUCache<string, any>({
+      max: getMax(200),
+      ttl: getTtl(10 * 60 * 1000),
+      updateAgeOnGet: true,
+      updateAgeOnHas: true,
+      ttlAutopurge: true,
+    }));
+
+    this.caches.set('attendance', new LRUCache<string, any>({
+      max: getMax(1000),
+      ttl: getTtl(5 * 60 * 1000),
+      updateAgeOnGet: true,
+      updateAgeOnHas: true,
+      ttlAutopurge: true,
+    }));
+
+    this.caches.set('settings', new LRUCache<string, any>({
+      max: getMax(50),
+      ttl: getTtl(30 * 60 * 1000),
+      updateAgeOnGet: true,
+      updateAgeOnHas: true,
+      ttlAutopurge: true,
+    }));
   }
 
   destroy(): void {

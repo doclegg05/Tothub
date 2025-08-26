@@ -1,18 +1,18 @@
+import cors from "cors";
 import "dotenv/config";
-import express, { type Request, Response, NextFunction } from "express";
-import { registerRoutes } from "./routes";
-import { setupVite, serveStatic, log } from "./vite";
+import express, { NextFunction, Response, type Request } from "express";
 import session from "express-session";
 import createMemoryStore from "memorystore";
-import cors from "cors";
-import {
-  securityHeaders,
-  createRateLimit,
-  validateInput,
-  generateCSRFToken,
-  csrfProtection,
-} from "./middleware/security";
 import { compressionMiddleware } from "./middleware/compression";
+import {
+  createRateLimit,
+  csrfProtection,
+  generateCSRFToken,
+  securityHeaders,
+  validateInput,
+} from "./middleware/security";
+import { registerRoutes } from "./routes";
+import { log, serveStatic, setupVite } from "./vite";
 
 const app = express();
 
@@ -35,7 +35,7 @@ app.use(
       return callback(new Error("Not allowed by CORS"));
     },
     credentials: true,
-  }),
+  })
 );
 
 // Security headers and compression
@@ -43,13 +43,16 @@ app.use(securityHeaders);
 app.use(compressionMiddleware);
 
 // Body parsing
-app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ extended: false, limit: '10mb' }));
+app.use(express.json({ limit: "10mb" }));
+app.use(express.urlencoded({ extended: false, limit: "10mb" }));
 
 // Sessions (MemoryStore for dev; use a persistent store in production)
 const MemoryStore = createMemoryStore(session);
 const SESSION_SECRET = process.env.SESSION_SECRET || "CHANGE_ME_SESSION_SECRET";
-if (app.get("env") !== "development" && SESSION_SECRET === "CHANGE_ME_SESSION_SECRET") {
+if (
+  app.get("env") !== "development" &&
+  SESSION_SECRET === "CHANGE_ME_SESSION_SECRET"
+) {
   log("WARNING: SESSION_SECRET is not set in production", "security");
 }
 app.use(
@@ -64,7 +67,7 @@ app.use(
       maxAge: 1000 * 60 * 60 * 8, // 8 hours
     },
     store: new MemoryStore({ checkPeriod: 1000 * 60 * 60 }),
-  }),
+  })
 );
 
 // Input sanitization
@@ -110,8 +113,22 @@ app.use((req, res, next) => {
     serveStatic(app);
   }
 
-  const port = parseInt(process.env.PORT || '5000', 10);
+  const port = parseInt(process.env.PORT || "5000", 10);
   server.listen(port, "0.0.0.0", () => {
     log(`serving on port ${port}`);
   });
 })();
+
+// Optional periodic memory logger for diagnostics (disabled by default)
+if (process.env.MEMORY_LOG_INTERVAL_MS) {
+  const every = parseInt(process.env.MEMORY_LOG_INTERVAL_MS, 10);
+  if (!Number.isNaN(every) && every > 0) {
+    setInterval(() => {
+      const used = process.memoryUsage();
+      log(
+        `heapUsed=${Math.round(used.heapUsed / 1024 / 1024)}MB heapTotal=${Math.round(used.heapTotal / 1024 / 1024)}MB rss=${Math.round(used.rss / 1024 / 1024)}MB`,
+        "memory",
+      );
+    }, every).unref();
+  }
+}

@@ -4,6 +4,8 @@ import { DatabaseStorage } from "./storage";
 import { z } from "zod";
 import { authMiddleware } from "./middleware/auth";
 import scheduleRoutes from "./routes/scheduleRoutes";
+import { getMemoryUsageReport, runGarbageCollection } from "./utils/memoryUtils";
+import { memoryCache as globalMemoryCache } from "./services/memoryOptimizationService";
 
 export async function registerRoutes(app: Express): Promise<Server> {
 	const auth = authMiddleware;
@@ -11,6 +13,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
 	// Schedule feature routes (Timefold integration)
 	app.use("/api/schedule", scheduleRoutes);
+
+	// Memory instrumentation (admin only in production via network restrictions)
+	app.get("/api/_infra/memory", auth, async (_req: Request, res: Response) => {
+		const report = getMemoryUsageReport();
+		res.json({ ok: true, report });
+	});
+
+	app.post("/api/_infra/memory/optimize", auth, async (_req: Request, res: Response) => {
+		try {
+			globalMemoryCache.clearAllCaches();
+			runGarbageCollection();
+			const report = getMemoryUsageReport();
+			res.json({ ok: true, message: "Memory optimization triggered", report });
+		} catch (e) {
+			res.status(500).json({ ok: false, message: "Failed to optimize memory" });
+		}
+	});
 
 	// Health check route that works with both SQLite and PostgreSQL
 	app.get("/api/health", (_req: Request, res: Response) => {
