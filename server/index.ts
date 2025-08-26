@@ -12,8 +12,8 @@ import {
   validateInput,
 } from "./middleware/security";
 import { registerRoutes } from "./routes";
-import { log, serveStatic, setupVite } from "./vite";
 import { MonitoringService } from "./services/monitoringService";
+import { log, serveStatic, setupVite } from "./vite";
 
 const app = express();
 

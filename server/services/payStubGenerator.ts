@@ -71,9 +71,9 @@ export class PayStubGenerator {
         ],
         [
           'Overtime Pay',
-          PayrollCalculator.formatHours(payStubData.overtimeHours),
+          PayrollCalculator.formatHours(payStubData.overtimeHours || 0),
           PayrollCalculator.formatCurrency((payStubData.staff.hourlyRate || 0) * 1.5),
-          PayrollCalculator.formatCurrency(payStubData.overtimePay),
+          PayrollCalculator.formatCurrency(payStubData.overtimePay || 0),
           '-'
         ],
         [

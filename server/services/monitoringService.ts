@@ -158,7 +158,7 @@ export class MonitoringService {
           timestamp: new Date(),
           userAgent: req.headers['user-agent'],
           ip: req.ip,
-          userId: req.session?.userId,
+          userId: (req.session as any)?.userId,
         };
 
         MonitoringService.getInstance().recordMetric(metric);

@@ -51,7 +51,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const cacheStats = globalMemoryCache.getCacheStats();
       res.json({ ok: true, cacheStats });
     } catch (e) {
-      res.status(500).json({ ok: false, message: "Failed to fetch cache stats" });
+      res
+        .status(500)
+        .json({ ok: false, message: "Failed to fetch cache stats" });
     }
   });
 

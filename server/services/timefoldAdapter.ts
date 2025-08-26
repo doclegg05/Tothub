@@ -46,8 +46,9 @@ export class TimefoldAdapter {
   /**
    * Convert TotHub staff to Timefold employees
    */
-  private static async convertStaffToEmployees(staff: any[]): Promise<TimefoldEmployee[]> {
-    return staff.map(staffMember => {
+  private static async convertStaffToEmployees(staff: any): Promise<TimefoldEmployee[]> {
+    const list: any[] = Array.isArray(staff?.data) ? staff.data : Array.isArray(staff) ? staff : [];
+    return list.map(staffMember => {
       // Convert skills from TotHub format
       const skills = this.extractSkillsFromStaff(staffMember);
       
@@ -128,7 +129,8 @@ export class TimefoldAdapter {
   private static async getRoomsWithChildCounts(weekStart: Date, centerId?: string): Promise<any[]> {
     try {
       // Get children and their room assignments
-      const children = await storage.getActiveChildren({ page: 1, limit: 1000 });
+      const childrenResult = await storage.getActiveChildren({ page: 1, limit: 1000 });
+      const children = Array.isArray(childrenResult?.data) ? childrenResult.data : (Array.isArray(childrenResult) ? childrenResult : []);
       
       // Group children by room
       const roomMap = new Map<string, number>();

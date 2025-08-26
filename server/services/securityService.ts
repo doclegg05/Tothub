@@ -75,7 +75,10 @@ abstract class SecurityDeviceHandler {
 
   protected getConnectionConfig(): any {
     try {
-      return JSON.parse(decrypt(this.device.connectionConfig));
+      const raw = this.device.connectionConfig;
+      if (!raw) return {};
+      const decrypted = decrypt(raw);
+      return JSON.parse(decrypted);
     } catch {
       return {};
     }

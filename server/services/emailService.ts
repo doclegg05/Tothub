@@ -1,3 +1,6 @@
+// Nodemailer lacks types in this project; import as any to avoid TS error
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore
 import nodemailer from 'nodemailer';
 import sgMail from '@sendgrid/mail';
 

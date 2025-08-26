@@ -1,6 +1,20 @@
-import { staff, staffSchedules, children, attendance, securityDevices, securityCredentials, securityLogs, alerts, dailyReports, type Staff, type InsertStaff, type StaffSchedule, type InsertStaffSchedule } from "@shared/schema";
+import {
+  alerts,
+  attendance,
+  children,
+  dailyReports,
+  securityCredentials,
+  securityDevices,
+  securityLogs,
+  staff,
+  staffSchedules,
+  type InsertStaff,
+  type InsertStaffSchedule,
+  type Staff,
+  type StaffSchedule,
+} from "@shared/schema";
+import { and, asc, desc, eq, gte, lte, sql } from "drizzle-orm";
 import { db } from "./db";
-import { eq, and, gte, lte, desc, asc, isNull, sql } from "drizzle-orm";
 
 export interface PaginationOptions {
   page?: number;
@@ -22,28 +36,36 @@ export interface IStorage {
   getActiveStaff(options?: PaginationOptions): Promise<PaginatedResult<Staff>>;
   createStaff(staff: InsertStaff): Promise<Staff>;
   updateStaff(id: string, staff: Partial<InsertStaff>): Promise<Staff>;
-  
+
   // Staff Schedules
   getStaffSchedule(id: string): Promise<StaffSchedule | undefined>;
   getTodaysStaffSchedules(): Promise<(StaffSchedule & { staff: Staff })[]>;
-  getStaffSchedulesByDate(date: Date): Promise<(StaffSchedule & { staff: Staff })[]>;
+  getStaffSchedulesByDate(
+    date: Date
+  ): Promise<(StaffSchedule & { staff: Staff })[]>;
   createStaffSchedule(schedule: InsertStaffSchedule): Promise<StaffSchedule>;
-  updateStaffSchedule(id: string, schedule: Partial<InsertStaffSchedule>): Promise<StaffSchedule>;
-  markStaffPresent(scheduleId: string, actualStart: Date): Promise<StaffSchedule>;
+  updateStaffSchedule(
+    id: string,
+    schedule: Partial<InsertStaffSchedule>
+  ): Promise<StaffSchedule>;
+  markStaffPresent(
+    scheduleId: string,
+    actualStart: Date
+  ): Promise<StaffSchedule>;
   markStaffEnd(scheduleId: string, actualEnd: Date): Promise<StaffSchedule>;
-  
+
   // Children
   getChild(id: string): Promise<any | undefined>;
   createChild(child: any): Promise<any>;
   clearAllChildren(): Promise<void>;
-  
+
   // Staff
   clearAllStaff(): Promise<void>;
-  
+
   // Attendance
   createAttendance(attendance: any): Promise<any>;
   clearAllAttendance(): Promise<void>;
-  
+
   // Security
   createSecurityDevice(device: any): Promise<any>;
   getSecurityDevice(id: string): Promise<any>;
@@ -51,30 +73,33 @@ export interface IStorage {
   getSecurityDevicesForLocation(location: string): Promise<any[]>;
   updateSecurityDeviceStatus(id: string, status: string): Promise<void>;
   createSecurityCredential(credential: any): Promise<any>;
-  getSecurityCredentialsForDevice(deviceId: string, type: string): Promise<any[]>;
+  getSecurityCredentialsForDevice(
+    deviceId: string,
+    type: string
+  ): Promise<any[]>;
   createSecurityLog(log: any): Promise<any>;
   getSecurityLogs(limit: number): Promise<any[]>;
-  
+
   // Parent
   getParentChildren(parentId: string): Promise<any[]>;
   getTodaysAttendance(): Promise<any[]>;
-  
+
   // Profile
   getUserProfile(userId: string): Promise<any>;
   createUserProfile(profile: any): Promise<any>;
   updateUserProfile(userId: string, profile: any): Promise<any>;
   getUserProfileByUsername(username: string): Promise<any>;
-  
+
   // Settings
   getAllSettings(): Promise<any[]>;
   createOrUpdateSetting(key: string, value: any): Promise<any>;
   getStateCompliance(): Promise<any>;
   updateStateCompliance(state: string, auditNote: string): Promise<any>;
-  
+
   // Teacher Notes
   addTeacherNote(note: any): Promise<any>;
   getTeacherNotes(childId: string, date: Date): Promise<any[]>;
-  
+
   // Parent Management
   getAllChildren(options?: any): Promise<any[]>;
   getParentByEmail(email: string): Promise<any>;
@@ -84,19 +109,30 @@ export interface IStorage {
 export class DatabaseStorage implements IStorage {
   // Staff methods
   async getStaff(id: string): Promise<Staff | undefined> {
-    const result = await db.select().from(staff).where(eq(staff.id, id)).limit(1);
+    const result = await db
+      .select()
+      .from(staff)
+      .where(eq(staff.id, id))
+      .limit(1);
     return result[0];
   }
 
-  async getAllStaff(options: PaginationOptions = {}): Promise<PaginatedResult<Staff>> {
+  async getAllStaff(
+    options: PaginationOptions = {}
+  ): Promise<PaginatedResult<Staff>> {
     const { page = 1, limit = 10 } = options;
     const safeLimit = Math.min(Math.max(limit, 1), 100);
     const safePage = Math.max(page, 1);
     const offset = (safePage - 1) * safeLimit;
 
     const [data, totalResult] = await Promise.all([
-      db.select().from(staff).orderBy(desc(staff.createdAt)).limit(safeLimit).offset(offset),
-      db.select({ count: sql<number>`count(*)` }).from(staff)
+      db
+        .select()
+        .from(staff)
+        .orderBy(desc(staff.createdAt))
+        .limit(safeLimit)
+        .offset(offset),
+      db.select({ count: sql<number>`count(*)` }).from(staff),
     ]);
 
     const total = totalResult[0]?.count || 0;
@@ -105,18 +141,28 @@ export class DatabaseStorage implements IStorage {
     return { data, total, page: safePage, limit: safeLimit, totalPages };
   }
 
-  async getActiveStaff(options: PaginationOptions = {}): Promise<PaginatedResult<Staff>> {
+  async getActiveStaff(
+    options: PaginationOptions = {}
+  ): Promise<PaginatedResult<Staff>> {
     const { page = 1, limit = 10 } = options;
     const offset = (page - 1) * limit;
-    
+
     const [data, totalResult] = await Promise.all([
-      db.select().from(staff).where(eq(staff.isActive, 1)).limit(limit).offset(offset),
-      db.select({ count: sql<number>`count(*)` }).from(staff).where(eq(staff.isActive, 1))
+      db
+        .select()
+        .from(staff)
+        .where(eq(staff.isActive, 1))
+        .limit(limit)
+        .offset(offset),
+      db
+        .select({ count: sql<number>`count(*)` })
+        .from(staff)
+        .where(eq(staff.isActive, 1)),
     ]);
-    
+
     const total = totalResult[0]?.count || 0;
     const totalPages = Math.ceil(total / limit);
-    
+
     return { data, total, page, limit, totalPages };
   }
 
@@ -125,35 +171,50 @@ export class DatabaseStorage implements IStorage {
     return newStaff;
   }
 
-  async updateStaff(id: string, staffData: Partial<InsertStaff>): Promise<Staff> {
-    const [updatedStaff] = await db.update(staff).set(staffData).where(eq(staff.id, id)).returning();
+  async updateStaff(
+    id: string,
+    staffData: Partial<InsertStaff>
+  ): Promise<Staff> {
+    const [updatedStaff] = await db
+      .update(staff)
+      .set(staffData)
+      .where(eq(staff.id, id))
+      .returning();
     return updatedStaff;
   }
 
   // Staff Schedule methods
   async getStaffSchedule(id: string): Promise<StaffSchedule | undefined> {
-    const result = await db.select().from(staffSchedules).where(eq(staffSchedules.id, id)).limit(1);
+    const result = await db
+      .select()
+      .from(staffSchedules)
+      .where(eq(staffSchedules.id, id))
+      .limit(1);
     return result[0];
   }
 
-  async getTodaysStaffSchedules(): Promise<(StaffSchedule & { staff: Staff })[]> {
-    const today = new Date().toISOString().split('T')[0];
+  async getTodaysStaffSchedules(): Promise<
+    (StaffSchedule & { staff: Staff })[]
+  > {
+    const today = new Date().toISOString().split("T")[0];
     return await db
       .select({
         ...staffSchedules,
-        staff: staff
+        staff: staff,
       })
       .from(staffSchedules)
       .innerJoin(staff, eq(staffSchedules.staffId, staff.id))
       .where(eq(staffSchedules.date, today));
   }
 
-  async getStaffSchedulesByDate(date: Date): Promise<(StaffSchedule & { staff: Staff })[]> {
-    const dateStr = date.toISOString().split('T')[0];
+  async getStaffSchedulesByDate(
+    date: Date
+  ): Promise<(StaffSchedule & { staff: Staff })[]> {
+    const dateStr = date.toISOString().split("T")[0];
     return await db
       .select({
         ...staffSchedules,
-        staff: staff
+        staff: staff,
       })
       .from(staffSchedules)
       .innerJoin(staff, eq(staffSchedules.staffId, staff.id))
@@ -161,13 +222,17 @@ export class DatabaseStorage implements IStorage {
       .orderBy(asc(staffSchedules.room), asc(staffSchedules.scheduledStart));
   }
 
-  async createStaffSchedule(scheduleData: InsertStaffSchedule): Promise<StaffSchedule> {
+  async createStaffSchedule(
+    scheduleData: InsertStaffSchedule
+  ): Promise<StaffSchedule> {
     // Validate that scheduled start time is not in the past
     const now = new Date();
     const scheduledStart = new Date(scheduleData.scheduledStart);
 
     if (scheduledStart < now) {
-      throw new Error("Cannot schedule staff for a time in the past. Please select a start time after the current time.");
+      throw new Error(
+        "Cannot schedule staff for a time in the past. Please select a start time after the current time."
+      );
     }
 
     // Validate that end time is after start time
@@ -176,28 +241,44 @@ export class DatabaseStorage implements IStorage {
       throw new Error("End time must be after start time.");
     }
 
-    const [newSchedule] = await db.insert(staffSchedules).values(scheduleData).returning();
+    const [newSchedule] = await db
+      .insert(staffSchedules)
+      .values(scheduleData)
+      .returning();
     return newSchedule;
   }
 
-  async updateStaffSchedule(id: string, scheduleData: Partial<InsertStaffSchedule>): Promise<StaffSchedule> {
-    const [updatedSchedule] = await db.update(staffSchedules).set(scheduleData).where(eq(staffSchedules.id, id)).returning();
+  async updateStaffSchedule(
+    id: string,
+    scheduleData: Partial<InsertStaffSchedule>
+  ): Promise<StaffSchedule> {
+    const [updatedSchedule] = await db
+      .update(staffSchedules)
+      .set(scheduleData)
+      .where(eq(staffSchedules.id, id))
+      .returning();
     return updatedSchedule;
   }
 
-  async markStaffPresent(scheduleId: string, actualStart: Date): Promise<StaffSchedule> {
+  async markStaffPresent(
+    scheduleId: string,
+    actualStart: Date
+  ): Promise<StaffSchedule> {
     const [updatedSchedule] = await db
       .update(staffSchedules)
-      .set({ 
+      .set({
         actualStart: actualStart.toISOString(),
-        isPresent: 1 
+        isPresent: 1,
       })
       .where(eq(staffSchedules.id, scheduleId))
       .returning();
     return updatedSchedule;
   }
 
-  async markStaffEnd(scheduleId: string, actualEnd: Date): Promise<StaffSchedule> {
+  async markStaffEnd(
+    scheduleId: string,
+    actualEnd: Date
+  ): Promise<StaffSchedule> {
     const [updatedSchedule] = await db
       .update(staffSchedules)
       .set({ actualEnd: actualEnd.toISOString() })
@@ -208,7 +289,11 @@ export class DatabaseStorage implements IStorage {
 
   // Children methods
   async getChild(id: string): Promise<any | undefined> {
-    const result = await db.select().from(children).where(eq(children.id, id)).limit(1);
+    const result = await db
+      .select()
+      .from(children)
+      .where(eq(children.id, id))
+      .limit(1);
     return result[0];
   }
 
@@ -227,7 +312,10 @@ export class DatabaseStorage implements IStorage {
 
   // Attendance methods
   async createAttendance(attendanceData: any): Promise<any> {
-    const [newAttendance] = await db.insert(attendance).values(attendanceData).returning();
+    const [newAttendance] = await db
+      .insert(attendance)
+      .values(attendanceData)
+      .returning();
     return newAttendance;
   }
 
@@ -242,18 +330,27 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getAttendanceByDate(date: Date): Promise<any[]> {
-    return await db.select().from(attendance)
-      .where(eq(attendance.date, date.toISOString().split('T')[0]));
+    return await db
+      .select()
+      .from(attendance)
+      .where(eq(attendance.date, date.toISOString().split("T")[0]));
   }
 
   // Security methods
   async createSecurityDevice(deviceData: any): Promise<any> {
-    const [newDevice] = await db.insert(securityDevices).values(deviceData).returning();
+    const [newDevice] = await db
+      .insert(securityDevices)
+      .values(deviceData)
+      .returning();
     return newDevice;
   }
 
   async getSecurityDevice(id: string): Promise<any> {
-    const result = await db.select().from(securityDevices).where(eq(securityDevices.id, id)).limit(1);
+    const result = await db
+      .select()
+      .from(securityDevices)
+      .where(eq(securityDevices.id, id))
+      .limit(1);
     return result[0];
   }
 
@@ -262,24 +359,40 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getSecurityDevicesForLocation(location: string): Promise<any[]> {
-    return await db.select().from(securityDevices).where(eq(securityDevices.location, location));
+    return await db
+      .select()
+      .from(securityDevices)
+      .where(eq(securityDevices.location, location));
   }
 
   async updateSecurityDeviceStatus(id: string, status: string): Promise<void> {
-    await db.update(securityDevices).set({ isActive: status === 'online' ? 1 : 0 }).where(eq(securityDevices.id, id));
+    await db
+      .update(securityDevices)
+      .set({ isActive: status === "online" ? 1 : 0 })
+      .where(eq(securityDevices.id, id));
   }
 
   async createSecurityCredential(credentialData: any): Promise<any> {
-    const [newCredential] = await db.insert(securityCredentials).values(credentialData).returning();
+    const [newCredential] = await db
+      .insert(securityCredentials)
+      .values(credentialData)
+      .returning();
     return newCredential;
   }
 
-  async getSecurityCredentialsForDevice(deviceId: string, type: string): Promise<any[]> {
-    return await db.select().from(securityCredentials)
-      .where(and(
-        eq(securityCredentials.deviceId, deviceId),
-        eq(securityCredentials.credentialType, type)
-      ));
+  async getSecurityCredentialsForDevice(
+    deviceId: string,
+    type: string
+  ): Promise<any[]> {
+    return await db
+      .select()
+      .from(securityCredentials)
+      .where(
+        and(
+          eq(securityCredentials.deviceId, deviceId),
+          eq(securityCredentials.credentialType, type)
+        )
+      );
   }
 
   async createSecurityLog(logData: any): Promise<any> {
@@ -288,26 +401,38 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getSecurityLogs(limit: number): Promise<any[]> {
-    return await db.select().from(securityLogs).limit(limit).orderBy(desc(securityLogs.timestamp));
+    return await db
+      .select()
+      .from(securityLogs)
+      .limit(limit)
+      .orderBy(desc(securityLogs.timestamp));
   }
 
   // Daily report methods
   async getChildDayData(childId: string, date: Date): Promise<any> {
-    const result = await db.select().from(attendance)
-      .where(and(
-        eq(attendance.childId, childId),
-        eq(attendance.date, date.toISOString().split('T')[0])
-      ))
+    const result = await db
+      .select()
+      .from(attendance)
+      .where(
+        and(
+          eq(attendance.childId, childId),
+          eq(attendance.date, date.toISOString().split("T")[0])
+        )
+      )
       .limit(1);
     return result[0];
   }
 
   async getDailyReport(childId: string, date: Date): Promise<any> {
-    const result = await db.select().from(dailyReports)
-      .where(and(
-        eq(dailyReports.childId, childId),
-        eq(dailyReports.date, date.toISOString().split('T')[0])
-      ))
+    const result = await db
+      .select()
+      .from(dailyReports)
+      .where(
+        and(
+          eq(dailyReports.childId, childId),
+          eq(dailyReports.date, date.toISOString().split("T")[0])
+        )
+      )
       .limit(1);
     return result[0];
   }
@@ -322,32 +447,44 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getPresentChildrenForDate(date: Date): Promise<any[]> {
-    return await db.select().from(attendance)
-      .where(and(
-        eq(attendance.date, date.toISOString().split('T')[0]),
-        sql`${attendance.checkOutTime} IS NULL`
-      ));
+    return await db
+      .select()
+      .from(attendance)
+      .where(
+        and(
+          eq(attendance.date, date.toISOString().split("T")[0]),
+          sql`${attendance.checkOutTime} IS NULL`
+        )
+      );
   }
 
   // Background job methods
-  async getAttendanceByDateRange(startDate: Date, endDate: Date): Promise<any[]> {
-    return await db.select().from(attendance)
-      .where(and(
-        gte(attendance.date, startDate.toISOString().split('T')[0]),
-        lte(attendance.date, endDate.toISOString().split('T')[0])
-      ));
+  async getAttendanceByDateRange(
+    startDate: Date,
+    endDate: Date
+  ): Promise<any[]> {
+    return await db
+      .select()
+      .from(attendance)
+      .where(
+        and(
+          gte(attendance.date, startDate.toISOString().split("T")[0]),
+          lte(attendance.date, endDate.toISOString().split("T")[0])
+        )
+      );
   }
 
   // Parent methods
   async getParentChildren(parentId: string): Promise<any[]> {
-    return await db.select().from(children)
+    return await db
+      .select()
+      .from(children)
       .where(eq(children.parentId, parentId));
   }
 
   async getTodaysAttendance(): Promise<any[]> {
-    const today = new Date().toISOString().split('T')[0];
-    return await db.select().from(attendance)
-      .where(eq(attendance.date, today));
+    const today = new Date().toISOString().split("T")[0];
+    return await db.select().from(attendance).where(eq(attendance.date, today));
   }
 
   // Profile methods
@@ -416,13 +553,21 @@ export class DatabaseStorage implements IStorage {
   // Parent Management methods
   async getAllChildren(options?: any): Promise<any[]> {
     const { page = 1, limit = 10 } = options || {};
-    const offset = (page - 1) * limit;
-    
-    const [data, totalResult] = await Promise.all([
-      db.select().from(children).limit(limit).offset(offset),
-      db.select({ count: sql<number>`count(*)` }).from(children)
+    const safeLimit = Math.min(Math.max(limit, 1), 100);
+    const safePage = Math.max(page, 1);
+    const offset = (safePage - 1) * safeLimit;
+
+    const [data] = await Promise.all([
+      db
+        .select()
+        .from(children)
+        .orderBy(desc(children.createdAt))
+        .limit(safeLimit)
+        .offset(offset),
+      // If the UI needs totals later, re-enable this count query
+      // db.select({ count: sql<number>`count(*)` }).from(children),
     ]);
-    
+
     return data;
   }
 
@@ -448,7 +593,11 @@ export class DatabaseStorage implements IStorage {
   }
 
   async markAlertAsRead(id: string): Promise<any> {
-    const [updatedAlert] = await db.update(alerts).set({ isRead: 1 }).where(eq(alerts.id, id)).returning();
+    const [updatedAlert] = await db
+      .update(alerts)
+      .set({ isRead: 1 })
+      .where(eq(alerts.id, id))
+      .returning();
     return updatedAlert;
   }
 
@@ -458,15 +607,22 @@ export class DatabaseStorage implements IStorage {
 
   // Attendance methods
   async getCurrentlyPresentChildren(): Promise<any[]> {
-    return await db.select().from(attendance)
+    return await db
+      .select()
+      .from(attendance)
       .where(sql`${attendance.checkOutTime} IS NULL`);
   }
 
-  async checkOutChild(id: string, checkOutBy: string, checkOutTime: Date): Promise<any> {
-    const [updatedAttendance] = await db.update(attendance)
-      .set({ 
+  async checkOutChild(
+    id: string,
+    checkOutBy: string,
+    checkOutTime: Date
+  ): Promise<any> {
+    const [updatedAttendance] = await db
+      .update(attendance)
+      .set({
         checkOutTime: checkOutTime.toISOString(),
-        checkOutBy 
+        checkOutBy,
       })
       .where(eq(attendance.id, id))
       .returning();
@@ -477,15 +633,21 @@ export class DatabaseStorage implements IStorage {
   async getActiveChildren(options?: any): Promise<any[]> {
     const { page = 1, limit = 10 } = options || {};
     const offset = (page - 1) * limit;
-    
-    return await db.select().from(children)
+
+    return await db
+      .select()
+      .from(children)
       .where(eq(children.isActive, 1))
       .limit(limit)
       .offset(offset);
   }
 
   async updateChild(id: string, data: any): Promise<any> {
-    const [updatedChild] = await db.update(children).set(data).where(eq(children.id, id)).returning();
+    const [updatedChild] = await db
+      .update(children)
+      .set(data)
+      .where(eq(children.id, id))
+      .returning();
     return updatedChild;
   }
 

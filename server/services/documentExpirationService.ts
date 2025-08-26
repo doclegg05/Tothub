@@ -69,7 +69,7 @@ export class DocumentExpirationService {
       })
       .from(documents)
       .leftJoin(documentTypes, eq(documents.documentTypeId, documentTypes.id))
-      .where(eq(documents.isActive, true))
+      .where(eq(documents.isActive, 1))
       .orderBy(asc(documents.expirationDate));
   }
 
@@ -79,7 +79,7 @@ export class DocumentExpirationService {
       .from(documents)
       .leftJoin(documentTypes, eq(documents.documentTypeId, documentTypes.id))
       .where(and(
-        eq(documents.isActive, true),
+        eq(documents.isActive, 1),
         eq(documentTypes.category, category)
       ))
       .orderBy(asc(documents.expirationDate));
@@ -88,6 +88,8 @@ export class DocumentExpirationService {
   static async getExpiringDocuments(daysAhead: number = 30) {
     const futureDate = new Date();
     futureDate.setDate(futureDate.getDate() + daysAhead);
+    const futureIso = futureDate.toISOString();
+    const nowIso = new Date().toISOString();
     
     return await db
       .select({
@@ -107,9 +109,9 @@ export class DocumentExpirationService {
       .from(documents)
       .leftJoin(documentTypes, eq(documents.documentTypeId, documentTypes.id))
       .where(and(
-        eq(documents.isActive, true),
-        lte(documents.expirationDate, futureDate),
-        gte(documents.expirationDate, new Date())
+        eq(documents.isActive, 1),
+        lte(documents.expirationDate, futureIso),
+        gte(documents.expirationDate, nowIso)
       ))
       .orderBy(asc(documents.expirationDate));
   }
@@ -120,8 +122,8 @@ export class DocumentExpirationService {
       .from(documents)
       .leftJoin(documentTypes, eq(documents.documentTypeId, documentTypes.id))
       .where(and(
-        eq(documents.isActive, true),
-        lte(documents.expirationDate, new Date())
+        eq(documents.isActive, 1),
+        lte(documents.expirationDate, new Date().toISOString())
       ))
       .orderBy(desc(documents.expirationDate));
   }
@@ -217,6 +219,8 @@ export class DocumentExpirationService {
     today.setHours(0, 0, 0, 0);
     const tomorrow = new Date(today);
     tomorrow.setDate(tomorrow.getDate() + 1);
+    const todayIso = today.toISOString();
+    const tomorrowIso = tomorrow.toISOString();
     
     return await db
       .select({
@@ -241,10 +245,10 @@ export class DocumentExpirationService {
       .leftJoin(documents, eq(documentReminders.documentId, documents.id))
       .leftJoin(documentTypes, eq(documents.documentTypeId, documentTypes.id))
       .where(and(
-        eq(documentReminders.isActive, true),
-        eq(documents.isActive, true),
-        gte(documentReminders.reminderDate, today),
-        lte(documentReminders.reminderDate, tomorrow),
+        eq(documentReminders.isActive, 1),
+        eq(documents.isActive, 1),
+        gte(documentReminders.reminderDate, todayIso),
+        lte(documentReminders.reminderDate, tomorrowIso),
         sql`${documentReminders.sentAt} IS NULL`
       ))
       .orderBy(asc(documentReminders.reminderDate), desc(documentReminders.priority));
@@ -276,23 +280,23 @@ export class DocumentExpirationService {
     const totalActive = await db
       .select({ count: sql<number>`count(*)` })
       .from(documents)
-      .where(and(eq(documents.isActive, true)));
+      .where(and(eq(documents.isActive, 1)));
     
     const expired = await db
       .select({ count: sql<number>`count(*)` })
       .from(documents)
       .where(and(
-        eq(documents.isActive, true),
-        lte(documents.expirationDate, today)
+        eq(documents.isActive, 1),
+        lte(documents.expirationDate, today.toISOString())
       ));
     
     const expiringSoon = await db
       .select({ count: sql<number>`count(*)` })
       .from(documents)
       .where(and(
-        eq(documents.isActive, true),
-        gte(documents.expirationDate, today),
-        lte(documents.expirationDate, in30Days)
+        eq(documents.isActive, 1),
+        gte(documents.expirationDate, today.toISOString()),
+        lte(documents.expirationDate, in30Days.toISOString())
       ));
     
     const byCategory = await db
@@ -302,14 +306,14 @@ export class DocumentExpirationService {
       })
       .from(documents)
       .leftJoin(documentTypes, eq(documents.documentTypeId, documentTypes.id))
-      .where(eq(documents.isActive, true))
+      .where(eq(documents.isActive, 1))
       .groupBy(documentTypes.category);
     
     return {
       total: totalActive[0]?.count || 0,
       expired: expired[0]?.count || 0,
       expiringSoon: expiringSoon[0]?.count || 0,
-      categoryBreakdown: byCategory.reduce((acc, item) => {
+      categoryBreakdown: byCategory.reduce((acc: Record<string, number>, item: { category: string | null; count: number }) => {
         if (item.category) {
           acc[item.category] = item.count;
         }
