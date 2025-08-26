@@ -1,7 +1,3 @@
-<<<<<<< HEAD
-# Tothub
-Daycare website
-=======
 # TotHub - Daycare Management Platform
 
 [![CI Lint](https://github.com/your-username/tothub/actions/workflows/ci.yml/badge.svg?branch=main&event=pull_request)](https://github.com/your-username/tothub/actions/workflows/ci.yml)
@@ -25,10 +21,10 @@ A comprehensive daycare management platform with biometric authentication, compl
 
 This repository contains multiple applications and services:
 
-- **`tothub/`** - Main TotHub application (existing)
-- **`apps/website/`** - Marketing website built with Next.js 14
-- **`server/`** - Backend API services
-- **`shared/`** - Shared types and utilities
+- `tothub/` - Main TotHub application (existing)
+- `apps/website/` - Marketing website built with Next.js 14
+- `server/` - Backend API services
+- `shared/` - Shared types and utilities
 
 ## 🛠️ Technology Stack
 
@@ -203,14 +199,6 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - **Discussions**: Use GitHub Discussions for questions
 - **Email**: support@tothub.com (if available)
 
-## 🙏 Acknowledgments
-
-- Next.js team for the amazing framework
-- Tailwind CSS for the utility-first CSS framework
-- Playwright for the excellent testing tools
-- All contributors and users of TotHub
-
 ---
 
-**Note**: Replace `your-username` in the badge URLs with your actual GitHub username when setting up the repository.
->>>>>>> 85be053 (feat: Add comprehensive CI/CD pipeline, gitignore, and branch protection setup)
+Note: Replace `your-username` in the badge URLs with your actual GitHub username when setting up the repository.
