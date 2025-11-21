@@ -1,7 +1,7 @@
 import { Metadata } from 'next'
-// Temporary hardcoded URLs for testing
-const loginUrl = 'http://localhost:5173/login';
-const registerUrl = 'http://localhost:5173/register';
+
+const loginUrl = process.env.NEXT_PUBLIC_APP_LOGIN_URL || 'https://thetothub.com/login';
+const registerUrl = process.env.NEXT_PUBLIC_APP_REGISTER_URL || 'https://thetothub.com/register';
 
 export const metadata: Metadata = {
   title: 'Demo - TotHub',
@@ -27,10 +27,10 @@ export default function DemoPage() {
               <h2 className="text-3xl font-bold text-gray-900">
                 Interactive Demo
               </h2>
-                              <p className="mt-4 text-lg text-gray-600">
-                  Explore TotHub&apos;s features with our hands-on demo. Experience the intuitive interface, powerful tools, and seamless workflow that makes daycare management effortless.
-                </p>
-              
+              <p className="mt-4 text-lg text-gray-600">
+                Explore TotHub&apos;s features with our hands-on demo. Experience the intuitive interface, powerful tools, and seamless workflow that makes daycare management effortless.
+              </p>
+
               <div className="mt-8 space-y-6">
                 <div className="flex items-start">
                   <div className="flex-shrink-0">
@@ -86,9 +86,9 @@ export default function DemoPage() {
 
         {/* What You'll Learn Section */}
         <div className="mt-20">
-                      <h2 className="text-3xl font-bold text-gray-900 text-center">
-              What You&apos;ll Learn
-            </h2>
+          <h2 className="text-3xl font-bold text-gray-900 text-center">
+            What You&apos;ll Learn
+          </h2>
           <div className="mt-12 grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3">
             <div className="text-center">
               <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-md bg-primary-500 text-white">

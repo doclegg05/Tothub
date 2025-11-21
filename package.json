@@ -9,7 +9,7 @@
     "build:website": "pnpm --filter tothub-website build",
     "test": "pnpm --filter tothub-website test",
     "test:website": "pnpm --filter tothub-website test",
-    "test:ui": "pnpm --filter tomd:website test:ui",
+    "test:ui": "pnpm --filter tothub-website test:ui",
     "test:headed": "pnpm --filter tothub-website test:headed",
     "start": "pnpm --filter tothub-website start",
     "start:website": "pnpm --filter tothub-website start",

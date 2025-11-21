@@ -6,25 +6,17 @@ export default function Footer() {
       { name: 'Features', href: '/features' },
       { name: 'Pricing', href: '/pricing' },
       { name: 'Demo', href: '/demo' },
-      { name: 'API', href: '/api' },
     ],
     support: [
-      { name: 'Documentation', href: '/resources' },
-      { name: 'Help Center', href: '/help' },
+      { name: 'Resources', href: '/resources' },
       { name: 'Contact', href: '/contact' },
-      { name: 'Status', href: '/status' },
     ],
     company: [
-      { name: 'About', href: '/about' },
-      { name: 'Blog', href: '/blog' },
-      { name: 'Careers', href: '/careers' },
-      { name: 'Press', href: '/press' },
+      { name: 'Security', href: '/security' },
     ],
     legal: [
       { name: 'Privacy', href: '/privacy' },
       { name: 'Terms', href: '/terms' },
-      { name: 'Security', href: '/security' },
-      { name: 'Compliance', href: '/compliance' },
     ],
   }
 
@@ -118,7 +110,7 @@ export default function Footer() {
             </div>
           </div>
         </div>
-        
+
         {/* Security Notice */}
         <div className="mt-16 border-t border-white/10 pt-8 sm:mt-20 lg:mt-24">
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center space-y-4 md:space-y-0">
@@ -144,8 +136,8 @@ export default function Footer() {
           </div>
           <p className="mt-4 text-xs text-gray-400">
             © 2025 TotHub. All rights reserved. For security issues, contact{' '}
-            <a href="mailto:security@tothub.com" className="text-gray-300 hover:text-white underline">
-              security@tothub.com
+            <a href="mailto:security@thetothub.com" className="text-gray-300 hover:text-white underline">
+              security@thetothub.com
             </a>
           </p>
         </div>

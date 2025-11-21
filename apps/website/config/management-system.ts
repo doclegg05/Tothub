@@ -1,30 +1,44 @@
 // Configuration for TotHub Management System URLs
-// Update these URLs when deploying to production
+// Uses environment variables for flexibility across environments
 
+// Get base URL from environment or use defaults
+const getAppUrl = () => {
+  if (typeof window !== 'undefined') {
+    // Client-side: use NEXT_PUBLIC_ variables
+    return process.env.NEXT_PUBLIC_APP_URL || 'http://127.0.0.1:5000';
+  }
+  // Server-side: same for now, but could use different variables
+  return process.env.NEXT_PUBLIC_APP_URL || 'http://127.0.0.1:5000';
+};
+
+// Build URLs from base or use specific overrides
+const baseUrl = getAppUrl();
+
+export const loginUrl = process.env.NEXT_PUBLIC_APP_LOGIN_URL || `${baseUrl}/login`;
+export const registerUrl = process.env.NEXT_PUBLIC_APP_REGISTER_URL || `${baseUrl}/register`;
+export const dashboardUrl = process.env.NEXT_PUBLIC_APP_DASHBOARD_URL || `${baseUrl}/dashboard`;
+
+// Legacy export for backwards compatibility
 export const MANAGEMENT_SYSTEM_CONFIG = {
-  // Development URLs
   development: {
     baseUrl: 'http://127.0.0.1:5000',
     loginUrl: 'http://127.0.0.1:5000/login',
     registerUrl: 'http://127.0.0.1:5000/register',
     dashboardUrl: 'http://127.0.0.1:5000/dashboard',
   },
-  
-  // Production URLs (update these when deploying)
   production: {
-    baseUrl: 'https://app.tothub.com', // or your production domain
-    loginUrl: 'https://app.tothub.com/login',
-    registerUrl: 'https://app.tothub.com/register',
-    dashboardUrl: 'https://app.tothub.com/dashboard',
+    baseUrl: 'https://thetothub.com',
+    loginUrl: 'https://thetothub.com/login',
+    registerUrl: 'https://thetothub.com/register',
+    dashboardUrl: 'https://thetothub.com/dashboard',
   }
 };
 
-// Get the appropriate URLs based on environment
 export const getManagementSystemUrls = () => {
-  // Default to development URLs for now
-  // In production, this will be overridden by build process
-  return MANAGEMENT_SYSTEM_CONFIG.development;
+  return {
+    baseUrl,
+    loginUrl,
+    registerUrl,
+    dashboardUrl,
+  };
 };
-
-// Export individual URLs for easy use
-export const { loginUrl, registerUrl, dashboardUrl } = MANAGEMENT_SYSTEM_CONFIG.development;

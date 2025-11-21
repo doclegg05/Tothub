@@ -6,16 +6,19 @@ import Footer from './components/footer'
 
 const inter = Inter({ subsets: ['latin'] })
 
+// Get site URL from environment or use default
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
+
 export const metadata: Metadata = {
   title: 'TotHub - Daycare Management Platform',
   description: 'Comprehensive daycare management solution with biometric authentication, compliance tracking, and real-time monitoring.',
   keywords: 'daycare management, child care, biometric authentication, compliance tracking',
   authors: [{ name: 'TotHub Team' }],
-  metadataBase: new URL('http://localhost:3000'),
+  metadataBase: new URL(siteUrl),
   openGraph: {
     title: 'TotHub - Daycare Management Platform',
     description: 'Comprehensive daycare management solution with biometric authentication, compliance tracking, and real-time monitoring.',
-    url: 'https://tothub.com',
+    url: siteUrl,
     siteName: 'TotHub',
     images: [
       {
@@ -45,9 +48,11 @@ export const metadata: Metadata = {
       'max-snippet': -1,
     },
   },
-  verification: {
-    google: 'your-google-verification-code',
-  },
+  ...(process.env.NEXT_PUBLIC_GOOGLE_VERIFICATION && {
+    verification: {
+      google: process.env.NEXT_PUBLIC_GOOGLE_VERIFICATION,
+    },
+  }),
 }
 
 export default function RootLayout({
