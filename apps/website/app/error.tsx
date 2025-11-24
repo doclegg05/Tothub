@@ -1,7 +1,7 @@
 'use client'
 
-import { useEffect } from 'react'
 import Link from 'next/link'
+import { useEffect } from 'react'
 
 export default function Error({
     error,
@@ -38,7 +38,7 @@ export default function Error({
                     <h1 className="text-3xl font-extrabold text-gray-900 mb-2">Oops!</h1>
                     <h2 className="text-xl font-semibold text-gray-700 mb-4">Something went wrong</h2>
                     <p className="text-gray-600 mb-6">
-                        We encountered an unexpected error. Our team has been notified and we're working to fix it.
+                        We encountered an unexpected error. Our team has been notified and we&apos;re working to fix it.
                     </p>
                     <div className="flex flex-col sm:flex-row gap-3 justify-center">
                         <button

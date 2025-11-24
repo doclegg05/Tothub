@@ -92,7 +92,7 @@ export default function PrivacyPage() {
                         </p>
                         <ul className="list-disc pl-6 text-gray-700 space-y-2">
                             <li>GDPR (General Data Protection Regulation)</li>
-                            <li>COPPA (Children's Online Privacy Protection Act)</li>
+                            <li>COPPA (Children&apos;s Online Privacy Protection Act)</li>
                             <li>HIPAA (Health Insurance Portability and Accountability Act)</li>
                             <li>SOC 2 Type II standards</li>
                         </ul>

@@ -41,7 +41,7 @@ export default function ContactPage() {
                         Contact Us
                     </h1>
                     <p className="mt-4 text-xl text-gray-600">
-                        Have questions? We'd love to hear from you.
+                        Have questions? We&apos;d love to hear from you.
                     </p>
                 </div>
 
@@ -118,7 +118,7 @@ export default function ContactPage() {
                             {submitStatus === 'success' && (
                                 <div className="rounded-md bg-green-50 p-4">
                                     <p className="text-sm font-medium text-green-800">
-                                        Thank you! We'll get back to you soon.
+                                        Thank you! We&apos;ll get back to you soon.
                                     </p>
                                 </div>
                             )}
@@ -146,7 +146,7 @@ export default function ContactPage() {
                         <div>
                             <h2 className="text-2xl font-bold text-gray-900 mb-4">Get in Touch</h2>
                             <p className="text-gray-600 mb-6">
-                                We're here to help! Reach out to us through any of these channels.
+                                We&apos;re here to help! Reach out to us through any of these channels.
                             </p>
                         </div>
 

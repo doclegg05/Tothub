@@ -20,7 +20,7 @@ export default function TermsPage() {
                     <section className="mb-8">
                         <h2 className="text-2xl font-bold text-gray-900 mb-4">1. Acceptance of Terms</h2>
                         <p className="text-gray-700 mb-4">
-                            By accessing and using TotHub ("the Service"), you accept and agree to be bound by the terms and provisions of this agreement. If you do not agree to these terms, please do not use the Service.
+                            By accessing and using TotHub (&quot;the Service&quot;), you accept and agree to be bound by the terms and provisions of this agreement. If you do not agree to these terms, please do not use the Service.
                         </p>
                     </section>
 
