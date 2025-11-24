@@ -1,0 +1,22 @@
+node_modules/
+/dist/
+/build/
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+
+# Env
+.env
+.env.*
+
+# Java build output
+**/target/
+
+# TypeScript
+*.tsbuildinfo
+
+# OS
+.DS_Store
+Thumbs.db

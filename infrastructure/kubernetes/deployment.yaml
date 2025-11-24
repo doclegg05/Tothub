@@ -1,0 +1,122 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: tothub-app
+  labels:
+    app: tothub
+    tier: application
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: tothub
+      tier: application
+  template:
+    metadata:
+      labels:
+        app: tothub
+        tier: application
+    spec:
+      containers:
+      - name: tothub
+        image: tothub:latest
+        ports:
+        - containerPort: 3000
+        env:
+        - name: DATABASE_URL
+          valueFrom:
+            secretKeyRef:
+              name: tothub-secrets
+              key: database-url
+        - name: REDIS_URL
+          valueFrom:
+            secretKeyRef:
+              name: tothub-secrets
+              key: redis-url
+        - name: NODE_ENV
+          value: "production"
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "250m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 3000
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: 3000
+          initialDelaySeconds: 5
+          periodSeconds: 5
+        volumeMounts:
+        - name: app-logs
+          mountPath: /app/logs
+        - name: backup-storage
+          mountPath: /app/backups
+      volumes:
+      - name: app-logs
+        persistentVolumeClaim:
+          claimName: app-logs-pvc
+      - name: backup-storage
+        persistentVolumeClaim:
+          claimName: backup-storage-pvc
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: tothub-service
+  labels:
+    app: tothub
+spec:
+  type: ClusterIP
+  ports:
+  - port: 80
+    targetPort: 3000
+    protocol: TCP
+  selector:
+    app: tothub
+    tier: application
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: tothub-hpa
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: tothub-app
+  minReplicas: 2
+  maxReplicas: 10
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 70
+  - type: Resource
+    resource:
+      name: memory
+      target:
+        type: Utilization
+        averageUtilization: 80
+  behavior:
+    scaleUp:
+      stabilizationWindowSeconds: 60
+      policies:
+      - type: Percent
+        value: 100
+        periodSeconds: 15
+    scaleDown:
+      stabilizationWindowSeconds: 60
+      policies:
+      - type: Percent
+        value: 10
+        periodSeconds: 60

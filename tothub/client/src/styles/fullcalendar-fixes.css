@@ -1,0 +1,110 @@
+/* FullCalendar Navigation Arrow Fixes */
+.fc-button-primary {
+  background-color: #2563eb !important;
+  border-color: #2563eb !important;
+}
+
+.fc-button-primary:hover {
+  background-color: #1d4ed8 !important;
+  border-color: #1d4ed8 !important;
+}
+
+/* Fix navigation arrows */
+.fc-icon {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 1em;
+  height: 1em;
+  line-height: 1;
+}
+
+.fc-icon-chevron-left::before {
+  content: "‹" !important;
+  font-size: 1.8em;
+  font-weight: normal;
+  line-height: 0.5;
+  display: block;
+}
+
+.fc-icon-chevron-right::before {
+  content: "›" !important;
+  font-size: 1.8em;
+  font-weight: normal;
+  line-height: 0.5;
+  display: block;
+}
+
+.fc-icon-chevrons-left::before {
+  content: "«" !important;
+  font-size: 1.5em;
+  font-weight: normal;
+  line-height: 0.6;
+  display: block;
+}
+
+.fc-icon-chevrons-right::before {
+  content: "»" !important;
+  font-size: 1.5em;
+  font-weight: normal;
+  line-height: 0.6;
+  display: block;
+}
+
+/* Ensure proper button styling */
+.fc-toolbar-chunk {
+  display: flex;
+  align-items: center;
+}
+
+.fc-button {
+  padding: 0.25em 0.5em;
+  font-size: 1em;
+  line-height: 1.5;
+}
+
+.fc-button-group > .fc-button {
+  margin-left: -1px;
+}
+
+.fc-button-group > .fc-button:first-child {
+  margin-left: 0;
+}
+
+/* Resource timeline specific fixes */
+.fc-resource-timeline .fc-button {
+  background-color: #3b82f6;
+  border-color: #3b82f6;
+  color: white;
+}
+
+.fc-resource-timeline .fc-button:hover {
+  background-color: #2563eb;
+  border-color: #2563eb;
+}
+
+.fc-resource-timeline .fc-button:disabled {
+  background-color: #e5e7eb;
+  border-color: #e5e7eb;
+  color: #9ca3af;
+}
+
+/* Dark mode support */
+.dark .fc-button-primary {
+  background-color: #3b82f6 !important;
+  border-color: #3b82f6 !important;
+}
+
+.dark .fc-button-primary:hover {
+  background-color: #2563eb !important;
+  border-color: #2563eb !important;
+}
+
+.dark .fc-toolbar-title {
+  color: #f3f4f6;
+}
+
+.dark .fc-col-header-cell-cushion,
+.dark .fc-daygrid-day-number {
+  color: #f3f4f6;
+}

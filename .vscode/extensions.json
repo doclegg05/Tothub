@@ -1,0 +1,17 @@
+{
+  "recommendations": [
+    "esbenp.prettier-vscode",
+    "ms-vscode.vscode-typescript-next",
+    "bradlc.vscode-tailwindcss",
+    "ms-vscode.vscode-json",
+    "ms-vscode.vscode-eslint",
+    "ms-vscode.vscode-prettier",
+    "formulahendry.auto-rename-tag",
+    "christian-kohler.path-intellisense",
+    "ms-vscode.vscode-js-debug",
+    "ms-vscode.vscode-js-debug-companion",
+    "ms-vscode.vscode-js-debug-nightly",
+    "ms-vscode.vscode-js-debug-companion-nightly"
+  ]
+}
+

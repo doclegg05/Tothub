@@ -1,0 +1,171 @@
+{
+  "$schema": "./ruleset.schema.json",
+  "id": "WV-2025.08",
+  "state": "WV",
+  "version": "2025.08",
+  "effectiveDate": "2025-08-01",
+  "lastUpdated": "2025-08-12T10:00:00Z",
+  "source": "WV Department of Health and Human Resources - Child Care Licensing",
+  "rules": {
+    "ageGroups": [
+      {
+        "name": "Infant",
+        "minAge": 0,
+        "maxAge": 12,
+        "unit": "months",
+        "description": "Children from birth to 12 months of age"
+      },
+      {
+        "name": "Young Toddler",
+        "minAge": 12,
+        "maxAge": 24,
+        "unit": "months",
+        "description": "Children from 12 to 24 months of age"
+      },
+      {
+        "name": "Older Toddler",
+        "minAge": 24,
+        "maxAge": 36,
+        "unit": "months",
+        "description": "Children from 24 to 36 months of age"
+      },
+      {
+        "name": "Preschool",
+        "minAge": 3,
+        "maxAge": 5,
+        "unit": "years",
+        "description": "Children from 3 to 5 years of age"
+      },
+      {
+        "name": "School Age",
+        "minAge": 5,
+        "maxAge": 12,
+        "unit": "years",
+        "description": "Children from 5 to 12 years of age"
+      }
+    ],
+    "ratios": [
+      {
+        "ageGroup": "Infant",
+        "maxRatio": "1:4",
+        "maxGroupSize": 8,
+        "notes": "Maximum 2 infants per caregiver in mixed-age groups",
+        "exceptions": [
+          {
+            "condition": "Mixed-age group with older children",
+            "modifiedRatio": "1:6",
+            "modifiedGroupSize": 12
+          }
+        ]
+      },
+      {
+        "ageGroup": "Young Toddler",
+        "maxRatio": "1:6",
+        "maxGroupSize": 12,
+        "notes": "Toddlers must be in separate groups from infants when possible"
+      },
+      {
+        "ageGroup": "Older Toddler",
+        "maxRatio": "1:8",
+        "maxGroupSize": 16,
+        "notes": "May be combined with preschool age in mixed-age groups"
+      },
+      {
+        "ageGroup": "Preschool",
+        "maxRatio": "1:10",
+        "maxGroupSize": 20,
+        "notes": "Standard preschool ratio for 3-5 year olds"
+      },
+      {
+        "ageGroup": "School Age",
+        "maxRatio": "1:15",
+        "maxGroupSize": 30,
+        "notes": "School age children may have higher ratios during school hours"
+      }
+    ],
+    "staffQualifications": [
+      {
+        "position": "Director",
+        "requiredEducation": "Bachelor's Degree in Early Childhood Education or related field",
+        "requiredExperience": "3 years in licensed childcare",
+        "requiredCertifications": ["CPR", "First Aid", "Child Development Associate"],
+        "notes": "Director must be on-site at least 50% of operating hours"
+      },
+      {
+        "position": "Lead Teacher",
+        "requiredEducation": "Associate's Degree in Early Childhood Education or related field",
+        "requiredExperience": "2 years in licensed childcare",
+        "requiredCertifications": ["CPR", "First Aid"],
+        "notes": "Lead teachers must have primary responsibility for curriculum planning"
+      },
+      {
+        "position": "Assistant Teacher",
+        "requiredEducation": "High School Diploma",
+        "requiredExperience": "1 year in licensed childcare",
+        "requiredCertifications": ["CPR", "First Aid"],
+        "notes": "Assistant teachers work under supervision of lead teacher"
+      },
+      {
+        "position": "Aide",
+        "requiredEducation": "High School Diploma or equivalent",
+        "requiredExperience": "None required",
+        "requiredCertifications": ["CPR", "First Aid"],
+        "notes": "Aides must be at least 18 years old and work under direct supervision"
+      }
+    ],
+    "facilityRequirements": {
+      "minimumSquareFootage": {
+        "indoor": 35,
+        "outdoor": 75
+      },
+      "safetyRequirements": [
+        "Fenced outdoor play area with self-closing gates",
+        "Emergency exit plans posted in each room",
+        "First aid kit in each room and vehicle",
+        "Fire extinguishers accessible on each floor",
+        "Smoke detectors in all sleeping areas",
+        "Carbon monoxide detectors if gas appliances present",
+        "Emergency contact information posted",
+        "Evacuation procedures practiced monthly"
+      ],
+      "healthRequirements": [
+        "Handwashing stations in each room with warm water",
+        "Daily cleaning and sanitizing of all surfaces",
+        "Illness exclusion policies posted and enforced",
+        "Medication administration training for designated staff",
+        "Food safety training for kitchen staff",
+        "Regular health inspections and documentation",
+        "Immunization records maintained for all children",
+        "Health assessment forms completed annually"
+      ]
+    },
+    "operatingHours": {
+      "maxHoursPerDay": 12,
+      "maxDaysPerWeek": 6,
+      "overnightCare": false,
+      "weekendCare": true
+    },
+    "specialNeeds": {
+      "inclusionRatio": "1:3",
+      "requiredTraining": [
+        "Special needs awareness training",
+        "Individualized care plan development",
+        "Adaptive equipment training",
+        "Communication strategies for non-verbal children"
+      ],
+      "documentation": [
+        "Individualized Family Service Plan (IFSP)",
+        "Individualized Education Program (IEP)",
+        "Medical documentation from healthcare providers",
+        "Behavioral intervention plans if applicable"
+      ]
+    }
+  },
+  "metadata": {
+    "createdBy": "TotHub Compliance Team",
+    "reviewedBy": "WV Licensing Specialist",
+    "approvalStatus": "approved",
+    "tags": ["west-virginia", "childcare", "licensing", "ratios", "qualifications"],
+    "notes": "This ruleset reflects current WV childcare licensing requirements as of August 2025. Regular updates should be checked against official state sources."
+  }
+}

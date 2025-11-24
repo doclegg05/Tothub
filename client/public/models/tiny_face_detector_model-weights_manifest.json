@@ -1,0 +1,12 @@
+{
+  "modelTopology": {},
+  "weightsManifest": [
+    {
+      "paths": ["./tiny_face_detector_model-shard1"],
+      "weights": []
+    }
+  ],
+  "format": "layers-model",
+  "generatedBy": "face-api.js",
+  "convertedBy": "TensorFlow.js Converter v1.0.0"
+}

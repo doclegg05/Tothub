@@ -1,0 +1,58 @@
+/* Additional styling improvements for the sidebar */
+.sidebar-section {
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-5px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Smooth transitions for collapsible sections */
+.sidebar-collapse-content {
+  overflow: hidden;
+  transition: max-height 0.3s ease-in-out;
+}
+
+/* Visual hierarchy improvements */
+.sidebar-section-title {
+  letter-spacing: 0.05em;
+  font-weight: 600;
+}
+
+/* Active state improvements */
+.sidebar-active-item {
+  position: relative;
+  overflow: hidden;
+}
+
+.sidebar-active-item::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background: linear-gradient(to bottom, #3b82f6, #2563eb);
+  border-radius: 0 2px 2px 0;
+}
+
+/* Hover effects */
+.sidebar-item:hover {
+  transform: translateX(2px);
+  transition: all 0.2s ease;
+}
+
+/* Responsive improvements for smaller screens */
+@media (max-width: 768px) {
+  .sidebar {
+    width: 100%;
+    max-width: 280px;
+  }
+}

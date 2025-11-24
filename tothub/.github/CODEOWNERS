@@ -1,0 +1,48 @@
+# TotHub Code Ownership
+
+# Core platform and architecture
+/docs/architecture.md @tothub/architects
+/server/ @tothub/backend-team
+/shared/ @tothub/backend-team
+
+# Frontend application
+/client/ @tothub/frontend-team
+/src/ @tothub/frontend-team
+
+# Security and authentication
+/server/middleware/auth.ts @tothub/security-team
+/server/services/securityService.ts @tothub/security-team
+/server/services/mfaService.ts @tothub/security-team
+
+# Database and data layer
+/server/db.ts @tothub/backend-team
+/server/storage.ts @tothub/backend-team
+/shared/schema.ts @tothub/backend-team
+
+# Memory management and performance
+/server/services/autoRestartService.ts @tothub/devops-team
+/server/services/monitoringService.ts @tothub/devops-team
+/server/services/memoryLeakDetector.ts @tothub/devops-team
+
+# Testing and quality
+/tests/ @tothub/qa-team
+/.github/workflows/ @tothub/devops-team
+/vitest.config.ts @tothub/qa-team
+
+# Configuration and build
+/package.json @tothub/devops-team
+/vite.config.ts @tothub/frontend-team
+/tsconfig.json @tothub/backend-team
+/tailwind.config.ts @tothub/frontend-team
+
+# Documentation
+/docs/ @tothub/tech-writers
+/README.md @tothub/tech-writers
+
+# Infrastructure and deployment
+/infrastructure/ @tothub/devops-team
+/Dockerfile @tothub/devops-team
+/docker-compose*.yml @tothub/devops-team
+
+# All other files
+* @tothub/core-team

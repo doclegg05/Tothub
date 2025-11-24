@@ -1,0 +1,108 @@
+<svg viewBox="0 0 800 600" xmlns="http://www.w3.org/2000/svg">
+  <!-- Browser Window -->
+  <rect width="800" height="600" rx="8" fill="#f8fafc"/>
+  
+  <!-- Header -->
+  <rect width="800" height="60" fill="#1e40af" opacity="0.9"/>
+  <text x="30" y="38" fill="white" font-family="Arial" font-size="20" font-weight="bold">KidSign Pro</text>
+  
+  <!-- Navigation Icons -->
+  <circle cx="720" cy="30" r="18" fill="#60a5fa" opacity="0.3"/>
+  <circle cx="670" cy="30" r="18" fill="#60a5fa" opacity="0.3"/>
+  <circle cx="620" cy="30" r="18" fill="#60a5fa" opacity="0.3"/>
+  
+  <!-- Sidebar -->
+  <rect x="0" y="60" width="200" height="540" fill="#f1f5f9"/>
+  
+  <!-- Menu Items -->
+  <rect x="10" y="80" width="180" height="40" rx="6" fill="#3b82f6" opacity="0.1"/>
+  <rect x="20" y="90" width="60" height="20" rx="4" fill="#3b82f6"/>
+  
+  <rect x="20" y="140" width="100" height="8" rx="4" fill="#cbd5e1"/>
+  <rect x="20" y="170" width="120" height="8" rx="4" fill="#cbd5e1"/>
+  <rect x="20" y="200" width="90" height="8" rx="4" fill="#cbd5e1"/>
+  <rect x="20" y="230" width="110" height="8" rx="4" fill="#cbd5e1"/>
+  
+  <!-- Main Content Area -->
+  <rect x="200" y="60" width="600" height="540" fill="white"/>
+  
+  <!-- Dashboard Title -->
+  <text x="230" y="100" fill="#1e293b" font-family="Arial" font-size="24" font-weight="bold">Dashboard Overview</text>
+  
+  <!-- Stats Cards -->
+  <g transform="translate(230, 130)">
+    <!-- Card 1 -->
+    <rect width="125" height="100" rx="8" fill="#f0f9ff" stroke="#bfdbfe" stroke-width="1"/>
+    <text x="20" y="40" fill="#3b82f6" font-family="Arial" font-size="28" font-weight="bold">42</text>
+    <text x="20" y="60" fill="#64748b" font-family="Arial" font-size="12">Children Present</text>
+    <rect x="20" y="75" width="85" height="6" rx="3" fill="#3b82f6" opacity="0.2"/>
+    <rect x="20" y="75" width="65" height="6" rx="3" fill="#3b82f6"/>
+    
+    <!-- Card 2 -->
+    <rect x="145" width="125" height="100" rx="8" fill="#f0fdf4" stroke="#bbf7d0" stroke-width="1"/>
+    <text x="165" y="40" fill="#22c55e" font-family="Arial" font-size="28" font-weight="bold">12</text>
+    <text x="165" y="60" fill="#64748b" font-family="Arial" font-size="12">Staff On Duty</text>
+    <circle cx="235" cy="75" r="15" fill="#22c55e" opacity="0.2"/>
+    <circle cx="235" cy="75" r="10" fill="#22c55e"/>
+    
+    <!-- Card 3 -->
+    <rect x="290" width="125" height="100" rx="8" fill="#fef3c7" stroke="#fde68a" stroke-width="1"/>
+    <text x="310" y="40" fill="#f59e0b" font-family="Arial" font-size="28" font-weight="bold">4:1</text>
+    <text x="310" y="60" fill="#64748b" font-family="Arial" font-size="12">Current Ratio</text>
+    <rect x="310" y="70" width="85" height="20" rx="4" fill="#f59e0b" opacity="0.1"/>
+    <text x="320" y="84" fill="#f59e0b" font-family="Arial" font-size="11">Compliant</text>
+    
+    <!-- Card 4 -->
+    <rect x="435" width="125" height="100" rx="8" fill="#fce7f3" stroke="#fbcfe8" stroke-width="1"/>
+    <text x="455" y="40" fill="#ec4899" font-family="Arial" font-size="28" font-weight="bold">3</text>
+    <text x="455" y="60" fill="#64748b" font-family="Arial" font-size="12">Alerts</text>
+    <circle cx="530" cy="40" r="4" fill="#ef4444"/>
+  </g>
+  
+  <!-- Chart Area -->
+  <rect x="230" y="260" width="270" height="200" rx="8" fill="#f8fafc" stroke="#e2e8f0" stroke-width="1"/>
+  <text x="250" y="290" fill="#1e293b" font-family="Arial" font-size="16" font-weight="bold">Attendance Trends</text>
+  
+  <!-- Chart Lines -->
+  <polyline points="260,420 290,400 320,410 350,380 380,390 410,370 440,375 470,360" 
+            fill="none" stroke="#3b82f6" stroke-width="2"/>
+  <polyline points="260,415 290,410 320,405 350,400 380,395 410,390 440,385 470,380" 
+            fill="none" stroke="#10b981" stroke-width="2" opacity="0.6"/>
+  
+  <!-- Activity Feed -->
+  <rect x="520" y="260" width="250" height="200" rx="8" fill="#f8fafc" stroke="#e2e8f0" stroke-width="1"/>
+  <text x="540" y="290" fill="#1e293b" font-family="Arial" font-size="16" font-weight="bold">Recent Activity</text>
+  
+  <!-- Activity Items -->
+  <g transform="translate(540, 310)">
+    <circle cx="0" cy="0" r="4" fill="#3b82f6"/>
+    <rect x="15" y="-5" width="120" height="10" rx="5" fill="#cbd5e1"/>
+    
+    <circle cx="0" cy="25" r="4" fill="#10b981"/>
+    <rect x="15" y="20" width="140" height="10" rx="5" fill="#cbd5e1"/>
+    
+    <circle cx="0" cy="50" r="4" fill="#f59e0b"/>
+    <rect x="15" y="45" width="100" height="10" rx="5" fill="#cbd5e1"/>
+    
+    <circle cx="0" cy="75" r="4" fill="#ec4899"/>
+    <rect x="15" y="70" width="130" height="10" rx="5" fill="#cbd5e1"/>
+  </g>
+  
+  <!-- Quick Actions -->
+  <rect x="230" y="480" width="540" height="100" rx="8" fill="#f0f9ff" stroke="#bfdbfe" stroke-width="1"/>
+  <text x="250" y="510" fill="#1e293b" font-family="Arial" font-size="16" font-weight="bold">Quick Actions</text>
+  
+  <!-- Action Buttons -->
+  <rect x="250" y="525" width="120" height="40" rx="6" fill="#3b82f6"/>
+  <text x="285" y="548" fill="white" font-family="Arial" font-size="12">Check In</text>
+  
+  <rect x="385" y="525" width="120" height="40" rx="6" fill="#10b981"/>
+  <text x="415" y="548" fill="white" font-family="Arial" font-size="12">New Child</text>
+  
+  <rect x="520" y="525" width="120" height="40" rx="6" fill="#8b5cf6"/>
+  <text x="555" y="548" fill="white" font-family="Arial" font-size="12">Reports</text>
+  
+  <!-- Floating Elements -->
+  <circle cx="750" cy="550" r="25" fill="#3b82f6"/>
+  <text x="745" y="557" fill="white" font-family="Arial" font-size="20">?</text>
+</svg>
