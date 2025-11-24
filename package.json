@@ -5,28 +5,19 @@
   "private": true,
   "type": "module",
   "license": "MIT",
+  "packageManager": "pnpm@8.0.0",
   "workspaces": [
     "apps/*"
   ],
   "scripts": {
-    "dev": "tsx server/index.ts",
-    "build": "vite build && esbuild server/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist",
-    "start": "node --expose-gc dist/index.js",
-    "check": "tsc",
-    "db:push": "drizzle-kit push",
-    "gen:openapi": "openapi-typescript docs/openapi.yaml -o shared/openapi-types.d.ts",
-    "test": "vitest --run",
-    "test:ui": "vitest --ui",
-    "dev:website": "pnpm --filter tothub-website dev",
-    "build:website": "pnpm --filter tothub-website build",
-    "start:website": "pnpm --filter tothub-website start",
-    "test:website": "pnpm --filter tothub-website test",
-    "test:ui:website": "pnpm --filter tothub-website test:ui",
-    "test:headed": "pnpm --filter tothub-website test:headed",
-    "lint": "pnpm --filter tothub-website lint",
-    "typecheck": "pnpm --filter tothub-website typecheck",
-    "audit": "pnpm audit",
-    "audit:fix": "pnpm audit --fix"
+    "dev": "turbo run dev",
+    "build": "turbo run build",
+    "lint": "turbo run lint",
+    "typecheck": "turbo run typecheck",
+    "test": "turbo run test",
+    "clean": "turbo run clean",
+    "dev:web": "pnpm --filter @tothub/web dev",
+    "build:web": "pnpm --filter @tothub/web build"
   },
   "dependencies": {
     "@fullcalendar/daygrid": "^6.1.18",
@@ -161,6 +152,7 @@
     "postcss": "^8.4.47",
     "tailwindcss": "^3.4.17",
     "tsx": "^4.20.3",
+    "turbo": "^2.6.1",
     "typescript": "^5.6.3",
     "vite": "^5.4.19",
     "vitest": "^3.2.4"

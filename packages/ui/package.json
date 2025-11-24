@@ -1,0 +1,22 @@
+{
+  "name": "@tothub/ui",
+  "version": "0.0.0",
+  "private": true,
+  "exports": {
+    "./button": "./src/button.tsx",
+    "./card": "./src/card.tsx"
+  },
+  "scripts": {
+    "lint": "eslint . --max-warnings 0",
+    "typecheck": "tsc --noEmit"
+  },
+  "peerDependencies": {
+    "react": "^18.3.1"
+  },
+  "devDependencies": {
+    "@tothub/eslint-config": "workspace:*",
+    "@tothub/typescript-config": "workspace:*",
+    "@types/react": "^18.3.11",
+    "typescript": "^5.6.3"
+  }
+}
