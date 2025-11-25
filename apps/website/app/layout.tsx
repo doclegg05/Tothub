@@ -1,10 +1,13 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import { Plus_Jakarta_Sans } from "next/font/google";
 import Footer from "./components/footer";
 import Navigation from "./components/navigation";
 import "./globals.css";
 
-const inter = Inter({ subsets: ["latin"] });
+const jakarta = Plus_Jakarta_Sans({
+  subsets: ["latin"],
+  variable: "--font-jakarta",
+});
 
 // Get site URL from environment or use default
 const siteUrl =
@@ -70,8 +73,8 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className={inter.className}>
-        <div className="min-h-screen bg-gray-50 flex flex-col">
+      <body className={`${jakarta.variable} font-sans`}>
+        <div className="min-h-screen bg-canvas flex flex-col">
           <Navigation />
           <main className="flex-grow">{children}</main>
           <Footer />

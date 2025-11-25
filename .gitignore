@@ -59,7 +59,7 @@ jspm_packages/
 out
 .nuxt
 dist
-public
+
 
 # Storybook
 .out
