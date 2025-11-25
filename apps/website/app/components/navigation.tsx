@@ -1,37 +1,39 @@
-'use client';
+"use client";
 
-import Link from 'next/link';
-import { useState } from 'react';
-import { loginUrl } from '../../config/management-system';
+import Link from "next/link";
+import { useState } from "react";
+import { loginUrl } from "../../config/management-system";
 
 export default function Navigation() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   const navigation = [
-    { name: 'Features', href: '/features' },
-    { name: 'Pricing', href: '/pricing' },
-    { name: 'Security', href: '/security' },
-    { name: 'Resources', href: '/resources' },
-    { name: 'Demo', href: '/demo' },
+    { name: "Features", href: "/features" },
+    { name: "Pricing", href: "/pricing" },
+    { name: "Security", href: "/security" },
+    { name: "Resources", href: "/resources" },
+    { name: "Demo", href: "/demo" },
   ];
 
   return (
-    <nav className="bg-white shadow-sm">
+    <nav className="bg-white/80 backdrop-blur-md border-b border-gray-200 sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-16">
           <div className="flex items-center">
             <Link href="/" className="flex-shrink-0 flex items-center">
-              <span className="text-2xl font-bold text-primary-600">TotHub</span>
+              <span className="text-2xl font-bold text-primary-700">
+                TotHub
+              </span>
             </Link>
           </div>
-          
+
           {/* Desktop Navigation */}
           <div className="hidden md:flex md:items-center md:space-x-8">
             {navigation.map((item) => (
               <Link
                 key={item.name}
                 href={item.href}
-                className="text-gray-700 hover:text-primary-600 px-3 py-2 text-sm font-medium transition-colors"
+                className="text-gray-600 hover:text-gray-900 px-3 py-2 text-sm font-medium transition-colors"
               >
                 {item.name}
               </Link>
@@ -40,13 +42,13 @@ export default function Navigation() {
               href={loginUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-gray-700 hover:text-primary-600 px-3 py-2 text-sm font-medium transition-colors"
+              className="text-gray-600 hover:text-gray-900 px-3 py-2 text-sm font-medium transition-colors"
             >
               Login
             </a>
             <Link
               href="/demo"
-              className="bg-primary-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-primary-700 transition-colors"
+              className="bg-primary-700 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-primary-800 transition-colors shadow-sm"
             >
               Get Started
             </Link>
@@ -60,12 +62,32 @@ export default function Navigation() {
             >
               <span className="sr-only">Open main menu</span>
               {isMenuOpen ? (
-                <svg className="block h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                <svg
+                  className="block h-6 w-6"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M6 18L18 6M6 6l12 12"
+                  />
                 </svg>
               ) : (
-                <svg className="block h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                <svg
+                  className="block h-6 w-6"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M4 6h16M4 12h16M4 18h16"
+                  />
                 </svg>
               )}
             </button>
@@ -81,7 +103,7 @@ export default function Navigation() {
               <Link
                 key={item.name}
                 href={item.href}
-                className="text-gray-700 hover:text-primary-600 block px-3 py-2 text-base font-medium"
+                className="text-gray-600 hover:text-gray-900 block px-3 py-2 text-base font-medium"
                 onClick={() => setIsMenuOpen(false)}
               >
                 {item.name}
@@ -91,14 +113,14 @@ export default function Navigation() {
               href={loginUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-gray-700 hover:text-primary-600 block px-3 py-2 text-base font-medium"
+              className="text-gray-600 hover:text-gray-900 block px-3 py-2 text-base font-medium"
               onClick={() => setIsMenuOpen(false)}
             >
               Login
             </a>
             <Link
               href="/demo"
-              className="bg-primary-600 text-white block px-3 py-2 rounded-md text-base font-medium hover:bg-primary-700"
+              className="bg-primary-700 text-white block px-3 py-2 rounded-md text-base font-medium hover:bg-primary-800"
               onClick={() => setIsMenuOpen(false)}
             >
               Get Started

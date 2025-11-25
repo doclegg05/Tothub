@@ -29,7 +29,7 @@ export default function FAQ() {
           <h2 className="text-primary font-semibold tracking-wide uppercase text-sm">
             FAQ
           </h2>
-          <p className="mt-2 text-3xl font-bold tracking-tight text-stone-800 sm:text-4xl">
+          <p className="mt-2 text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl">
             Frequently Asked Questions
           </p>
         </div>
@@ -38,9 +38,9 @@ export default function FAQ() {
           {faqs.map((faq, index) => (
             <details
               key={index}
-              className="group bg-surface rounded-card shadow-soft-sm border border-stone-200 overflow-hidden"
+              className="group bg-surface rounded-card shadow-sm border border-gray-200 overflow-hidden"
             >
-              <summary className="flex justify-between items-center font-medium cursor-pointer list-none p-6 text-stone-800 hover:bg-stone-50 transition-colors">
+              <summary className="flex justify-between items-center font-medium cursor-pointer list-none p-6 text-gray-900 hover:bg-gray-50 transition-colors">
                 <span>{faq.question}</span>
                 <span className="transition group-open:rotate-180">
                   <svg
@@ -58,7 +58,7 @@ export default function FAQ() {
                   </svg>
                 </span>
               </summary>
-              <div className="text-stone-600 px-6 pb-6 pt-0 leading-relaxed">
+              <div className="text-gray-600 px-6 pb-6 pt-0 leading-relaxed">
                 {faq.answer}
               </div>
             </details>

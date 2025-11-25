@@ -3,14 +3,13 @@
 @tailwind utilities;
 
 :root {
-  /* Warm Paper Theme */
-  --canvas: 253 252 248; /* #FDFCF8 */
+  /* Linear Light Theme */
+  --canvas: 249 250 251; /* #F9FAFB Cool Gray 50 */
   --surface: 255 255 255; /* #FFFFFF */
   --primary: 15 118 110; /* #0F766E Deep Teal */
-  --secondary: 255 140 120; /* #FF8C78 Soft Coral */
-  --foreground: 41 37 36; /* #292524 Stone 800 */
-  --muted: 120 113 108; /* #78716C Stone 500 */
-  --border: 231 229 228; /* #E7E5E4 Stone 200 */
+  --foreground: 17 24 39; /* #111827 Gray 900 */
+  --muted: 107 114 128; /* #6B7280 Gray 500 */
+  --border: 229 231 235; /* #E5E7EB Gray 200 */
 }
 
 body {

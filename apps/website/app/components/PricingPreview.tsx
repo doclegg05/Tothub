@@ -56,10 +56,10 @@ export default function PricingPreview() {
           <h2 className="text-primary font-semibold tracking-wide uppercase text-sm">
             Pricing
           </h2>
-          <p className="mt-2 text-3xl font-bold tracking-tight text-stone-800 sm:text-4xl">
+          <p className="mt-2 text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl">
             Simple, transparent pricing
           </p>
-          <p className="mt-4 text-lg text-stone-500 max-w-2xl mx-auto">
+          <p className="mt-4 text-lg text-gray-500 max-w-2xl mx-auto">
             Choose the plan that fits your center&apos;s needs. No hidden fees.
           </p>
         </div>
@@ -70,29 +70,25 @@ export default function PricingPreview() {
               key={plan.name}
               className={`relative rounded-card p-8 border ${
                 plan.featured
-                  ? "border-primary shadow-soft-lg bg-canvas ring-1 ring-primary"
-                  : "border-stone-200 bg-surface shadow-soft-sm hover:shadow-soft-md"
+                  ? "border-primary-600 shadow-lg bg-white ring-1 ring-primary-600"
+                  : "border-gray-200 bg-white shadow-sm hover:shadow-md"
               } transition-all duration-300 flex flex-col`}
             >
               {plan.featured && (
-                <div className="absolute top-0 right-0 -mt-4 mr-4 px-4 py-1 bg-secondary text-white text-xs font-bold uppercase tracking-wide rounded-full shadow-sm">
+                <div className="absolute top-0 right-0 -mt-4 mr-4 px-4 py-1 bg-primary-600 text-white text-xs font-bold uppercase tracking-wide rounded-full shadow-sm">
                   Most Popular
                 </div>
               )}
               <div className="mb-6">
-                <h3 className="text-xl font-bold text-stone-800">
-                  {plan.name}
-                </h3>
-                <p className="mt-2 text-stone-500 text-sm">
-                  {plan.description}
-                </p>
+                <h3 className="text-xl font-bold text-gray-900">{plan.name}</h3>
+                <p className="mt-2 text-gray-500 text-sm">{plan.description}</p>
               </div>
               <div className="mb-6">
-                <span className="text-4xl font-bold text-stone-800">
+                <span className="text-4xl font-bold text-gray-900">
                   {plan.price}
                 </span>
                 {plan.period && (
-                  <span className="text-stone-500">{plan.period}</span>
+                  <span className="text-gray-500">{plan.period}</span>
                 )}
               </div>
               <ul className="space-y-4 mb-8 flex-1">
@@ -111,7 +107,7 @@ export default function PricingPreview() {
                         d="M5 13l4 4L19 7"
                       />
                     </svg>
-                    <span className="text-stone-600 text-sm">{feature}</span>
+                    <span className="text-gray-600 text-sm">{feature}</span>
                   </li>
                 ))}
               </ul>
@@ -119,8 +115,8 @@ export default function PricingPreview() {
                 href={plan.href}
                 className={`w-full flex items-center justify-center px-6 py-3 border border-transparent text-base font-medium rounded-button transition-colors ${
                   plan.featured
-                    ? "bg-primary text-white hover:bg-primary-600"
-                    : "bg-stone-100 text-stone-800 hover:bg-stone-200"
+                    ? "bg-primary-700 text-white hover:bg-primary-800"
+                    : "bg-gray-50 text-gray-900 hover:bg-gray-100"
                 }`}
               >
                 {plan.cta}

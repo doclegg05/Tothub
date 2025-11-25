@@ -20,13 +20,13 @@ export default function HomePage() {
           <div className="relative z-10 pb-8 bg-canvas sm:pb-16 md:pb-20 lg:max-w-2xl lg:w-full lg:pb-28 xl:pb-32">
             <main className="mt-10 mx-auto max-w-7xl px-4 sm:mt-12 sm:px-6 md:mt-16 lg:mt-20 lg:px-8 xl:mt-28">
               <div className="sm:text-center lg:text-left">
-                <h1 className="text-4xl tracking-tight font-extrabold text-stone-900 sm:text-5xl md:text-6xl">
+                <h1 className="text-5xl tracking-tight font-extrabold text-gray-900 sm:text-6xl">
                   <span className="block xl:inline">Transform Your</span>{" "}
                   <span className="block text-primary xl:inline">
                     Daycare Operations
                   </span>
                 </h1>
-                <p className="mt-3 text-base text-stone-500 sm:mt-5 sm:text-lg sm:max-w-xl sm:mx-auto md:mt-5 md:text-xl lg:mx-0">
+                <p className="mt-3 text-base text-gray-500 sm:mt-5 sm:text-lg sm:max-w-xl sm:mx-auto md:mt-5 md:text-xl lg:mx-0">
                   Streamline your daycare with our comprehensive management
                   platform. From biometric check-ins to compliance tracking,
                   we&apos;ve got you covered.
@@ -35,7 +35,7 @@ export default function HomePage() {
                   <div className="rounded-md shadow">
                     <Link
                       href="/demo"
-                      className="w-full flex items-center justify-center px-8 py-3 border border-transparent text-base font-medium rounded-button text-white bg-primary hover:bg-primary-600 md:py-4 md:text-lg md:px-10 transition-colors"
+                      className="w-full flex items-center justify-center px-8 py-3 border border-transparent text-base font-medium rounded-button text-white bg-primary-700 hover:bg-primary-800 shadow-sm md:py-4 md:text-lg md:px-10 transition-all"
                     >
                       Get Started
                     </Link>
@@ -43,7 +43,7 @@ export default function HomePage() {
                   <div className="mt-3 sm:mt-0 sm:ml-3">
                     <Link
                       href="/features"
-                      className="w-full flex items-center justify-center px-8 py-3 border border-transparent text-base font-medium rounded-button text-primary bg-primary-50 hover:bg-primary-100 md:py-4 md:text-lg md:px-10 transition-colors"
+                      className="w-full flex items-center justify-center px-8 py-3 border border-gray-200 text-base font-medium rounded-button text-gray-700 bg-white hover:bg-gray-50 md:py-4 md:text-lg md:px-10 transition-all"
                     >
                       Learn More
                     </Link>
@@ -56,21 +56,21 @@ export default function HomePage() {
       </div>
 
       {/* Features Preview */}
-      <div className="py-12 bg-stone-50">
+      <div className="py-12 bg-canvas">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="lg:text-center">
             <h2 className="text-base text-primary font-semibold tracking-wide uppercase">
               Features
             </h2>
-            <p className="mt-2 text-3xl leading-8 font-extrabold tracking-tight text-stone-900 sm:text-4xl">
+            <p className="mt-2 text-3xl leading-8 font-extrabold tracking-tight text-gray-900 sm:text-4xl">
               Everything you need to run your daycare
             </p>
           </div>
 
           <div className="mt-10">
             <div className="space-y-10 md:space-y-0 md:grid md:grid-cols-2 md:gap-x-8 md:gap-y-10">
-              <div className="relative">
-                <div className="absolute flex items-center justify-center h-12 w-12 rounded-md bg-primary text-white">
+              <div className="relative bg-white p-6 rounded-2xl border border-gray-200 shadow-sm hover:shadow-md transition-all">
+                <div className="absolute flex items-center justify-center h-12 w-12 rounded-md bg-primary-50 text-primary-700">
                   <svg
                     className="h-6 w-6"
                     fill="none"
@@ -85,17 +85,17 @@ export default function HomePage() {
                     />
                   </svg>
                 </div>
-                <p className="ml-16 text-lg leading-6 font-medium text-stone-900">
+                <p className="ml-16 text-lg leading-6 font-medium text-gray-900">
                   Biometric Authentication
                 </p>
-                <p className="mt-2 ml-16 text-base text-stone-500">
+                <p className="mt-2 ml-16 text-base text-gray-500">
                   Secure check-ins with fingerprint and facial recognition
                   technology.
                 </p>
               </div>
 
-              <div className="relative">
-                <div className="absolute flex items-center justify-center h-12 w-12 rounded-md bg-primary text-white">
+              <div className="relative bg-white p-6 rounded-2xl border border-gray-200 shadow-sm hover:shadow-md transition-all">
+                <div className="absolute flex items-center justify-center h-12 w-12 rounded-md bg-primary-50 text-primary-700">
                   <svg
                     className="h-6 w-6"
                     fill="none"
@@ -110,17 +110,17 @@ export default function HomePage() {
                     />
                   </svg>
                 </div>
-                <p className="ml-16 text-lg leading-6 font-medium text-stone-900">
+                <p className="ml-16 text-lg leading-6 font-medium text-gray-900">
                   Compliance Tracking
                 </p>
-                <p className="mt-2 ml-16 text-base text-stone-500">
+                <p className="mt-2 ml-16 text-base text-gray-500">
                   Stay compliant with state regulations and licensing
                   requirements.
                 </p>
               </div>
 
-              <div className="relative">
-                <div className="absolute flex items-center justify-center h-12 w-12 rounded-md bg-primary text-white">
+              <div className="relative bg-white p-6 rounded-2xl border border-gray-200 shadow-sm hover:shadow-md transition-all">
+                <div className="absolute flex items-center justify-center h-12 w-12 rounded-md bg-primary-50 text-primary-700">
                   <svg
                     className="h-6 w-6"
                     fill="none"
@@ -135,16 +135,16 @@ export default function HomePage() {
                     />
                   </svg>
                 </div>
-                <p className="ml-16 text-lg leading-6 font-medium text-stone-900">
+                <p className="ml-16 text-lg leading-6 font-medium text-gray-900">
                   Real-time Monitoring
                 </p>
-                <p className="mt-2 ml-16 text-base text-stone-500">
+                <p className="mt-2 ml-16 text-base text-gray-500">
                   Monitor attendance, activities, and safety in real-time.
                 </p>
               </div>
 
-              <div className="relative">
-                <div className="absolute flex items-center justify-center h-12 w-12 rounded-md bg-primary text-white">
+              <div className="relative bg-white p-6 rounded-2xl border border-gray-200 shadow-sm hover:shadow-md transition-all">
+                <div className="absolute flex items-center justify-center h-12 w-12 rounded-md bg-primary-50 text-primary-700">
                   <svg
                     className="h-6 w-6"
                     fill="none"
@@ -159,10 +159,10 @@ export default function HomePage() {
                     />
                   </svg>
                 </div>
-                <p className="ml-16 text-lg leading-6 font-medium text-stone-900">
+                <p className="ml-16 text-lg leading-6 font-medium text-gray-900">
                   Analytics & Reporting
                 </p>
-                <p className="mt-2 ml-16 text-base text-stone-500">
+                <p className="mt-2 ml-16 text-base text-gray-500">
                   Comprehensive insights into your daycare operations and
                   performance.
                 </p>
@@ -175,16 +175,16 @@ export default function HomePage() {
       <Testimonials />
 
       {/* Security Section */}
-      <div className="py-12 bg-surface">
+      <div className="py-12 bg-canvas">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="lg:text-center">
             <h2 className="text-base text-primary font-semibold tracking-wide uppercase">
               Security
             </h2>
-            <p className="mt-2 text-3xl leading-8 font-extrabold tracking-tight text-stone-900 sm:text-4xl">
+            <p className="mt-2 text-3xl leading-8 font-extrabold tracking-tight text-gray-900 sm:text-4xl">
               Enterprise-grade security for your peace of mind
             </p>
-            <p className="mt-4 max-w-2xl text-xl text-stone-500 lg:mx-auto">
+            <p className="mt-4 max-w-2xl text-xl text-gray-500 lg:mx-auto">
               Your data security is our top priority. TotHub implements
               industry-leading security measures to protect sensitive
               information.
@@ -193,7 +193,7 @@ export default function HomePage() {
 
           <div className="mt-10">
             <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3">
-              <div className="text-center">
+              <div className="text-center bg-white p-6 rounded-2xl border border-gray-200 shadow-sm hover:shadow-md transition-all">
                 <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-md bg-green-100">
                   <svg
                     className="h-6 w-6 text-green-600"
@@ -209,16 +209,16 @@ export default function HomePage() {
                     />
                   </svg>
                 </div>
-                <h3 className="mt-4 text-lg font-medium text-stone-900">
+                <h3 className="mt-4 text-lg font-medium text-gray-900">
                   2FA for Admins
                 </h3>
-                <p className="mt-2 text-base text-stone-500">
+                <p className="mt-2 text-base text-gray-500">
                   Mandatory multi-factor authentication for all administrative
                   accounts.
                 </p>
               </div>
 
-              <div className="text-center">
+              <div className="text-center bg-white p-6 rounded-2xl border border-gray-200 shadow-sm hover:shadow-md transition-all">
                 <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-md bg-blue-100">
                   <svg
                     className="h-6 w-6 text-blue-600"
@@ -234,16 +234,16 @@ export default function HomePage() {
                     />
                   </svg>
                 </div>
-                <h3 className="mt-4 text-lg font-medium text-stone-900">
+                <h3 className="mt-4 text-lg font-medium text-gray-900">
                   Role-Based Access
                 </h3>
-                <p className="mt-2 text-base text-stone-500">
+                <p className="mt-2 text-base text-gray-500">
                   Granular permissions and access control for staff and
                   administrators.
                 </p>
               </div>
 
-              <div className="text-center">
+              <div className="text-center bg-white p-6 rounded-2xl border border-gray-200 shadow-sm hover:shadow-md transition-all">
                 <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-md bg-purple-100">
                   <svg
                     className="h-6 w-6 text-purple-600"
@@ -259,10 +259,10 @@ export default function HomePage() {
                     />
                   </svg>
                 </div>
-                <h3 className="mt-4 text-lg font-medium text-stone-900">
+                <h3 className="mt-4 text-lg font-medium text-gray-900">
                   End-to-End Encryption
                 </h3>
-                <p className="mt-2 text-base text-stone-500">
+                <p className="mt-2 text-base text-gray-500">
                   AES-256 encryption for data at rest and TLS 1.3 for data in
                   transit.
                 </p>
@@ -299,13 +299,13 @@ export default function HomePage() {
       <FAQ />
 
       {/* Existing Users Section */}
-      <div className="py-16 bg-stone-50">
+      <div className="py-16 bg-canvas">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center">
-            <h2 className="text-3xl font-extrabold text-stone-900 sm:text-4xl">
+            <h2 className="text-3xl font-extrabold text-gray-900 sm:text-4xl">
               Already a TotHub User?
             </h2>
-            <p className="mt-4 text-lg text-stone-600 max-w-2xl mx-auto">
+            <p className="mt-4 text-lg text-gray-600 max-w-2xl mx-auto">
               Access your daycare management dashboard and continue managing
               your operations with all the tools you need.
             </p>
@@ -314,7 +314,7 @@ export default function HomePage() {
                 href={loginUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-button text-white bg-primary hover:bg-primary-600 transition-colors"
+                className="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-button text-white bg-primary-700 hover:bg-primary-800 transition-colors"
               >
                 <svg
                   className="mr-2 h-5 w-5"
@@ -335,7 +335,7 @@ export default function HomePage() {
                 href={registerUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center px-6 py-3 border border-stone-300 text-base font-medium rounded-button text-stone-700 bg-white hover:bg-stone-50 transition-colors"
+                className="inline-flex items-center px-6 py-3 border border-gray-300 text-base font-medium rounded-button text-gray-700 bg-white hover:bg-gray-50 transition-colors"
               >
                 <svg
                   className="mr-2 h-5 w-5"

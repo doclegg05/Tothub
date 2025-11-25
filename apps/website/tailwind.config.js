@@ -8,8 +8,8 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        canvas: "#FDFCF8",
-        surface: "#FFFFFF",
+        canvas: "#F9FAFB", // Cool Gray 50
+        surface: "#FFFFFF", // Pure White
         primary: {
           DEFAULT: "#0F766E", // Deep Teal
           50: "#f0fdfa",
@@ -23,45 +23,32 @@ module.exports = {
           800: "#115e59",
           900: "#134e4a",
         },
-        secondary: {
-          DEFAULT: "#FF8C78", // Soft Coral
-          50: "#fff1f2",
-          100: "#ffe4e6",
-          200: "#fecdd3",
-          300: "#fda4af",
-          400: "#fb7185",
-          500: "#f43f5e",
-          600: "#e11d48",
-          700: "#be123c",
-          800: "#9f1239",
-          900: "#881337",
-        },
-        stone: {
-          50: "#fafaf9",
-          100: "#f5f5f4",
-          200: "#e7e5e4", // Borders
-          300: "#d6d3d1",
-          400: "#a8a29e",
-          500: "#78716c", // Text Muted
-          600: "#57534e",
-          700: "#44403c",
-          800: "#292524", // Text Main
-          900: "#1c1917",
+        gray: {
+          50: "#f9fafb",
+          100: "#f3f4f6",
+          200: "#e5e7eb", // Borders
+          300: "#d1d5db",
+          400: "#9ca3af",
+          500: "#6b7280", // Text Muted
+          600: "#4b5563",
+          700: "#374151",
+          800: "#1f2937",
+          900: "#111827", // Headings
         },
       },
       fontFamily: {
         sans: ["var(--font-jakarta)", "sans-serif"],
       },
       borderRadius: {
-        card: "0.75rem", // 12px
+        card: "1rem", // 16px (rounded-2xl)
         button: "0.5rem", // 8px
       },
       boxShadow: {
-        "soft-sm": "0 1px 2px 0 rgb(231 229 228 / 0.5)", // stone-200
+        "soft-sm": "0 1px 2px 0 rgb(0 0 0 / 0.05)",
         "soft-md":
-          "0 4px 6px -1px rgb(231 229 228 / 0.5), 0 2px 4px -2px rgb(231 229 228 / 0.5)",
+          "0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)",
         "soft-lg":
-          "0 10px 15px -3px rgb(231 229 228 / 0.5), 0 4px 6px -4px rgb(231 229 228 / 0.5)",
+          "0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1)",
       },
     },
   },
