@@ -1,17 +1,3 @@
-/** @type {import('next').NextConfig} */
-const nextConfig = {
-  experimental: {
-    mdxRs: true,
-  },
-  pageExtensions: ['js', 'jsx', 'ts', 'tsx', 'md', 'mdx'],
-  images: {
-    domains: ['localhost'],
-  },
-  async headers() {
-    const isDev = process.env.NODE_ENV !== 'production';
-    const securityHeaders = [
-      // Only set X-Frame-Options in production so local preview iframes work
-      ...(!isDev
         ? [{ key: 'X-Frame-Options', value: 'DENY' }]
         : []),
       { key: 'X-Content-Type-Options', value: 'nosniff' },
