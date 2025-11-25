@@ -1,42 +1,43 @@
-import { Switch, Route } from "wouter";
-import { queryClient } from "./lib/queryClient";
-import { QueryClientProvider } from "@tanstack/react-query";
+import { ChatbotNew } from "@/components/chatbot-new";
+import { Sidebar } from "@/components/sidebar";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { AuthProvider, useAuth, ProtectedRoute } from "./lib/auth";
-import { Sidebar } from "@/components/sidebar";
-import { ChatbotNew } from "@/components/chatbot-new";
-import Dashboard from "@/pages/dashboard";
+import AlertRules from "@/pages/alert-rules";
+import Analytics from "@/pages/analytics";
+import AuthReceiver from "@/pages/auth-receiver";
+import BackgroundJobs from "@/pages/background-jobs";
+import Billing from "@/pages/billing";
 import CheckIn from "@/pages/checkin";
+import ChildDetails from "@/pages/child-details";
 import Children from "@/pages/children";
-import Staff from "@/pages/staff";
-import Reports from "@/pages/reports";
-import Settings from "@/pages/settings";
-import PerformanceTest from "@/pages/performance-test";
-import Security from "@/pages/security";
 import Compliance from "@/pages/compliance";
-import ParentCommunication from "@/pages/parent-communication";
-import Payroll from "@/pages/payroll";
-import Scheduling from "@/pages/scheduling";
-import { StaffSchedulingDayPilot } from "@/pages/staff-scheduling-daypilot";
-import Sessions from "@/pages/sessions";
+import DailyReports from "@/pages/daily-reports";
+import Dashboard from "@/pages/dashboard";
 import Landing from "@/pages/landing";
 import Login from "@/pages/login";
 import NotFound from "@/pages/not-found";
-import UserProfile from "@/pages/user-profile";
-import ParentPortal from "@/pages/parent-portal";
+import ParentCommunication from "@/pages/parent-communication";
 import ParentLogin from "@/pages/parent-login";
-import ChildDetails from "@/pages/child-details";
-import Analytics from "@/pages/analytics";
-import ZapierIntegration from "@/pages/zapier-integration";
-import DailyReports from "@/pages/daily-reports";
+import ParentPortal from "@/pages/parent-portal";
 import Payment from "@/pages/payment";
 import PaymentSuccess from "@/pages/payment-success";
-import Billing from "@/pages/billing";
+import Payroll from "@/pages/payroll";
 import PerformanceMonitor from "@/pages/performance-monitor";
-import BackgroundJobs from "@/pages/background-jobs";
-import AlertRules from "@/pages/alert-rules";
+import PerformanceTest from "@/pages/performance-test";
+import Reports from "@/pages/reports";
+import Scheduling from "@/pages/scheduling";
+import Security from "@/pages/security";
+import Sessions from "@/pages/sessions";
+import Settings from "@/pages/settings";
+import Staff from "@/pages/staff";
+import { StaffSchedulingDayPilot } from "@/pages/staff-scheduling-daypilot";
+import UserProfile from "@/pages/user-profile";
 import WorkflowVisualization from "@/pages/workflow-visualization";
+import ZapierIntegration from "@/pages/zapier-integration";
+import { QueryClientProvider } from "@tanstack/react-query";
+import { Route, Switch } from "wouter";
+import { AuthProvider, useAuth } from "./lib/auth";
+import { queryClient } from "./lib/queryClient";
 
 function AuthenticatedApp() {
   return (
@@ -64,7 +65,10 @@ function AuthenticatedApp() {
           <Route path="/performance-monitor" component={PerformanceMonitor} />
           <Route path="/background-jobs" component={BackgroundJobs} />
           <Route path="/alert-rules" component={AlertRules} />
-          <Route path="/workflow-visualization" component={WorkflowVisualization} />
+          <Route
+            path="/workflow-visualization"
+            component={WorkflowVisualization}
+          />
           <Route path="/sessions" component={Sessions} />
           <Route path="/profile" component={UserProfile} />
           <Route path="/payment" component={Payment} />
@@ -98,13 +102,14 @@ function Router() {
       <Switch>
         <Route path="/landing" component={Landing} />
         <Route path="/parent-login" component={ParentLogin} />
+        <Route path="/auth-receiver" component={AuthReceiver} />
         <Route component={Login} />
       </Switch>
     );
   }
 
   // Parent users get a different experience
-  if (user?.role === 'parent') {
+  if (user?.role === "parent") {
     return (
       <div className="min-h-screen bg-gray-50">
         <ParentPortal />
