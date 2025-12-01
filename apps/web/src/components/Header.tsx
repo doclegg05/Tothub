@@ -1,5 +1,12 @@
 "use client";
 
+import {
+  SignInButton,
+  SignUpButton,
+  SignedIn,
+  SignedOut,
+  UserButton,
+} from "@clerk/nextjs";
 import { Button } from "@tothub/ui/button";
 import Link from "next/link";
 import { useState } from "react";
@@ -41,9 +48,26 @@ export function Header() {
 
         {/* CTA Button */}
         <div className="hidden md:flex items-center space-x-4">
-          <Button variant="primary" size="md">
-            Get Started
-          </Button>
+          <SignedOut>
+            <SignInButton mode="modal">
+              <Button variant="ghost" size="md">
+                Sign In
+              </Button>
+            </SignInButton>
+            <SignUpButton mode="modal">
+              <Button variant="primary" size="md">
+                Get Started
+              </Button>
+            </SignUpButton>
+          </SignedOut>
+          <SignedIn>
+            <UserButton />
+            <Link href="/dashboard">
+              <Button variant="primary" size="md">
+                Dashboard
+              </Button>
+            </Link>
+          </SignedIn>
         </div>
 
         {/* Mobile Menu Button */}
@@ -84,10 +108,35 @@ export function Header() {
                 {link.label}
               </Link>
             ))}
-            <div className="pt-4">
-              <Button variant="primary" size="md" className="w-full">
-                Get Started
-              </Button>
+            <div className="pt-4 space-y-3">
+              <SignedOut>
+                <SignInButton mode="modal">
+                  <Button variant="outline" size="md" className="w-full">
+                    Sign In
+                  </Button>
+                </SignInButton>
+                <SignUpButton mode="modal">
+                  <Button variant="primary" size="md" className="w-full">
+                    Get Started
+                  </Button>
+                </SignUpButton>
+              </SignedOut>
+              <SignedIn>
+                <div className="flex items-center justify-between py-2">
+                  <span className="text-sm font-medium text-gray-700">
+                    Account
+                  </span>
+                  <UserButton />
+                </div>
+                <Link
+                  href="/dashboard"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  <Button variant="primary" size="md" className="w-full">
+                    Go to Dashboard
+                  </Button>
+                </Link>
+              </SignedIn>
             </div>
           </div>
         </div>

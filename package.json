@@ -17,9 +17,12 @@
     "test": "turbo run test",
     "clean": "turbo run clean",
     "dev:web": "pnpm --filter @tothub/web dev",
-    "build:web": "pnpm --filter @tothub/web build"
+    "build:web": "pnpm --filter @tothub/web build",
+    "dev:client": "vite"
   },
   "dependencies": {
+    "@fontsource/nunito": "^5.2.7",
+    "@fontsource/quicksand": "^5.2.10",
     "@fullcalendar/daygrid": "^6.1.18",
     "@fullcalendar/interaction": "^6.1.18",
     "@fullcalendar/react": "^6.1.18",
@@ -64,6 +67,7 @@
     "@types/bcryptjs": "^2.4.6",
     "@types/better-sqlite3": "^7.6.13",
     "@types/compression": "^1.8.1",
+    "@types/cors": "^2.8.19",
     "@types/fs-extra": "^11.0.4",
     "@types/jsonwebtoken": "^9.0.10",
     "@types/memoizee": "^0.4.12",
@@ -77,6 +81,7 @@
     "cmdk": "^1.1.1",
     "compression": "^1.8.1",
     "connect-pg-simple": "^10.0.0",
+    "cors": "^2.8.5",
     "date-fns": "^3.6.0",
     "dotenv": "^17.2.1",
     "drizzle-orm": "^0.39.1",

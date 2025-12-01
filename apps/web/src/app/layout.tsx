@@ -9,18 +9,22 @@ export const metadata: Metadata = {
     "Comprehensive daycare management system with biometric authentication, compliance tracking, and real-time monitoring.",
 };
 
+import { ClerkProvider } from "@clerk/nextjs";
+
 export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
-      <body className="flex flex-col min-h-screen">
-        <Header />
-        <main className="flex-1">{children}</main>
-        <Footer />
-      </body>
-    </html>
+    <ClerkProvider>
+      <html lang="en">
+        <body className="flex flex-col min-h-screen">
+          <Header />
+          <main className="flex-1">{children}</main>
+          <Footer />
+        </body>
+      </html>
+    </ClerkProvider>
   );
 }

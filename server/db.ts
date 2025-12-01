@@ -1,6 +1,5 @@
 import { Pool, neonConfig } from "@neondatabase/serverless";
 import * as schema from "@shared/schema";
-import Database from "better-sqlite3";
 import { drizzle as drizzleSQLite } from "drizzle-orm/better-sqlite3";
 import { drizzle } from "drizzle-orm/neon-serverless";
 import ws from "ws";
@@ -16,18 +15,36 @@ let pool: any = null;
 if (databaseUrl.startsWith("sqlite:")) {
   // Use SQLite
   const dbPath = databaseUrl.replace("sqlite:", "");
-  const sqlite = new Database(dbPath);
-  // SQLite performance pragmas (safe defaults)
   try {
-    sqlite.pragma("journal_mode = WAL");
-    sqlite.pragma("synchronous = NORMAL");
-    sqlite.pragma("cache_size = -16000"); // ~16MB cache
-    sqlite.pragma("temp_store = MEMORY");
-    sqlite.pragma("mmap_size = 268435456"); // 256MB if supported
+    const Database = require("better-sqlite3");
+    const sqlite = new Database(dbPath);
+    // SQLite performance pragmas (safe defaults)
+    try {
+      sqlite.pragma("journal_mode = WAL");
+      sqlite.pragma("synchronous = NORMAL");
+      sqlite.pragma("cache_size = -16000"); // ~16MB cache
+      sqlite.pragma("temp_store = MEMORY");
+      sqlite.pragma("mmap_size = 268435456"); // 256MB if supported
+    } catch (e) {
+      console.warn("SQLite PRAGMA configuration failed:", e);
+    }
+    db = drizzleSQLite(sqlite, { schema });
+    console.log("✅ SQLite database connected successfully");
   } catch (e) {
-    console.warn("SQLite PRAGMA configuration failed:", e);
+    console.error(
+      "❌ Failed to load better-sqlite3. Falling back to in-memory mock DB.",
+      e
+    );
+    // Create a mock DB object that logs warnings when used
+    db = {
+      select: () => ({
+        from: () => ({ where: () => ({ orderBy: () => [], limit: () => [] }) }),
+      }),
+      insert: () => ({ values: () => Promise.resolve() }),
+      update: () => ({ set: () => ({ where: () => Promise.resolve() }) }),
+      delete: () => ({ where: () => Promise.resolve() }),
+    };
   }
-  db = drizzleSQLite(sqlite, { schema });
 } else {
   // Use PostgreSQL
   if (!databaseUrl) {

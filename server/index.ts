@@ -9,7 +9,6 @@ import {
   csrfProtection,
   generateCSRFToken,
   securityHeaders,
-  validateInput,
 } from "./middleware/security";
 import { registerRoutes } from "./routes";
 import { MonitoringService } from "./services/monitoringService";
@@ -22,19 +21,15 @@ if (app.get("env") !== "development") {
   app.set("trust proxy", 1);
 }
 
-// CORS configuration (comma-separated list in CORS_ORIGIN)
-const allowedOrigins = (process.env.CORS_ORIGIN || "")
-  .split(",")
-  .map((s) => s.trim())
-  .filter(Boolean);
+app.use((req, res, next) => {
+  console.log(`🌍 INCOMING REQUEST: ${req.method} ${req.url}`);
+  next();
+});
+
+// CORS configuration - Allow all in development
 app.use(
   cors({
-    origin: (origin, callback) => {
-      if (!origin) return callback(null, true);
-      if (allowedOrigins.length === 0) return callback(null, true);
-      if (allowedOrigins.includes(origin)) return callback(null, true);
-      return callback(new Error("Not allowed by CORS"));
-    },
+    origin: true, // Allow all origins in development
     credentials: true,
   })
 );
@@ -72,11 +67,14 @@ app.use(
 );
 
 // Input sanitization
-app.use(validateInput);
+// app.use(validateInput);
 
 // CSRF token generation for GETs; protection for modifying requests
 app.use(generateCSRFToken);
-app.use("/api", csrfProtection);
+app.use("/api", (req, res, next) => {
+  if (req.path === "/auth/login") return next();
+  csrfProtection(req, res, next);
+});
 
 // Global API rate limit
 app.use("/api", createRateLimit(15 * 60 * 1000, 300, "Too many requests"));

@@ -1,7 +1,4 @@
-import { db } from '../db';
-import { sessions, sessionActivity } from '@shared/schema';
-import { eq, desc, and, gte } from 'drizzle-orm';
-import crypto from 'crypto';
+import crypto from "crypto";
 
 export interface SessionData {
   userId: string;
@@ -15,7 +12,9 @@ export interface SessionData {
 
 export class SessionService {
   private static instance: SessionService;
-  
+  private sessions: Map<string, any> = new Map();
+  private activityLog: any[] = [];
+
   public static getInstance(): SessionService {
     if (!SessionService.instance) {
       SessionService.instance = new SessionService();
@@ -31,10 +30,10 @@ export class SessionService {
     ipAddress?: string;
     userAgent?: string;
   }): Promise<string> {
-    const sessionId = crypto.randomBytes(32).toString('hex');
+    const sessionId = crypto.randomBytes(32).toString("hex");
     const now = new Date();
-    
-    await db.insert(sessions).values({
+
+    const session = {
       id: sessionId,
       userId: data.userId,
       username: data.username,
@@ -44,35 +43,32 @@ export class SessionService {
       ipAddress: data.ipAddress,
       userAgent: data.userAgent,
       isActive: true,
-    });
-    
+    };
+
+    this.sessions.set(sessionId, session);
+    console.log(`✅ Session created (in-memory): ${sessionId}`);
+
     // Log initial activity
-    await this.trackActivity(sessionId, 'login', '/api/auth/login');
-    
+    await this.trackActivity(sessionId, "login", "/api/auth/login");
+
     return sessionId;
   }
 
   // Get active session
   public async getSession(sessionId: string): Promise<SessionData | null> {
-    const [session] = await db
-      .select()
-      .from(sessions)
-      .where(and(
-        eq(sessions.id, sessionId),
-        eq(sessions.isActive, 1)
-      ));
-    
-    if (!session) return null;
-    
+    const session = this.sessions.get(sessionId);
+
+    if (!session || !session.isActive) return null;
+
     // Check if session has expired (8 hours)
     const expirationTime = 8 * 60 * 60 * 1000; // 8 hours in milliseconds
     const sessionAge = Date.now() - new Date(session.loginTime).getTime();
-    
+
     if (sessionAge > expirationTime) {
-      await this.endSession(sessionId, 'expired');
+      await this.endSession(sessionId, "expired");
       return null;
     }
-    
+
     return {
       userId: session.userId,
       username: session.username,
@@ -86,10 +82,11 @@ export class SessionService {
 
   // Update session activity
   public async updateActivity(sessionId: string): Promise<void> {
-    await db
-      .update(sessions)
-      .set({ lastActivity: new Date() })
-      .where(eq(sessions.id, sessionId));
+    const session = this.sessions.get(sessionId);
+    if (session) {
+      session.lastActivity = new Date();
+      this.sessions.set(sessionId, session);
+    }
   }
 
   // Track specific activity
@@ -99,86 +96,76 @@ export class SessionService {
     path: string,
     details?: any
   ): Promise<void> {
-    await db.insert(sessionActivity).values({
+    this.activityLog.push({
       sessionId,
       action,
       path,
       details: details ? JSON.stringify(details) : null,
+      timestamp: new Date(),
     });
-    
+
     // Update last activity time
     await this.updateActivity(sessionId);
   }
 
   // End session
-  public async endSession(sessionId: string, reason: 'logout' | 'expired' | 'forced' = 'logout'): Promise<void> {
-    await db
-      .update(sessions)
-      .set({ 
-        isActive: false,
-        endTime: new Date(),
-        endReason: reason,
-      })
-      .where(eq(sessions.id, sessionId));
-    
+  public async endSession(
+    sessionId: string,
+    reason: "logout" | "expired" | "forced" = "logout"
+  ): Promise<void> {
+    const session = this.sessions.get(sessionId);
+    if (session) {
+      session.isActive = false;
+      session.endTime = new Date();
+      session.endReason = reason;
+      this.sessions.set(sessionId, session);
+    }
+
     // Log logout activity
-    await this.trackActivity(sessionId, 'logout', '/api/auth/logout', { reason });
+    await this.trackActivity(sessionId, "logout", "/api/auth/logout", {
+      reason,
+    });
   }
 
   // Get active sessions for a user
   public async getUserSessions(userId: string): Promise<any[]> {
-    return await db
-      .select()
-      .from(sessions)
-      .where(and(
-        eq(sessions.userId, userId),
-        eq(sessions.isActive, 1)
-      ))
-      .orderBy(desc(sessions.loginTime));
+    return Array.from(this.sessions.values())
+      .filter((s) => s.userId === userId && s.isActive)
+      .sort((a, b) => b.loginTime.getTime() - a.loginTime.getTime());
   }
 
   // Get session activity
-  public async getSessionActivity(sessionId: string, limit: number = 100): Promise<any[]> {
-    return await db
-      .select()
-      .from(sessionActivity)
-      .where(eq(sessionActivity.sessionId, sessionId))
-      .orderBy(desc(sessionActivity.timestamp))
-      .limit(limit);
+  public async getSessionActivity(
+    sessionId: string,
+    limit: number = 100
+  ): Promise<any[]> {
+    return this.activityLog
+      .filter((a) => a.sessionId === sessionId)
+      .sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime())
+      .slice(0, limit);
   }
 
   // Get all active sessions (for admin dashboard)
   public async getActiveSessions(): Promise<any[]> {
     const cutoffTime = new Date(Date.now() - 30 * 60 * 1000); // 30 minutes ago
-    
-    return await db
-      .select()
-      .from(sessions)
-      .where(and(
-        eq(sessions.isActive, 1),
-        gte(sessions.lastActivity, cutoffTime.toISOString())
-      ))
-      .orderBy(desc(sessions.lastActivity));
+
+    return Array.from(this.sessions.values())
+      .filter((s) => s.isActive && s.lastActivity >= cutoffTime)
+      .sort((a, b) => b.lastActivity.getTime() - a.lastActivity.getTime());
   }
 
   // Clean up expired sessions
   public async cleanupExpiredSessions(): Promise<number> {
     const expirationTime = new Date(Date.now() - 8 * 60 * 60 * 1000); // 8 hours ago
-    
-    const expiredSessions = await db
-      .select()
-      .from(sessions)
-      .where(and(
-        eq(sessions.isActive, 1),
-        gte(sessions.loginTime, expirationTime.toISOString())
-      ));
-    
+
     let cleaned = 0;
-    for (const session of expiredSessions) {
-      await this.endSession(session.id, 'expired');
-      cleaned++;
+    for (const [id, session] of this.sessions.entries()) {
+      if (session.isActive && session.loginTime < expirationTime) {
+        await this.endSession(id, "expired");
+        cleaned++;
+      }
     }
-    
+
     return cleaned;
   }
 }

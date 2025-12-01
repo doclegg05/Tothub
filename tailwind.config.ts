@@ -9,8 +9,19 @@ export default {
         lg: "var(--radius)",
         md: "calc(var(--radius) - 2px)",
         sm: "calc(var(--radius) - 4px)",
+        squircle: "24px", // The signature soft corner
       },
       colors: {
+        // The "Nursery" Palette
+        nursery: {
+          bg: "#FDFBF7", // Warm Cream (Backgrounds)
+          dark: "#4A4A68", // Deep Slate (Text)
+          coral: "#FF8A80", // Primary Action (Buttons)
+          sage: "#A7D7C5", // Success / Calm (Borders/Accents)
+          sky: "#BDE0FE", // Info / Secondary
+          yellow: "#FFF59D", // Highlights
+          wood: "#E3CBA8", // Sidebar/Cubby texture
+        },
         background: "var(--background)",
         foreground: "var(--foreground)",
         card: {
@@ -61,6 +72,16 @@ export default {
           border: "var(--sidebar-border)",
           ring: "var(--sidebar-ring)",
         },
+      },
+      fontFamily: {
+        heading: ["Quicksand", "sans-serif"], // Bubbly, rounded
+        body: ["Nunito", "sans-serif"], // Legible, soft
+      },
+      boxShadow: {
+        // The "Construction Paper" cut-out look
+        paper: "4px 4px 0px 0px rgba(74, 74, 104, 0.1)",
+        "paper-hover": "2px 2px 0px 0px rgba(74, 74, 104, 0.1)",
+        cubby: "inset 2px 2px 5px rgba(0,0,0,0.05)", // Inner shadow for sidebar
       },
       keyframes: {
         "accordion-down": {

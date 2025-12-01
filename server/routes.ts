@@ -2,6 +2,7 @@ import type { Express, Request, Response } from "express";
 import { createServer, type Server } from "http";
 import { z } from "zod";
 import { authMiddleware } from "./middleware/auth";
+import authRoutes from "./routes/authRoutes";
 import scheduleRoutes from "./routes/scheduleRoutes";
 import { memoryCache as globalMemoryCache } from "./services/memoryOptimizationService";
 import { MonitoringService } from "./services/monitoringService";
@@ -14,6 +15,9 @@ import {
 export async function registerRoutes(app: Express): Promise<Server> {
   const auth = authMiddleware;
   const storage = new DatabaseStorage();
+
+  // Auth routes
+  app.use("/api/auth", authRoutes);
 
   // Schedule feature routes (Timefold integration)
   app.use("/api/schedule", scheduleRoutes);

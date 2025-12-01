@@ -13,6 +13,7 @@ import Children from "@/pages/children";
 import Compliance from "@/pages/compliance";
 import DailyReports from "@/pages/daily-reports";
 import Dashboard from "@/pages/dashboard";
+import DashboardNursery from "@/pages/dashboard-nursery";
 import Landing from "@/pages/landing";
 import Login from "@/pages/login";
 import NotFound from "@/pages/not-found";
@@ -35,7 +36,7 @@ import UserProfile from "@/pages/user-profile";
 import WorkflowVisualization from "@/pages/workflow-visualization";
 import ZapierIntegration from "@/pages/zapier-integration";
 import { QueryClientProvider } from "@tanstack/react-query";
-import { Route, Switch } from "wouter";
+import { Route, Switch, useLocation } from "wouter";
 import { AuthProvider, useAuth } from "./lib/auth";
 import { queryClient } from "./lib/queryClient";
 
@@ -85,6 +86,12 @@ function AuthenticatedApp() {
 
 function Router() {
   const { isAuthenticated, isLoading, user } = useAuth();
+  const [location] = useLocation();
+
+  // Special route for design preview
+  if (location === "/nursery") {
+    return <DashboardNursery />;
+  }
 
   if (isLoading) {
     return (
@@ -120,16 +127,66 @@ function Router() {
   return <AuthenticatedApp />;
 }
 
+import React from "react";
+
+class ErrorBoundary extends React.Component<
+  { children: React.ReactNode },
+  { hasError: boolean; error: Error | null }
+> {
+  constructor(props: { children: React.ReactNode }) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+
+  static getDerivedStateFromError(error: Error) {
+    return { hasError: true, error };
+  }
+
+  componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
+    console.error("Uncaught error:", error, errorInfo);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="min-h-screen flex items-center justify-center bg-red-50 p-4">
+          <div className="bg-white p-8 rounded-lg shadow-xl max-w-lg w-full">
+            <h1 className="text-2xl font-bold text-red-600 mb-4">
+              Something went wrong
+            </h1>
+            <p className="text-gray-700 mb-4">
+              The application crashed with the following error:
+            </p>
+            <pre className="bg-gray-100 p-4 rounded text-sm overflow-auto mb-4 text-red-800">
+              {this.state.error?.toString()}
+            </pre>
+            <button
+              onClick={() => window.location.reload()}
+              className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+            >
+              Reload Page
+            </button>
+          </div>
+        </div>
+      );
+    }
+
+    return this.props.children;
+  }
+}
+
 function App() {
   return (
-    <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <TooltipProvider>
-          <Toaster />
-          <Router />
-        </TooltipProvider>
-      </AuthProvider>
-    </QueryClientProvider>
+    <ErrorBoundary>
+      <QueryClientProvider client={queryClient}>
+        <AuthProvider>
+          <TooltipProvider>
+            <Toaster />
+            <Router />
+          </TooltipProvider>
+        </AuthProvider>
+      </QueryClientProvider>
+    </ErrorBoundary>
   );
 }
 
