@@ -107,10 +107,10 @@ function Router() {
   if (!isAuthenticated) {
     return (
       <Switch>
-        <Route path="/landing" component={Landing} />
+        <Route path="/login" component={Login} />
         <Route path="/parent-login" component={ParentLogin} />
         <Route path="/auth-receiver" component={AuthReceiver} />
-        <Route component={Login} />
+        <Route component={Landing} />
       </Switch>
     );
   }
